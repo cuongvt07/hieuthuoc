@@ -154,10 +154,10 @@
                         <div class="detail-item">
                             <div class="detail-label">Trạng thái:</div>
                             <div class="detail-value">
-                                @if($phieuNhap->trang_thai === 'hoàn_thành')
+                                @if($phieuNhap->trang_thai === 'hoan_tat')
                                     <span class="badge status-badge status-completed">Hoàn thành</span>
-                                @elseif($phieuNhap->trang_thai === 'nháp')
-                                    <span class="badge status-badge status-draft">Nháp</span>
+                                @elseif($phieuNhap->trang_thai === 'cho_xu_ly')
+                                    <span class="badge status-badge status-draft">Chờ xử lý</span>
                                 @else
                                     <span class="badge status-badge status-cancelled">Đã hủy</span>
                                 @endif

@@ -101,6 +101,9 @@
                     <a href="{{ route('phieu-nhap.index') }}" class="menu-item {{ request()->routeIs('phieu-nhap.*') ? 'active' : '' }}">
                         <i class="bi bi-file-earmark-plus"></i> Phiếu Nhập Kho
                     </a>
+                    <a href="{{ route('lo-thuoc.index') }}" class="menu-item {{ request()->routeIs('lo-thuoc.*') ? 'active' : '' }}">
+                        <i class="bi bi-box2"></i> Quản Lý Lô Thuốc
+                    </a>
                     
                     <!-- Hệ thống -->
                     <div class="menu-header text-muted px-3 py-2 small">

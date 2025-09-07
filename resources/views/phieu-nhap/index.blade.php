@@ -46,9 +46,9 @@
                     <label for="trang_thai" class="form-label small">Trạng thái</label>
                     <select class="form-select form-select-sm" id="trang_thai" name="trang_thai">
                         <option value="">Tất cả</option>
-                        <option value="hoàn_thành" @if(request('trang_thai') == 'hoàn_thành') selected @endif>Hoàn thành</option>
-                        <option value="nháp" @if(request('trang_thai') == 'nháp') selected @endif>Nháp</option>
-                        <option value="đã_hủy" @if(request('trang_thai') == 'đã_hủy') selected @endif>Đã hủy</option>
+                        <option value="hoan_tat" @if(request('trang_thai') == 'hoan_tat') selected @endif>Hoàn thành</option>
+                        <option value="cho_xu_ly" @if(request('trang_thai') == 'cho_xu_ly') selected @endif>Chờ xử lý</option>
+                        <option value="da_huy" @if(request('trang_thai') == 'da_huy') selected @endif>Đã hủy</option>
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -109,10 +109,10 @@
                         <td><strong>{{ number_format($phieuNhap->tong_cong) }}</strong></td>
                         <td>{{ $phieuNhap->nguoiDung->ho_ten ?? 'N/A' }}</td>
                         <td>
-                            @if($phieuNhap->trang_thai === 'hoàn_thành')
+                            @if($phieuNhap->trang_thai === 'hoan_tat')
                                 <span class="badge status-badge status-completed">Hoàn thành</span>
-                            @elseif($phieuNhap->trang_thai === 'nháp')
-                                <span class="badge status-badge status-draft">Nháp</span>
+                            @elseif($phieuNhap->trang_thai === 'cho_xu_ly')
+                                <span class="badge status-badge status-draft">Chờ xử lý</span>
                             @else
                                 <span class="badge status-badge status-cancelled">Đã hủy</span>
                             @endif

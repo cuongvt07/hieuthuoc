@@ -1,0 +1,129 @@
+@extends('layouts.app')
+
+@section('title', 'Chỉnh Sửa Lô Thuốc - Hệ Thống Quản Lý Hiệu Thuốc')
+
+@section('page-title', 'Chỉnh Sửa Lô Thuốc')
+
+@section('content')
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ route('lo-thuoc.show', $loThuoc->lo_id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Quay Lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Chỉnh Sửa Thông Tin Lô Thuốc</h6>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('lo-thuoc.update', $loThuoc->lo_id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h5 class="card-title">Thông Tin Cơ Bản</h5>
+                            <p class="text-muted small">Cập nhật thông tin cơ bản của lô thuốc</p>
+                            
+                            <div class="mb-3">
+                                <label for="ma_lo" class="form-label">Mã lô</label>
+                                <input type="text" class="form-control @error('ma_lo') is-invalid @enderror" id="ma_lo" name="ma_lo" value="{{ old('ma_lo', $loThuoc->ma_lo) }}">
+                                @error('ma_lo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Để trống nếu sử dụng mã tự động</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="so_lo_nha_san_xuat" class="form-label">Số lô nhà sản xuất</label>
+                                <input type="text" class="form-control @error('so_lo_nha_san_xuat') is-invalid @enderror" id="so_lo_nha_san_xuat" name="so_lo_nha_san_xuat" value="{{ old('so_lo_nha_san_xuat', $loThuoc->so_lo_nha_san_xuat) }}">
+                                @error('so_lo_nha_san_xuat')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="ngay_san_xuat" class="form-label">Ngày sản xuất</label>
+                                <input type="date" class="form-control @error('ngay_san_xuat') is-invalid @enderror" id="ngay_san_xuat" name="ngay_san_xuat" value="{{ old('ngay_san_xuat', $loThuoc->ngay_san_xuat ? \Carbon\Carbon::parse($loThuoc->ngay_san_xuat)->format('Y-m-d') : '') }}">
+                                @error('ngay_san_xuat')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="han_su_dung" class="form-label">Hạn sử dụng <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control @error('han_su_dung') is-invalid @enderror" id="han_su_dung" name="han_su_dung" value="{{ old('han_su_dung', \Carbon\Carbon::parse($loThuoc->han_su_dung)->format('Y-m-d')) }}" required>
+                                @error('han_su_dung')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="card-title">Thông Tin Bổ Sung</h5>
+                            <p class="text-muted small">Thông tin kho và ghi chú bổ sung</p>
+                            
+                            <div class="mb-3">
+                                <label for="kho_id" class="form-label">Kho lưu trữ <span class="text-danger">*</span></label>
+                                <select class="form-select @error('kho_id') is-invalid @enderror" id="kho_id" name="kho_id" required>
+                                    @foreach($khos as $kho)
+                                        <option value="{{ $kho->kho_id }}" {{ old('kho_id', $loThuoc->kho_id) == $kho->kho_id ? 'selected' : '' }}>
+                                            {{ $kho->ten_kho }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('kho_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="ghi_chu" class="form-label">Ghi chú</label>
+                                <textarea class="form-control @error('ghi_chu') is-invalid @enderror" id="ghi_chu" name="ghi_chu" rows="5">{{ old('ghi_chu', $loThuoc->ghi_chu) }}</textarea>
+                                @error('ghi_chu')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i> Lưu ý: Không thể sửa đổi thuốc hoặc số lượng tồn kho trực tiếp. Để điều chỉnh số lượng tồn kho, vui lòng sử dụng chức năng điều chỉnh tồn kho.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i> Lưu Thay Đổi
+                            </button>
+                            <a href="{{ route('lo-thuoc.show', $loThuoc->lo_id) }}" class="btn btn-secondary px-4 ms-2">
+                                <i class="bi bi-x-circle me-1"></i> Hủy
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        // Hiển thị cảnh báo khi ngày sản xuất sau hạn sử dụng
+        $('#ngay_san_xuat, #han_su_dung').on('change', function() {
+            var ngaySX = new Date($('#ngay_san_xuat').val());
+            var hanSD = new Date($('#han_su_dung').val());
+            
+            if (ngaySX > hanSD) {
+                alert('Cảnh báo: Ngày sản xuất không thể sau hạn sử dụng!');
+            }
+        });
+    });
+</script>
+@endsection

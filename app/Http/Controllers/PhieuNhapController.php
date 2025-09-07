@@ -142,7 +142,7 @@ class PhieuNhapController extends Controller
             $phieuNhap->vat = $request->vat;
             $phieuNhap->tong_cong = $request->tong_cong;
             $phieuNhap->ghi_chu = $request->ghi_chu;
-            $phieuNhap->trang_thai = 'hoàn_thành'; // Mặc định là hoàn thành
+            $phieuNhap->trang_thai = 'hoan_tat'; // Mặc định là hoàn thành
             $phieuNhap->save();
 
             // Lưu chi tiết lô nhập
@@ -294,7 +294,7 @@ class PhieuNhapController extends Controller
      */
     public function destroy(PhieuNhap $phieuNhap)
     {
-        if ($phieuNhap->trang_thai === 'hoàn_thành') {
+        if ($phieuNhap->trang_thai === 'hoan_tat') {
             return redirect()->route('phieu-nhap.index')
                 ->with('error', 'Không thể hủy phiếu nhập đã hoàn thành.');
         }

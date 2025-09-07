@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\GiaThuocController;
 use App\Http\Controllers\KhachHangController;
 use App\Http\Controllers\KhoController;
+use App\Http\Controllers\LoThuocController;
 use App\Http\Controllers\NguoiDungController;
 use App\Http\Controllers\NhaCungCapController;
 use App\Http\Controllers\NhomThuocController;
@@ -67,4 +68,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('phieu-nhap', PhieuNhapController::class);
     Route::get('phieu-nhap-ton-kho', [PhieuNhapController::class, 'getTonKho'])->name('phieu-nhap.get-ton-kho');
     Route::get('phieu-nhap-lo-thuoc', [PhieuNhapController::class, 'getLoThuoc'])->name('phieu-nhap.get-lo-thuoc');
+    
+    // Lô thuốc routes
+    Route::resource('lo-thuoc', LoThuocController::class);
+    Route::post('lo-thuoc/{loThuoc}/adjust-stock', [LoThuocController::class, 'adjustStock'])->name('lo-thuoc.adjust-stock');
+    Route::post('lo-thuoc/{loThuoc}/transfer', [LoThuocController::class, 'transfer'])->name('lo-thuoc.transfer');
 });
