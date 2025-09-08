@@ -94,6 +94,8 @@ class PhieuNhapController extends Controller
             'thuoc_id.*' => 'required|exists:thuoc,thuoc_id',
             'kho_id' => 'required|array',
             'kho_id.*' => 'required|exists:kho,kho_id',
+            'is_new_lot' => 'required|array',
+            'lo_id' => 'required|array',
             'so_lo' => 'required|array',
             'so_lo.*' => 'nullable|string',
             'so_luong' => 'required|array',
@@ -149,6 +151,8 @@ class PhieuNhapController extends Controller
             for ($i = 0; $i < count($request->thuoc_id); $i++) {
                 $thuocId = $request->thuoc_id[$i];
                 $khoId = $request->kho_id[$i];
+                $isNewLot = $request->is_new_lot[$i] == '1';
+                $loId = $request->lo_id[$i];
                 $soLo = $request->so_lo[$i];
                 $soLoNSX = $request->so_lo_nha_san_xuat[$i] ?? null;
                 $hanSuDung = $request->han_su_dung[$i];
@@ -161,19 +165,9 @@ class PhieuNhapController extends Controller
                 $thanhTien = $request->thanh_tien[$i];
                 $ghiChuLo = $request->ghi_chu_lo[$i] ?? null;
 
-                // Tìm hoặc tạo mới lô thuốc
-                $loThuoc = LoThuoc::where('thuoc_id', $thuocId)
-                    ->where('kho_id', $khoId)
-                    ->where('han_su_dung', $hanSuDung)
-                    ->where(function($query) use ($soLoNSX) {
-                        if (!empty($soLoNSX)) {
-                            $query->where('so_lo_nha_san_xuat', $soLoNSX);
-                        }
-                    })
-                    ->first();
-
-                // Nếu lô chưa tồn tại, tạo mới
-                if (!$loThuoc) {
+                // Xử lý lô thuốc dựa vào isNewLot
+                if ($isNewLot) {
+                    // Tạo lô mới
                     // Tạo mã lô tự động nếu không nhập
                     if (empty($soLo)) {
                         $soLo = 'LT' . date('Ymd') . rand(1000, 9999);
@@ -192,7 +186,10 @@ class PhieuNhapController extends Controller
                     $loThuoc->ghi_chu = $ghiChuLo;
                     $loThuoc->save();
                 } else {
-                    // Nếu lô đã tồn tại, cập nhật thông tin
+                    // Cập nhật lô hiện có
+                    $loThuoc = LoThuoc::findOrFail($loId);
+                    
+                    // Tính giá nhập trung bình mới
                     $tongSoLuongCu = $loThuoc->tong_so_luong;
                     $giaNhapTBCu = $loThuoc->gia_nhap_tb;
                     
@@ -309,24 +306,75 @@ class PhieuNhapController extends Controller
      */
     public function getTonKho(Request $request)
     {
-        $thuocId = $request->thuoc_id;
-        $khoId = $request->kho_id;
-
-        $tonKho = LoThuoc::where('thuoc_id', $thuocId)
-            ->where('kho_id', $khoId)
-            ->where('ton_kho_hien_tai', '>', 0)
-            ->select('lo_id', 'ma_lo', 'han_su_dung', 'ton_kho_hien_tai', 'so_lo_nha_san_xuat')
-            ->orderBy('han_su_dung')
-            ->get();
-
-        $thuoc = Thuoc::find($thuocId);
+        $getAllLots = $request->has('all_lots');
         
-        return response()->json([
-            'tonKho' => $tonKho,
-            'thuoc' => $thuoc
-        ]);
+        if ($getAllLots) {
+            // Lấy tất cả các lô có tồn kho > 0
+            $tonKho = LoThuoc::with(['thuoc', 'kho'])
+                ->where('ton_kho_hien_tai', '>', 0)
+                ->orderBy('han_su_dung', 'asc')
+                ->get();
+                
+            return response()->json([
+                'tonKho' => $tonKho
+            ]);
+        } else {
+            // Lấy lô theo thuốc và kho cụ thể
+            $thuocId = $request->thuoc_id;
+            $khoId = $request->kho_id;
+            
+            if (!$thuocId || !$khoId) {
+                return response()->json([
+                    'error' => 'Thiếu thông tin thuốc hoặc kho'
+                ], 400);
+            }
+            
+            $thuoc = Thuoc::find($thuocId);
+            
+            if (!$thuoc) {
+                return response()->json([
+                    'error' => 'Không tìm thấy thuốc'
+                ], 404);
+            }
+
+            $tonKho = LoThuoc::where('thuoc_id', $thuocId)
+                ->where('kho_id', $khoId)
+                ->where('ton_kho_hien_tai', '>', 0)
+                ->orderBy('han_su_dung', 'asc')
+                ->get();
+            
+            return response()->json([
+                'tonKho' => $tonKho,
+                'thuoc' => $thuoc
+            ]);
+        }
     }
 
+    /**
+     * API để lấy lịch sử nhập của một lô
+     */
+    public function getLotHistory(Request $request)
+    {
+        $loId = $request->lo_id;
+        
+        if (!$loId) {
+            return response()->json([
+                'error' => 'Thiếu thông tin lô'
+            ], 400);
+        }
+        
+        // Lấy lịch sử nhập của lô
+        $history = ChiTietLoNhap::with(['phieuNhap' => function($query) {
+            $query->select('phieu_id', 'ma_phieu', 'ngay_nhap');
+        }])->where('lo_id', $loId)
+           ->orderBy('phieu_id', 'desc')
+           ->get();
+        
+        return response()->json([
+            'history' => $history
+        ]);
+    }
+    
     /**
      * API để lấy thông tin lô thuốc
      */

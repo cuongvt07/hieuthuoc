@@ -1,0 +1,61 @@
+# Don Ban Le (Retail Order) UI Improvements
+
+I've implemented the requested improvements to the "Don Ban Le" (Retail Order) interface. Here are the key changes:
+
+## 1. Direct Product Addition from Product Table
+
+- Products are now displayed in a table after selection from the dropdown
+- Users can now click directly on a product row to add it to the cart without needing an additional button
+- Products are shown with both original unit and retail unit options when available
+- Users can easily see which products are available and their stock quantities
+
+## 2. In-Line Cart Item Editing
+
+- Quantity and tax rate fields are now editable directly in the cart
+- Click on any quantity or tax field to edit its value
+- Changes are validated to ensure quantities don't exceed available stock
+- Cart totals are automatically recalculated when values change
+
+## 3. Unit Selection from Product Table
+
+- Both units (don_vi_goc and don_vi_ban) are displayed as separate rows in the product table
+- Users can choose which unit they want when selecting a product
+- Pricing automatically adjusts based on the selected unit
+- Product table clearly shows which row corresponds to which unit
+
+## 4. Stock Availability Checking
+
+- System validates stock availability before adding products to the cart
+- When increasing quantity, checks are performed to prevent exceeding available stock
+- User receives clear error messages if they try to add more than available stock
+- Stock information is displayed in the product listing
+
+## 5. Bootstrap Icons Integration
+
+- All icons have been updated to use Bootstrap Icons (bi bi-*)
+- Examples: 
+  - bi-arrow-left instead of fas fa-arrow-left
+  - bi-search instead of fas fa-search
+  - bi-save instead of fas fa-save
+  - bi-plus-circle and bi-minus-circle for quantity controls
+  - bi-trash for delete items
+
+## Additional Improvements
+
+- Better visual styling for editable fields
+- More intuitive plus/minus controls for quantity adjustment
+- Cleaner cart interface with better spacing and alignment
+- Improved mobile responsiveness
+
+## Usage Instructions
+
+1. **Search for a product** using the select dropdown
+2. **View available products** in the table below the search
+3. **Click on any product** to add it directly to your cart
+4. **Edit quantities** directly in the cart by clicking on the quantity field
+5. **Adjust tax rates** by clicking on the percentage
+6. **Use +/- buttons** to fine-tune quantities
+7. **Remove items** using the trash icon
+8. **Complete the order** when all items are added
+
+These changes create a more streamlined, user-friendly interface that should significantly improve the user experience when creating retail orders.

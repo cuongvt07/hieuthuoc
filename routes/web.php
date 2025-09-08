@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\DonBanLeController;
 use App\Http\Controllers\GiaThuocController;
 use App\Http\Controllers\KhachHangController;
 use App\Http\Controllers\KhoController;
@@ -68,9 +69,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('phieu-nhap', PhieuNhapController::class);
     Route::get('phieu-nhap-ton-kho', [PhieuNhapController::class, 'getTonKho'])->name('phieu-nhap.get-ton-kho');
     Route::get('phieu-nhap-lo-thuoc', [PhieuNhapController::class, 'getLoThuoc'])->name('phieu-nhap.get-lo-thuoc');
+    Route::get('phieu-nhap-lot-history', [PhieuNhapController::class, 'getLotHistory'])->name('phieu-nhap.get-lot-history');
     
     // Lô thuốc routes
     Route::resource('lo-thuoc', LoThuocController::class);
     Route::post('lo-thuoc/{loThuoc}/adjust-stock', [LoThuocController::class, 'adjustStock'])->name('lo-thuoc.adjust-stock');
     Route::post('lo-thuoc/{loThuoc}/transfer', [LoThuocController::class, 'transfer'])->name('lo-thuoc.transfer');
+    
+    // Đơn bán lẻ routes
+    Route::resource('don-ban-le', DonBanLeController::class);
+    Route::get('don-ban-le-thuoc-info', [DonBanLeController::class, 'getThuocInfo'])->name('don-ban-le.thuoc-info');
+    Route::get('don-ban-le-search-thuoc', [DonBanLeController::class, 'searchThuoc'])->name('don-ban-le.search-thuoc');
+    Route::post('don-ban-le/{donBanLe}/cancel', [DonBanLeController::class, 'cancel'])->name('don-ban-le.cancel');
+    Route::get('don-ban-le/{donBanLe}/print', [DonBanLeController::class, 'print'])->name('don-ban-le.print');
+    Route::get('don-ban-le-report', [DonBanLeController::class, 'report'])->name('don-ban-le.report');
 });

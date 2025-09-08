@@ -105,6 +105,14 @@
                         <i class="bi bi-box2"></i> Quản Lý Lô Thuốc
                     </a>
                     
+                    <!-- Bán Hàng -->
+                    <div class="menu-header text-muted px-3 py-2 small">
+                        <i class="bi bi-cart4 me-2"></i> BÁN HÀNG
+                    </div>
+                    <a href="{{ route('don-ban-le.index') }}" class="menu-item {{ request()->routeIs('don-ban-le.*') ? 'active' : '' }}">
+                        <i class="bi bi-receipt"></i> Đơn Bán Lẻ
+                    </a>
+                    
                     <!-- Hệ thống -->
                     <div class="menu-header text-muted px-3 py-2 small">
                         <i class="bi bi-gear me-2"></i> HỆ THỐNG

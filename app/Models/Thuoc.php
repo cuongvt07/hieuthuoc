@@ -59,4 +59,27 @@ class Thuoc extends Model
             ->orderBy('ngay_bat_dau', 'desc')
             ->first();
     }
+    
+    /**
+     * Tính tổng tồn kho của thuốc này trong tất cả các lô
+     */
+    public function tongTonKho()
+    {
+        return $this->loThuoc()->sum('ton_kho_hien_tai');
+    }
+    
+    /**
+     * Lấy tất cả các lô của thuốc còn hạn sử dụng và còn hàng
+     * Ưu tiên lô nhập cũ nhất (FIFO - First In First Out)
+     */
+    public function getLoThuocConHang()
+    {
+        $today = date('Y-m-d');
+        return $this->loThuoc()
+            ->where('ton_kho_hien_tai', '>', 0)
+            ->where('han_su_dung', '>=', $today)
+            ->orderBy('ngay_san_xuat', 'asc') // Ưu tiên lô sản xuất trước (cũ nhất)
+            ->orderBy('han_su_dung', 'asc')    // Nếu cùng ngày sản xuất, ưu tiên lô sắp hết hạn
+            ->get();
+    }
 }
