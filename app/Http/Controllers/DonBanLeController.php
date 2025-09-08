@@ -296,7 +296,7 @@ class DonBanLeController extends Controller
                 'nguoi_dung_id' => Auth::id(),
                 'khach_hang_id' => $khachHangId,
                 'ngay_ban' => Carbon::now(),
-                'trang_thai' => 'hoan_thanh',
+                'trang_thai' => 'hoan_tat',
                 'tong_tien' => $tongTien - $tongVat,
                 'vat' => $tongVat,
                 'tong_cong' => $tongTien,
