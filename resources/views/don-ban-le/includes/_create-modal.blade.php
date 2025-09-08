@@ -74,7 +74,10 @@
                                         <span class="input-group-text"><i class="bi bi-search"></i></span>
                                         <input type="text" class="form-control" id="product_search" placeholder="Tìm kiếm thuốc">
                                     </div>
-                                    <div id="product-search-results" class="mt-2"></div>
+                                    <div id="selected-product-container" class="mt-1 mb-1 alert alert-success py-1 px-2 small" style="display: none;">
+                                        <div id="selected-product-name"></div>
+                                    </div>
+                                    <div id="product-search-results" class="mt-1"></div>
                                     <input type="hidden" id="quick_add_product_id">
                                 </div>
                                 <div class="col-md-2">
@@ -85,22 +88,24 @@
                                         </select>
                                     </div>
                                 </div>
+                                <!-- Hidden select for lô thuốc (không hiển thị để người dùng chọn) -->
+                                <div style="display: none;">
+                                    <select class="form-select" id="quick_add_batch"></select>
+                                </div>
+                                <!-- Hiển thị thông tin lô được chọn tự động -->
                                 <div class="col-md-2">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text"><i class="bi bi-tag"></i></span>
-                                        <select class="form-select" id="quick_add_batch">
-                                            <option value="" disabled selected>Chọn lô</option>
-                                        </select>
+                                    <div class="alert alert-info py-1 px-2 mb-0 small">
+                                        <div id="batch-info">Chưa chọn thuốc</div>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text"><i class="bi bi-123"></i></span>
+                                        <span class="input-group-text"><i class="bi bi-hash"></i></span>
                                         <input type="number" class="form-control" id="quick_add_quantity" placeholder="Số lượng" min="1">
                                     </div>
                                 </div>
                                 <div class="col-md-2">
-                                    <button class="btn btn-sm btn-success w-100" id="add-to-list-btn" disabled>
+                                    <button type="button" class="btn btn-sm btn-success w-100" id="add-to-list-btn" disabled>
                                         <i class="bi bi-plus-lg"></i> Thêm
                                     </button>
                                 </div>
@@ -109,6 +114,8 @@
                                 <div id="stock-info" class="text-muted"></div>
                                 <div id="product-price" class="text-muted"></div>
                                 <div id="product-vat" class="text-muted"></div>
+                                <div id="product-total" class="text-muted"></div>
+                                <div id="validation-message"></div>
                             </div>
                         </div>
                     </div>
@@ -126,7 +133,6 @@
                                             <th>STT</th>
                                             <th>Tên sản phẩm</th>
                                             <th>Đơn vị</th>
-                                            <th>Lô</th>
                                             <th>Số lượng</th>
                                             <th>Đơn giá</th>
                                             <th>VAT (%)</th>
@@ -136,7 +142,7 @@
                                     </thead>
                                     <tbody>
                                         <tr id="no-products-row">
-                                            <td colspan="9" class="text-center">Chưa có sản phẩm nào</td>
+                                            <td colspan="8" class="text-center">Chưa có sản phẩm nào</td>
                                         </tr>
                                     </tbody>
                                     <tfoot>

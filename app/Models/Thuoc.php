@@ -82,4 +82,19 @@ class Thuoc extends Model
             ->orderBy('han_su_dung', 'asc')    // Nếu cùng ngày sản xuất, ưu tiên lô sắp hết hạn
             ->get();
     }
+    
+    /**
+     * Lấy lô thuốc cũ nhất còn hàng và còn hạn sử dụng
+     * Áp dụng nguyên tắc FIFO (First In First Out)
+     */
+    public function getLoThuocCuNhat()
+    {
+        $today = date('Y-m-d');
+        return $this->loThuoc()
+            ->where('ton_kho_hien_tai', '>', 0)
+            ->where('han_su_dung', '>=', $today)
+            ->orderBy('ngay_san_xuat', 'asc') // Ưu tiên lô sản xuất trước (cũ nhất)
+            ->orderBy('han_su_dung', 'asc')    // Nếu cùng ngày sản xuất, ưu tiên lô sắp hết hạn
+            ->first();
+    }
 }
