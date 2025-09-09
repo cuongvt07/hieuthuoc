@@ -16,7 +16,7 @@
         border-left: 4px solid #6c757d;
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
-    .summary-card-orders {
+    .summar                $('#detail-products-table tbody').append('<tr><td colspan="8" class="text-center">Không có dữ liệu sản phẩm</td></tr>');-card-orders {
         border-left-color: #007bff;
     }
     .summary-card-revenue {
@@ -68,10 +68,13 @@
                         <label for="status">Trạng thái:</label>
                         <select class="form-control" id="status" name="status">
                             <option value="">Tất cả</option>
-                            <option value="hoan_thanh" {{ request('status') == 'hoan_thanh' ? 'selected' : '' }}>
-                                Hoàn thành
+                            <option value="hoan_tat" {{ request('status') == 'hoan_tat' || request('status') == 'hoan_thanh' ? 'selected' : '' }}>
+                                Hoàn tất
                             </option>
-                            <option value="da_huy" {{ request('status') == 'da_huy' ? 'selected' : '' }}>
+                            <option value="cho_xu_ly" {{ request('status') == 'cho_xu_ly' ? 'selected' : '' }}>
+                                Chờ xử lý
+                            </option>
+                            <option value="huy" {{ request('status') == 'huy' || request('status') == 'da_huy' ? 'selected' : '' }}>
                                 Đã hủy
                             </option>
                         </select>
@@ -128,7 +131,7 @@
                                 Doanh thu
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="summary-total-revenue">
-                                {{ number_format($donBanLes->where('trang_thai', 'hoan_thanh')->sum('tong_cong'), 0, ',', '.') }} đ
+                                {{ number_format($donBanLes->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->sum('tong_cong'), 0, ',', '.') }} đ
                             </div>
                         </div>
                         <div class="col-auto">
@@ -148,7 +151,7 @@
                                 Đơn hoàn thành
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="summary-completed-orders">
-                                {{ $donBanLes->where('trang_thai', 'hoan_thanh')->count() }}
+                                {{ $donBanLes->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->count() }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -168,7 +171,7 @@
                                 Đơn đã hủy
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="summary-cancelled-orders">
-                                {{ $donBanLes->where('trang_thai', 'da_huy')->count() }}
+                                {{ $donBanLes->whereIn('trang_thai', ['da_huy', 'huy'])->count() }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -207,6 +210,14 @@
 <script src="{{ asset('js/don-ban-le.js') }}"></script>
 <script>
     $(document).ready(function() {
+        // Handle batch links in order details
+        $(document).on('click', '.batch-link', function(e) {
+            e.preventDefault();
+            const batchId = $(this).data('id');
+            // Open batch details in a new tab
+            window.open(`/lo-thuoc/${batchId}`, '_blank');
+        });
+        
         // Filter form handling
         $('#filter-form').on('submit', function(e) {
             e.preventDefault();
@@ -235,6 +246,44 @@
             loadOrders(url);
             window.history.pushState({}, '', url);
         });
+        
+        // Xử lý hủy đơn hàng
+        $('#detail-cancel-btn').on('click', function() {
+            if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
+                const orderId = $(this).data('id');
+                
+                // Ẩn thông báo lỗi trước đó (nếu có)
+                $('#cancel-error-message').hide();
+                
+                $.ajax({
+                    url: `/don-ban-le/${orderId}/cancel`,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Cập nhật lại danh sách đơn hàng
+                            loadOrders(window.location.href);
+                            // Đóng modal
+                            $('#orderDetailModal').modal('hide');
+                            // Hiển thị thông báo thành công
+                            alert('Hủy đơn hàng thành công!');
+                        } else {
+                            $('#cancel-error-message').text(response.message).show();
+                        }
+                    },
+                    error: function(xhr) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            $('#cancel-error-message').text(response.message || 'Có lỗi xảy ra khi hủy đơn hàng.').show();
+                        } catch (e) {
+                            $('#cancel-error-message').text('Có lỗi xảy ra khi hủy đơn hàng.').show();
+                        }
+                    }
+                });
+            }
+        });
     });
 
     function loadOrders(url) {
@@ -244,7 +293,12 @@
             dataType: 'json',
             success: function(response) {
                 $('#orders-table-container').html(response.data);
-                updateSummaries();
+                if (response.pagination) {
+                    $('#pagination-container').html(response.pagination);
+                }
+                if (response.summaries) {
+                    updateSummaries(response.summaries);
+                }
             },
             error: function(xhr) {
                 console.error('Error loading orders:', xhr.responseText);
@@ -252,9 +306,28 @@
         });
     }
     
-    function updateSummaries() {
-        // This would be updated via the AJAX response in a real implementation
-        // For now, we'll just use the initial counts
+    function updateSummaries(summaries) {
+        if (!summaries) return;
+        
+        // Update total orders
+        if (summaries.totalOrders !== undefined) {
+            $('#summary-total-orders').text(summaries.totalOrders);
+        }
+        
+        // Update completed orders
+        if (summaries.completedOrders !== undefined) {
+            $('#summary-completed-orders').text(summaries.completedOrders);
+        }
+        
+        // Update cancelled orders
+        if (summaries.cancelledOrders !== undefined) {
+            $('#summary-cancelled-orders').text(summaries.cancelledOrders);
+        }
+        
+        // Update total revenue with formatting
+        if (summaries.totalRevenue !== undefined) {
+            $('#summary-total-revenue').text(formatCurrency(summaries.totalRevenue));
+        }
     }
     
     function viewOrderDetails(orderId) {
@@ -271,6 +344,126 @@
                 console.error(xhr.responseText);
             }
         });
+    }
+    
+    function populateOrderModal(donBanLe) {
+        // Điền thông tin đơn hàng
+        $('#detail-ma-don').text(donBanLe.ma_don);
+        
+        // Định dạng ngày bán
+        const ngayBan = new Date(donBanLe.ngay_ban);
+        const formattedDate = ngayBan.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        $('#detail-ngay-ban').text(formattedDate);
+        
+        // Hiển thị trạng thái
+        let trangThaiText = 'Không xác định';
+        let trangThaiClass = 'badge-secondary';
+        
+        switch (donBanLe.trang_thai) {
+            case 'hoan_thanh':
+            case 'hoan_tat':
+                trangThaiText = 'Hoàn tất';
+                trangThaiClass = 'badge-hoan-thanh';
+                break;
+            case 'da_huy':
+            case 'huy':
+                trangThaiText = 'Đã hủy';
+                trangThaiClass = 'badge-da-huy';
+                break;
+            case 'cho_xu_ly':
+                trangThaiText = 'Chờ xử lý';
+                trangThaiClass = 'badge-info';
+                break;
+        }
+        
+        $('#detail-trang-thai').html(`<span class="badge ${trangThaiClass}">${trangThaiText}</span>`);
+        
+        // Điền thông tin khách hàng
+        if (donBanLe.khach_hang) {
+            $('#detail-ten-khach').text(donBanLe.khach_hang.ho_ten);
+            $('#detail-sdt-khach').text(donBanLe.khach_hang.sdt);
+        } else {
+            $('#detail-ten-khach').text('Khách lẻ');
+            $('#detail-sdt-khach').text('Không có');
+        }
+        
+        // Điền thông tin nhân viên
+        $('#detail-nhan-vien').text(donBanLe.nguoi_dung ? donBanLe.nguoi_dung.ho_ten : 'Không có thông tin');
+        
+        // Xóa dữ liệu cũ trong bảng sản phẩm
+        $('#detail-products-table tbody').empty();
+        
+        // Thêm chi tiết sản phẩm vào bảng
+        if (donBanLe.chi_tiet_don_ban_le && donBanLe.chi_tiet_don_ban_le.length > 0) {
+            donBanLe.chi_tiet_don_ban_le.forEach((item, index) => {
+                // Hiển thị đơn vị đúng
+                const donViText = item.don_vi === 0 ? 
+                    item.lo_thuoc.thuoc.don_vi_goc : 
+                    item.lo_thuoc.thuoc.don_vi_ban;
+                
+                // Định dạng thông tin thuế
+                const tienThue = item.tien_thue || 0;
+                const thueSuat = item.thue_suat || 0;
+                const thueText = `${formatCurrency(tienThue)} (${thueSuat}%)`;
+                
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.lo_thuoc.thuoc.ten_thuoc}</td>
+                        <td>${donViText}</td>
+                        <td>
+                            <a href="/lo-thuoc/${item.lo_thuoc.lo_id}" class="text-primary batch-link" data-id="${item.lo_thuoc.lo_id}">
+                                ${item.lo_thuoc.ma_lo}
+                            </a>
+                        </td>
+                        <td class="text-right">${formatNumber(item.so_luong)}</td>
+                        <td class="text-right">${formatCurrency(item.gia_ban)}</td>
+                        <td class="text-right">${thueText}</td>
+                        <td class="text-right">${formatCurrency(item.thanh_tien)}</td>
+                    </tr>
+                `;
+                $('#detail-products-table tbody').append(row);
+            });
+        } else {
+            $('#detail-products-table tbody').append('<tr><td colspan="8" class="text-center">Không có dữ liệu sản phẩm</td></tr>');
+        }
+        
+        // Hiển thị tổng tiền, VAT và tổng cộng
+        $('#detail-tong-tien').text(formatCurrency(donBanLe.tong_tien || 0));
+        $('#detail-tong-vat').text(formatCurrency(donBanLe.vat || 0));
+        $('#detail-tong-cong').text(formatCurrency(donBanLe.tong_cong));
+        
+        // Cập nhật liên kết in đơn hàng
+        $('#detail-print-btn').attr('href', `/don-ban-le/${donBanLe.don_id}/print`);
+        
+        // Quản lý nút Hủy đơn - Hiển thị nút chỉ khi đơn có trạng thái hoàn tất hoặc chờ xử lý
+        if (donBanLe.trang_thai === 'hoan_thanh' || donBanLe.trang_thai === 'hoan_tat' || donBanLe.trang_thai === 'cho_xu_ly') {
+            $('#detail-cancel-btn').show().data('id', donBanLe.don_id);
+        } else {
+            $('#detail-cancel-btn').hide();
+        }
+    }
+    
+    // Hàm định dạng số
+    function formatNumber(value) {
+        return parseFloat(value).toLocaleString('vi-VN', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // Hàm định dạng tiền tệ
+    function formatCurrency(value) {
+        return parseFloat(value).toLocaleString('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).replace(/\s₫$/, ' đ');
     }
 </script>
 @endsection

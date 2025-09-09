@@ -19,6 +19,11 @@ class PhieuNhapController extends Controller
      */
     public function index(Request $request)
     {
+        // Get all receipts for the tree view
+        $allPhieuNhaps = PhieuNhap::with(['nhaCungCap', 'nguoiDung'])
+            ->orderBy('ngay_nhap', 'desc')
+            ->get();
+            
         $query = PhieuNhap::with(['nhaCungCap', 'nguoiDung'])
             ->orderBy('ngay_nhap', 'desc');
 
@@ -53,7 +58,7 @@ class PhieuNhapController extends Controller
         $phieuNhaps = $query->paginate(10);
         $nhaCungCaps = NhaCungCap::orderBy('ten_ncc')->get();
 
-        return view('phieu-nhap.index', compact('phieuNhaps', 'nhaCungCaps'));
+        return view('phieu-nhap.index', compact('phieuNhaps', 'nhaCungCaps', 'allPhieuNhaps'));
     }
 
     /**
@@ -390,5 +395,30 @@ class PhieuNhapController extends Controller
         return response()->json([
             'loThuoc' => $loThuoc
         ]);
+    }
+    
+    /**
+     * API để lấy thông tin phiếu nhập cho AJAX
+     */
+    public function getPhieuNhapInfo($id)
+    {
+        try {
+            $phieuNhap = PhieuNhap::with([
+                'nhaCungCap',
+                'nguoiDung',
+                'chiTietLoNhaps.loThuoc.thuoc',
+                'chiTietLoNhaps.loThuoc.kho'
+            ])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'phieuNhap' => $phieuNhap
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy phiếu nhập hoặc có lỗi xảy ra: ' . $e->getMessage()
+            ], 404);
+        }
     }
 }

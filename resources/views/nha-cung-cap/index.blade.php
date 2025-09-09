@@ -7,23 +7,44 @@
 @section('styles')
 <style>
     .invoice-item {
-        border-left: 3px solid #4e73df;
-        padding-left: 10px;
-        margin-bottom: 15px;
+        border-left: 4px solid #4e73df;
+        padding: 12px;
+        margin-bottom: 12px;
+        background-color: #f8f9fc;
+        border-radius: 0 5px 5px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        transition: all 0.2s ease-in-out;
     }
     
-    .invoice-date {
+    .invoice-item:hover {
+        transform: translateX(3px);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+    }
+    
+    .invoice-code {
         color: #4e73df;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .invoice-total {
+        color: #1cc88a;
         font-weight: bold;
     }
     
-    .invoice-details {
-        margin-top: 10px;
+    .invoice-status-pending {
+        color: #f6c23e;
+        font-weight: 500;
     }
     
-    .invoice-products {
-        margin-top: 5px;
-        padding-left: 15px;
+    .invoice-status-completed {
+        color: #1cc88a;
+        font-weight: 500;
+    }
+    
+    .invoice-status-cancelled {
+        color: #e74a3b;
+        font-weight: 500;
     }
     
     .modal-body {
@@ -223,50 +244,73 @@
 <div class="modal fade" id="viewNhaCungCapModal" tabindex="-1" aria-labelledby="viewNhaCungCapModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="viewNhaCungCapModalLabel">Chi Tiết Nhà Cung Cấp</h5>
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewNhaCungCapModalLabel">
+                    <i class="bi bi-building me-1"></i> Chi Tiết Nhà Cung Cấp: <span id="view_ncc_title"></span>
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="card mb-4">
-                    <div class="card-header py-2">
-                        <h6 class="m-0 font-weight-bold">Thông Tin Nhà Cung Cấp</h6>
+                <div class="row">
+                    <div class="col-md-7">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header py-2 bg-light">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="bi bi-info-circle me-1"></i> Thông Tin Nhà Cung Cấp
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless supplier-info-table">
+                                    <tbody>
+                                        <tr>
+                                            <td><i class="bi bi-building me-1"></i> Tên NCC:</td>
+                                            <td id="view_ten_ncc" class="fw-bold"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-telephone me-1"></i> Số Điện Thoại:</td>
+                                            <td id="view_sdt"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-envelope me-1"></i> Email:</td>
+                                            <td id="view_email"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-credit-card me-1"></i> Mã Số Thuế:</td>
+                                            <td id="view_ma_so_thue"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-geo-alt me-1"></i> Địa Chỉ:</td>
+                                            <td id="view_dia_chi"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><i class="bi bi-sticky me-1"></i> Mô Tả:</td>
+                                            <td id="view_mo_ta"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <table class="table table-borderless supplier-info-table">
-                            <tbody>
-                                <tr>
-                                    <td>Tên NCC:</td>
-                                    <td id="view_ten_ncc"></td>
-                                </tr>
-                                <tr>
-                                    <td>Số Điện Thoại:</td>
-                                    <td id="view_sdt"></td>
-                                </tr>
-                                <tr>
-                                    <td>Email:</td>
-                                    <td id="view_email"></td>
-                                </tr>
-                                <tr>
-                                    <td>Mã Số Thuế:</td>
-                                    <td id="view_ma_so_thue"></td>
-                                </tr>
-                                <tr>
-                                    <td>Địa Chỉ:</td>
-                                    <td id="view_dia_chi"></td>
-                                </tr>
-                                <tr>
-                                    <td>Mô Tả:</td>
-                                    <td id="view_mo_ta"></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="col-md-5">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header py-2 bg-light">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="bi bi-clock-history me-1"></i> Thông Tin Hệ Thống
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p><i class="bi bi-calendar-plus me-1"></i> <strong>Ngày tạo:</strong> <span id="view_created_at"></span></p>
+                                <p><i class="bi bi-calendar-check me-1"></i> <strong>Cập nhật:</strong> <span id="view_updated_at"></span></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="card">
-                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold">Lịch Sử Phiếu Nhập</h6>
+                <div class="card shadow-sm">
+                    <div class="card-header py-2 bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="bi bi-list-check me-1"></i> Danh Sách Phiếu Nhập
+                        </h6>
                         <span class="badge bg-primary" id="phieu_nhap_count">0 phiếu</span>
                     </div>
                     <div class="card-body">
@@ -277,7 +321,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <a href="{{ route('phieu-nhap.create') }}" class="btn btn-primary" id="create-phieu-nhap-btn">
+                    <i class="bi bi-plus-circle me-1"></i> Tạo Phiếu Nhập Mới
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Đóng
+                </button>
             </div>
         </div>
     </div>
@@ -325,6 +374,15 @@
             if (!dateString) return '';
             const date = new Date(dateString);
             return date.toLocaleDateString('vi-VN');
+        }
+        
+        function formatDateTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
         
         // Format giá tiền
@@ -496,58 +554,63 @@
                     
                     // Hiển thị thông tin nhà cung cấp
                     $('#view_ten_ncc').text(nhaCungCap.ten_ncc);
+                    $('#view_ncc_title').text(nhaCungCap.ten_ncc);
                     $('#view_sdt').text(nhaCungCap.sdt || 'Không có');
                     $('#view_email').text(nhaCungCap.email || 'Không có');
                     $('#view_ma_so_thue').text(nhaCungCap.ma_so_thue || 'Không có');
                     $('#view_dia_chi').text(nhaCungCap.dia_chi || 'Không có');
                     $('#view_mo_ta').text(nhaCungCap.mo_ta || 'Không có');
                     
+                    // Hiển thị thông tin thời gian
+                    const createdAt = nhaCungCap.created_at ? formatDateTime(nhaCungCap.created_at) : 'Không có';
+                    const updatedAt = nhaCungCap.updated_at ? formatDateTime(nhaCungCap.updated_at) : 'Không có';
+                    $('#view_created_at').text(createdAt);
+                    $('#view_updated_at').text(updatedAt);
+                    
                     // Hiển thị số lượng phiếu nhập
                     $('#phieu_nhap_count').text(phieuNhap.length + ' phiếu');
+                    
+                    // Set up the create phiếu nhập button with the supplier ID
+                    $('#create-phieu-nhap-btn').click(function(e) {
+                        // Store supplier ID in session storage to use in phieu-nhap.create
+                        sessionStorage.setItem('selected_supplier_id', nhaCungCap.ncc_id);
+                        sessionStorage.setItem('selected_supplier_name', nhaCungCap.ten_ncc);
+                    });
                     
                     // Render danh sách phiếu nhập
                     let phieuNhapHtml = '';
                     if (phieuNhap.length > 0) {
                         $.each(phieuNhap, function(index, item) {
                             const ngayNhap = formatDate(item.ngay_nhap);
-                            const trangThai = item.trang_thai === 1 ? 
-                                '<span class="badge bg-success">Hoàn thành</span>' : 
-                                '<span class="badge bg-warning text-dark">Đang xử lý</span>';
+                            let trangThai = '';
+                            if (item.trang_thai === 'hoan_tat') {
+                                trangThai = '<span class="badge bg-success invoice-status-completed"><i class="bi bi-check-circle me-1"></i>Hoàn thành</span>';
+                            } else if (item.trang_thai === 'cho_xu_ly') {
+                                trangThai = '<span class="badge bg-warning text-dark invoice-status-pending"><i class="bi bi-clock me-1"></i>Đang xử lý</span>';
+                            } else if (item.trang_thai === 'huy') {
+                                trangThai = '<span class="badge bg-danger invoice-status-cancelled"><i class="bi bi-x-circle me-1"></i>Đã hủy</span>';
+                            } else {
+                                trangThai = '<span class="badge bg-secondary"><i class="bi bi-question-circle me-1"></i>Không xác định</span>';
+                            }
                             
                             phieuNhapHtml += `
                                 <div class="invoice-item">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <div class="invoice-date">${ngayNhap}</div>
-                                        <div class="invoice-total fw-bold">${formatMoney(item.tong_cong)}</div>
-                                    </div>
-                                    <div class="invoice-code">Mã phiếu: <strong>${item.ma_phieu}</strong></div>
-                                    <div class="d-flex justify-content-between">
-                                        <div>Người nhập: <strong>${item.nguoi_dung?.ho_ten || 'N/A'}</strong></div>
+                                        <div class="invoice-code">
+                                            <i class="bi bi-receipt me-1"></i>
+                                            <strong>${item.ma_phieu}</strong>
+                                        </div>
                                         <div>${trangThai}</div>
                                     </div>
-                                    <div class="invoice-details">
-                                        <div class="fw-bold">Danh sách thuốc:</div>
-                                        <ul class="invoice-products">
-                            `;
-                            
-                            // Render chi tiết phiếu
-                            if (item.chi_tiet_lo_nhap && item.chi_tiet_lo_nhap.length > 0) {
-                                $.each(item.chi_tiet_lo_nhap, function(i, chiTiet) {
-                                    phieuNhapHtml += `
-                                        <li>
-                                            ${chiTiet.lo_thuoc?.thuoc?.ten_thuoc || 'Không có thông tin'} - 
-                                            ${chiTiet.so_luong} ${chiTiet.don_vi_tinh || 'Đơn vị'} x 
-                                            ${formatMoney(chiTiet.don_gia)} = 
-                                            ${formatMoney(chiTiet.thanh_tien)}
-                                        </li>
-                                    `;
-                                });
-                            } else {
-                                phieuNhapHtml += '<li>Không có dữ liệu chi tiết</li>';
-                            }
-                            
-                            phieuNhapHtml += `
-                                        </ul>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <div>
+                                            <i class="bi bi-person me-1"></i>
+                                            <strong>${item.nguoi_dung?.ho_ten || 'N/A'}</strong>
+                                        </div>
+                                        <div class="invoice-total">
+                                            <i class="bi bi-currency-dollar me-1"></i>
+                                            ${formatMoney(item.tong_cong)}
+                                        </div>
                                     </div>
                                 </div>
                             `;

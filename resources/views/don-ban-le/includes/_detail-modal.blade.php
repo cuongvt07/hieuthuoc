@@ -22,7 +22,7 @@
                     </div>
                 </div>
 
-                <h5 class="font-weight-bold">Chi tiết sản phẩm</h5>
+                <h5 class="font-weight-bold">Chi tiết sản phẩm đơn</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered" id="detail-products-table">
                         <thead>
@@ -33,6 +33,7 @@
                                 <th>Số lô</th>
                                 <th>Số lượng</th>
                                 <th>Đơn giá</th>
+                                <th>Thuế</th>
                                 <th>Thành tiền</th>
                             </tr>
                         </thead>
@@ -41,8 +42,18 @@
                         </tbody>
                         <tfoot>
                             <tr>
+                                <td colspan="6" class="text-right">Tổng tiền:</td>
+                                <td class="text-right" id="detail-tong-tien"></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-right">Tổng VAT:</td>
+                                <td class="text-right" id="detail-tong-vat"></td>
+                                <td></td>
+                            </tr>
+                            <tr>
                                 <th colspan="6" class="text-right">Tổng cộng:</th>
-                                <th class="text-right" id="detail-tong-cong"></th>
+                                <th colspan="2" class="text-right" id="detail-tong-cong"></th>
                             </tr>
                         </tfoot>
                     </table>

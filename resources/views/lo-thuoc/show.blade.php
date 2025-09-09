@@ -182,7 +182,14 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">Đã xuất:</div>
-                        <div class="info-value">{{ number_format($loThuoc->tong_so_luong - $loThuoc->ton_kho_hien_tai, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</div>
+                        <div class="info-value">
+                            {{ number_format($loThuoc->tong_so_luong - $loThuoc->ton_kho_hien_tai, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}
+                            @if($loThuoc->tong_so_luong > $loThuoc->ton_kho_hien_tai)
+                                <a href="#export-tab" class="ms-2 badge bg-info text-decoration-none" onclick="showExportHistory()">
+                                    <i class="bi bi-list-ul"></i> Xem chi tiết
+                                </a>
+                            @endif
+                        </div>
                     </div>
                     <div class="info-item">
                         <div class="info-label">Giá nhập TB:</div>
@@ -206,6 +213,9 @@
         <ul class="nav nav-tabs" id="lotTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="import-tab" data-bs-toggle="tab" data-bs-target="#import-tab-pane" type="button" role="tab">Lịch Sử Nhập</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export-tab-pane" type="button" role="tab">Lịch Sử Xuất</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="adjustment-tab" data-bs-toggle="tab" data-bs-target="#adjustment-tab-pane" type="button" role="tab">Điều Chỉnh Tồn Kho</button>
@@ -246,16 +256,78 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="text-end mt-2">
-                                        <a href="{{ route('phieu-nhap.show', $phieuNhap->phieu_id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye me-1"></i> Xem chi tiết
-                                        </a>
-                                    </div>
                                 </div>
                             @endforeach
                         @else
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle me-2"></i> Không tìm thấy lịch sử nhập hàng cho lô thuốc này.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Lịch sử xuất -->
+            <div class="tab-pane fade" id="export-tab-pane" role="tabpanel" aria-labelledby="export-tab" tabindex="0">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Lịch Sử Xuất Thuốc</h6>
+                    </div>
+                    <div class="card-body">
+                        @php
+                            $lichSuXuat = \App\Models\LichSuTonKho::where('lo_id', $loThuoc->lo_id)
+                                ->where('loai_thay_doi', 'ban')
+                                ->with(['donBanLe', 'chiTietDonBanLe', 'nguoiDung'])
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+                        @endphp
+                        
+                        @if($lichSuXuat->count() > 0)
+                            @foreach($lichSuXuat as $lichSu)
+                                <div class="history-item">
+                                    <div class="history-header">
+                                        <div class="history-action">
+                                            @if($lichSu->donBanLe)
+                                                Đơn bán lẻ #{{ $lichSu->donBanLe->ma_don }}
+                                            @else
+                                                Xuất kho
+                                            @endif
+                                        </div>
+                                        <div class="history-date">{{ $lichSu->created_at->format('d/m/Y H:i:s') }}</div>
+                                    </div>
+                                    <div class="history-content">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-1"><strong>Số lượng:</strong> {{ number_format(abs($lichSu->so_luong_thay_doi), 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</p>
+                                                <p class="mb-1"><strong>Tồn kho sau xuất:</strong> {{ number_format($lichSu->ton_kho_moi, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</p>
+                                                @if($lichSu->nguoiDung)
+                                                <p class="mb-1"><strong>Người thực hiện:</strong> {{ $lichSu->nguoiDung->ho_ten }}</p>
+                                                @endif
+                                            </div>
+                                            <div class="col-md-6">
+                                                @if($lichSu->donBanLe && $lichSu->chiTietDonBanLe)
+                                                    @if($lichSu->donBanLe->khachHang)
+                                                    <p class="mb-1"><strong>Khách hàng:</strong> {{ $lichSu->donBanLe->khachHang->ho_ten }}</p>
+                                                    @endif
+                                                    <p class="mb-1"><strong>Đơn vị bán:</strong> {{ $lichSu->chiTietDonBanLe->don_vi }}</p>
+                                                    <p class="mb-1"><strong>Giá bán:</strong> {{ number_format($lichSu->chiTietDonBanLe->gia_ban) }} VNĐ</p>
+                                                @endif
+                                                <p class="mb-1"><strong>Ghi chú:</strong> {{ $lichSu->mo_ta }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if($lichSu->donBanLe)
+                                    <div class="text-end mt-2">
+                                        <a href="{{ route('don-ban-le.show', $lichSu->don_ban_le_id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i> Xem đơn hàng
+                                        </a>
+                                    </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i> Chưa có lịch sử xuất hàng cho lô thuốc này.
                             </div>
                         @endif
                     </div>
@@ -441,5 +513,17 @@
             }
         });
     });
+    
+    // Hàm hiển thị tab lịch sử xuất
+    function showExportHistory() {
+        $('#export-tab').tab('show');
+        
+        // Cuộn trang đến vị trí tab sau khi chuyển tab
+        setTimeout(function() {
+            $('html, body').animate({
+                scrollTop: $("#export-tab").offset().top - 100
+            }, 500);
+        }, 300);
+    }
 </script>
 @endsection

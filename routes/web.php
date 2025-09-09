@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     
     // Phiếu nhập routes
     Route::resource('phieu-nhap', PhieuNhapController::class);
+    Route::get('phieu-nhap/{id}/ajax', [PhieuNhapController::class, 'getPhieuNhapInfo'])->name('phieu-nhap.ajax');
     Route::get('phieu-nhap-ton-kho', [PhieuNhapController::class, 'getTonKho'])->name('phieu-nhap.get-ton-kho');
     Route::get('phieu-nhap-lo-thuoc', [PhieuNhapController::class, 'getLoThuoc'])->name('phieu-nhap.get-lo-thuoc');
     Route::get('phieu-nhap-lot-history', [PhieuNhapController::class, 'getLotHistory'])->name('phieu-nhap.get-lot-history');

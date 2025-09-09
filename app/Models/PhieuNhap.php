@@ -42,7 +42,7 @@ class PhieuNhap extends Model
     /**
      * Get all chi tiết for this phiếu
      */
-    public function chiTietLoNhap()
+    public function chiTietLoNhaps()
     {
         return $this->hasMany(ChiTietLoNhap::class, 'phieu_id', 'phieu_id');
     }

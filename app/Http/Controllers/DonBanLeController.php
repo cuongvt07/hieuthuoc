@@ -69,9 +69,49 @@ class DonBanLeController extends Controller
             ->get(['nguoi_dung_id', 'ho_ten']);
 
         if ($request->ajax()) {
+            // Calculate summary data for AJAX response
+            $totalOrders = $donBanLes->total();
+            
+            // Create a fresh query for the summaries to avoid filter issues
+            $summaryQuery = DonBanLe::query();
+            
+            // Apply the same filters as the main query except pagination
+            if ($request->has('keyword') && $request->keyword != '') {
+                $keyword = $request->keyword;
+                $summaryQuery->where(function($q) use ($keyword) {
+                    $q->where('ma_don', 'like', "%{$keyword}%")
+                      ->orWhereHas('khachHang', function($q) use ($keyword) {
+                          $q->where('ho_ten', 'like', "%{$keyword}%")
+                            ->orWhere('sdt', 'like', "%{$keyword}%");
+                      });
+                });
+            }
+            
+            if ($request->has('from_date') && $request->from_date) {
+                $summaryQuery->whereDate('ngay_ban', '>=', $request->from_date);
+            }
+            
+            if ($request->has('to_date') && $request->to_date) {
+                $summaryQuery->whereDate('ngay_ban', '<=', $request->to_date);
+            }
+            
+            if ($request->has('staff') && $request->staff != '') {
+                $summaryQuery->where('nguoi_dung_id', $request->staff);
+            }
+            
+            $completedOrders = (clone $summaryQuery)->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->count();
+            $cancelledOrders = (clone $summaryQuery)->whereIn('trang_thai', ['da_huy', 'huy'])->count();
+            $totalRevenue = (clone $summaryQuery)->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->sum('tong_cong');
+            
             return response()->json([
                 'data' => view('don-ban-le.partials._list', compact('donBanLes'))->render(),
-                'pagination' => view('layouts.partials._pagination', ['paginator' => $donBanLes])->render()
+                'pagination' => view('layouts.partials._pagination', ['paginator' => $donBanLes])->render(),
+                'summaries' => [
+                    'totalOrders' => $totalOrders,
+                    'completedOrders' => $completedOrders,
+                    'cancelledOrders' => $cancelledOrders,
+                    'totalRevenue' => $totalRevenue,
+                ]
             ]);
         }
         
@@ -378,7 +418,6 @@ class DonBanLeController extends Controller
                         LichSuTonKho::create([
                             'lo_id' => $loThuoc->lo_id,
                             'thuoc_id' => $thuocId,
-                            'kho_id' => $loThuoc->kho_id,
                             'don_ban_le_id' => $donBanLe->don_id,
                             'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
                             'so_luong_thay_doi' => -$soLuongLayTuLo, // chỉnh lại kiểu dữ liệu nhé
@@ -445,7 +484,6 @@ class DonBanLeController extends Controller
                         LichSuTonKho::create([
                             'lo_id' => $loThuoc->lo_id,
                             'thuoc_id' => $thuocId,
-                            'kho_id' => $loThuoc->kho_id,
                             'don_ban_le_id' => $donBanLe->don_id,
                             'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
                             'so_luong_thay_doi' => -$soLuongLayTuLo,
@@ -494,7 +532,6 @@ class DonBanLeController extends Controller
                                 LichSuTonKho::create([
                                     'lo_id' => $lo->lo_id,
                                     'thuoc_id' => $thuocId,
-                                    'kho_id' => $lo->kho_id,
                                     'don_ban_le_id' => $donBanLe->don_id,
                                     'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
                                     'so_luong_thay_doi' => -$soLuongLayTuLo,
@@ -532,7 +569,6 @@ class DonBanLeController extends Controller
                         LichSuTonKho::create([
                             'lo_id' => $loThuoc->lo_id,
                             'thuoc_id' => $thuocId,
-                            'kho_id' => $loThuoc->kho_id,
                             'don_ban_le_id' => $donBanLe->don_id,
                             'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
                             'so_luong_thay_doi' => -$soLuongQuyDoiDonViGoc,
@@ -568,6 +604,7 @@ class DonBanLeController extends Controller
      */
     public function show(DonBanLe $donBanLe)
     {
+        // Load relationships with additional fields
         $donBanLe->load([
             'nguoiDung', 
             'khachHang', 
@@ -590,10 +627,10 @@ class DonBanLeController extends Controller
     public function cancel(DonBanLe $donBanLe)
     {
         // Kiểm tra xem đơn có thể hủy không
-        if ($donBanLe->trang_thai != 'hoan_thanh') {
+        if (!in_array($donBanLe->trang_thai, ['hoan_thanh', 'hoan_tat', 'cho_xu_ly'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Chỉ có thể hủy đơn hàng ở trạng thái hoàn thành'
+                'message' => 'Chỉ có thể hủy đơn hàng ở trạng thái hoàn thành hoặc chờ xử lý'
             ], 422);
         }
         
@@ -601,21 +638,45 @@ class DonBanLeController extends Controller
         
         try {
             // Cập nhật trạng thái đơn
-            $donBanLe->trang_thai = 'da_huy';
+            $donBanLe->trang_thai = 'huy';
             $donBanLe->save();
             
-            // Hoàn lại tồn kho
+            // Hoàn lại tồn kho và ghi lại lịch sử tồn kho
             foreach ($donBanLe->chiTietDonBanLe as $chiTiet) {
                 $loThuoc = $chiTiet->loThuoc;
-                $loThuoc->ton_kho_hien_tai += $chiTiet->so_luong;
+                $thuoc = $loThuoc->thuoc;
+                
+                // Tính số lượng cần hoàn trả theo đơn vị gốc
+                $soLuongHoanTra = $chiTiet->so_luong;
+                
+                // Quy đổi số lượng về đơn vị gốc nếu cần
+                if ($chiTiet->don_vi == 1 && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $thuoc->ti_le_quy_doi > 0) {
+                    $soLuongHoanTra = $chiTiet->so_luong / $thuoc->ti_le_quy_doi;
+                }
+                
+                // Cập nhật tồn kho
+                $loThuoc->ton_kho_hien_tai += $soLuongHoanTra;
                 $loThuoc->save();
+                
+                // Ghi nhận vào lịch sử tồn kho
+                LichSuTonKho::create([
+                    'lo_id' => $loThuoc->lo_id,
+                    'thuoc_id' => $thuoc->thuoc_id,
+                    'don_ban_le_id' => $donBanLe->don_id,
+                    'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
+                    'so_luong_thay_doi' => $soLuongHoanTra,
+                    'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
+                    'nguoi_dung_id' => auth()->id(),
+                    'loai_thay_doi' => 'hoan_tra',
+                    'mo_ta' => 'Hoàn trả thuốc do hủy đơn: ' . $thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
+                ]);
             }
             
             DB::commit();
             
             return response()->json([
                 'success' => true,
-                'message' => 'Đơn hàng đã được hủy thành công'
+                'message' => 'Đơn hàng đã được hủy thành công và hàng đã được hoàn trả vào kho'
             ]);
             
         } catch (\Exception $e) {

@@ -12,14 +12,12 @@ class LichSuTonKho extends Model
     protected $fillable = [
         'lo_id',
         'thuoc_id',
-        'kho_id',
-        'phieu_nhap_id',
         'don_ban_le_id',
         'chi_tiet_don_id',
         'so_luong_thay_doi',
         'ton_kho_moi',
         'nguoi_dung_id',
-        'loai_thay_doi',   // 'nhap', 'ban', 'dieu_chinh', 'chuyen_kho'
+        'loai_thay_doi',   // 'nhap', 'ban', 'dieu_chinh', 'chuyen_kho', 'hoan_tra'
         'mo_ta',
         'created_at',
         'updated_at'
@@ -41,21 +39,7 @@ class LichSuTonKho extends Model
         return $this->belongsTo(Thuoc::class, 'thuoc_id', 'thuoc_id');
     }
 
-    /**
-     * Get the kho for this lịch sử
-     */
-    public function kho()
-    {
-        return $this->belongsTo(Kho::class, 'kho_id', 'kho_id');
-    }
-
-    /**
-     * Get the phiếu nhập for this lịch sử
-     */
-    public function phieuNhap()
-    {
-        return $this->belongsTo(PhieuNhap::class, 'phieu_nhap_id', 'phieu_id');
-    }
+    // Removed kho() and phieuNhap() relationships as they are no longer used
 
     /**
      * Get the đơn bán lẻ for this lịch sử

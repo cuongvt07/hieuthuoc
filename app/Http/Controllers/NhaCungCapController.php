@@ -63,7 +63,7 @@ class NhaCungCapController extends Controller
     {
         // Lấy danh sách phiếu nhập của nhà cung cấp
         $phieuNhap = $nhaCungCap->phieuNhap()
-                  ->with(['chiTietLoNhap.loThuoc.thuoc', 'nguoiDung']) // Eager load chi tiết phiếu và thông tin thuốc
+                  ->with(['chiTietLoNhaps.loThuoc.thuoc', 'nguoiDung']) // Eager load chi tiết phiếu và thông tin thuốc
                   ->orderBy('ngay_nhap', 'desc')
                   ->get();
         
