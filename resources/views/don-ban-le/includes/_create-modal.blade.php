@@ -14,7 +14,7 @@
                             <h6 class="m-0 font-weight-bold"><i class="bi bi-person-fill"></i> Thông tin khách hàng</h6>
                         </div>
                         <div class="card-body py-2">
-                            <div class="row align-items-center">
+                            <div class="row align-items-center d-flex justify-content-center">
                                 <div class="col-md-2">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="customer_type" id="new_customer" value="new" checked>
@@ -27,7 +27,7 @@
                                 </div>
                                 <!-- New Customer -->
                                 <div id="new-customer-form" class="col-md-10">
-                                    <div class="row g-2">
+                                    <div class="row g-2 align-items-center d-flex justify-content-center">
                                         <div class="col-md-5">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text"><i class="bi bi-person"></i></span>
@@ -44,7 +44,7 @@
                                 </div>
                                 <!-- Existing Customer -->
                                 <div id="existing-customer-form" class="col-md-10" style="display: none;">
-                                    <div class="row g-2">
+                                    <div class="row g-2 align-items-center d-flex justify-content-center">
                                         <div class="col-md-5">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text"><i class="bi bi-telephone"></i></span>

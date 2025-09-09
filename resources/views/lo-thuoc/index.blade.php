@@ -157,7 +157,7 @@
                         @forelse($loThuocs as $lo)
                         <tr>
                             <td>
-                                {{ $lo->ma_lo ?? 'N/A' }}
+                                {{ $lo->ma_lo ?? 'Chưa nhập' }}
                                 @if($lo->so_lo_nha_san_xuat)
                                 <div class="small text-muted">NSX: {{ $lo->so_lo_nha_san_xuat }}</div>
                                 @endif
@@ -168,7 +168,7 @@
                                 {{ number_format($lo->ton_kho_hien_tai, 2) }} {{ $lo->thuoc->don_vi_goc }}
                                 <div class="small text-muted">Tổng nhập: {{ number_format($lo->tong_so_luong, 2) }}</div>
                             </td>
-                            <td>{{ $lo->ngay_san_xuat ? \Carbon\Carbon::parse($lo->ngay_san_xuat)->format('d/m/Y') : 'N/A' }}</td>
+                            <td>{{ $lo->ngay_san_xuat ? \Carbon\Carbon::parse($lo->ngay_san_xuat)->format('d/m/Y') : 'Chưa nhập' }}</td>
                             <td>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</td>
                             <td>
                                 @php
@@ -269,7 +269,7 @@
                     <div class="card-body">
                         <div class="lot-info">
                             <span class="fw-bold">Mã lô:</span>
-                            <span>{{ $lo->ma_lo ?? 'N/A' }}</span>
+                            <span>{{ $lo->ma_lo ?? 'Chưa nhập' }}</span>
                         </div>
                         @if($lo->so_lo_nha_san_xuat)
                         <div class="lot-info">
@@ -287,7 +287,7 @@
                         </div>
                         <div class="lot-info">
                             <span class="fw-bold">NSX:</span>
-                            <span>{{ $lo->ngay_san_xuat ? \Carbon\Carbon::parse($lo->ngay_san_xuat)->format('d/m/Y') : 'N/A' }}</span>
+                            <span>{{ $lo->ngay_san_xuat ? \Carbon\Carbon::parse($lo->ngay_san_xuat)->format('d/m/Y') : 'Chưa nhập' }}</span>
                         </div>
                         <div class="lot-info">
                             <span class="fw-bold">HSD:</span>

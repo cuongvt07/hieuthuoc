@@ -576,15 +576,15 @@ $(function () {
         // Lấy đơn giá theo đơn vị đã được tính toán trước đó
         let donGia = parseFloat($('#quick_add_quantity').attr('data-gia-theo-don-vi')) || selectedProduct.gia_ban;
         
-        // Đơn vị được chọn từ dropdown
-        const donVi = unit.text().trim();
+        // FIX: Lấy don_vi là value của option (don_vi_goc hoặc don_vi_ban)
+        const donVi = unitSelect.val(); // "don_vi_goc" hoặc "don_vi_ban"
         
         // Log thông tin để debug
-        console.log('Thông tin sản phẩm khi thêm:', {
+        console.log('Thông tin sản phẩm khi thêm (sau fix):', {
             ten_thuoc: selectedProduct.ten_thuoc,
             don_vi_goc: selectedProduct.don_vi_goc,
             don_vi_ban: selectedProduct.don_vi_ban,
-            don_vi_duoc_chon: donVi,
+            don_vi_duoc_chon: donVi, // Value của option
             ti_le_quy_doi: tiLe,
             gia_ban_goc: selectedProduct.gia_ban,
             gia_ban_theo_don_vi: donGia,
@@ -610,13 +610,13 @@ $(function () {
             orderItems[existingItemIndex].thanh_tien += thanhTien;
             orderItems[existingItemIndex].tien_thue += tienThue;
         } else {
+            // FIX: Sử dụng don_vi là value của option
             orderItems.push({
                 thuoc_id: selectedProduct.thuoc_id,
                 ten_thuoc: selectedProduct.ten_thuoc,
                 lo_id: batch.val(),
                 ma_lo: batch.text().split(' ')[0],
-                don_vi: unit.text().trim(),
-                don_vi_type: unitSelect.val(), // Lưu loại đơn vị (đơn vị gốc hay đơn vị bán)
+                don_vi: donVi, // "don_vi_goc" hoặc "don_vi_ban"
                 don_vi_goc: selectedProduct.don_vi_goc, // Lưu đơn vị gốc để hiển thị
                 ti_le_quy_doi: tiLe, // Lưu tỉ lệ quy đổi để dùng khi xử lý tồn kho
                 so_luong: quantity,
@@ -660,26 +660,26 @@ $(function () {
             totalAmount += item.thanh_tien;
             
             // Hiển thị thông tin quy đổi đơn vị nếu sử dụng đơn vị bán
-            let donViInfo = item.don_vi;
-            if (item.don_vi_type === 'don_vi_ban' && item.ti_le_quy_doi > 1) {
+            let donViInfo = item.don_vi === 'don_vi_goc' ? selectedProduct.don_vi_goc : (item.don_vi === 'don_vi_ban' ? selectedProduct.don_vi_ban : '');
+            if (item.don_vi === 'don_vi_ban' && item.ti_le_quy_doi > 1) {
                 // Tính số lượng theo đơn vị gốc
                 const soLuongDonViGoc = item.so_luong / item.ti_le_quy_doi;
                 // Làm tròn đến 2 chữ số thập phân
                 const formattedSoLuongGoc = soLuongDonViGoc.toFixed(2).replace(/\.00$/, '');
-                // Sử dụng don_vi_goc từ sản phẩm trong đơn hàng, không phải từ selectedProduct
                 const donViGoc = item.don_vi_goc || 'đơn vị gốc';
                 donViInfo += ` (~ ${formattedSoLuongGoc} ${donViGoc})`;
             }
             
+            // FIX: Hiển thị don_vi_info dựa trên don_vi (giá trị "don_vi_goc" hoặc "don_vi_ban")
             tbody.append(`
-                <tr data-index="${index}">
+                <tr data-index="${index}" data-don-vi="${item.don_vi}">
                     <td>${index + 1}</td>
                     <td>${item.ten_thuoc}</td>
                     <td>${donViInfo}</td>
                     <td><input type="number" class="form-control form-control-sm quantity-input" 
                         value="${item.so_luong}" min="1" 
                         data-ti-le="${item.ti_le_quy_doi}" 
-                        data-don-vi-type="${item.don_vi_type}"></td>
+                        data-don-vi="${item.don_vi}"></td>
                     <td><input type="number" class="form-control form-control-sm price-input" value="${item.gia_ban}"></td>
                     <td><input type="number" class="form-control form-control-sm vat-input" value="${item.thue_suat}"></td>
                     <td class="text-right">${formatCurrency(item.thanh_tien)}</td>
@@ -714,15 +714,18 @@ $(function () {
         // Nếu đây là đơn vị bán, hiển thị quy đổi
         if ($(this).hasClass('quantity-input')) {
             const tiLe = parseFloat(quantityInput.data('ti-le')) || 1;
-            const donViType = quantityInput.data('don-vi-type');
+            const donVi = quantityInput.data('don-vi'); // "don_vi_goc" hoặc "don_vi_ban"
             
-            if (donViType === 'don_vi_ban' && tiLe > 1) {
+            // FIX: Log debug để kiểm tra don_vi khi edit
+            console.log('Edit inline - don_vi:', donVi);
+            
+            if (donVi === 'don_vi_ban' && tiLe > 1) {
                 // Hiển thị cảnh báo cho người dùng về quy đổi
                 const soLuongDonViGoc = item.so_luong / tiLe;
                 const formattedSoLuongGoc = soLuongDonViGoc.toFixed(2).replace(/\.00$/, '');
                 
-                // Hiển thị thông báo quy đổi, sử dụng đơn vị gốc từ item thay vì selectedProduct
-                showToast('info', `Quy đổi: ${item.so_luong} ${item.don_vi} ≈ ${formattedSoLuongGoc} ${item.don_vi_goc || 'đơn vị gốc'}`, 'bi bi-info-circle-fill');
+                // Hiển thị thông báo quy đổi, sử dụng đơn vị gốc từ item
+                showToast('info', `Quy đổi: ${item.so_luong} ${selectedProduct.don_vi_ban || 'đơn vị bán'} ≈ ${formattedSoLuongGoc} ${item.don_vi_goc || 'đơn vị gốc'}`, 'bi bi-info-circle-fill');
             }
         }
 
@@ -804,12 +807,12 @@ $(function () {
             data: { sdt: phone },
             success: function(response) {
                 if (response.success && response.khachHang) {
-                    const customer = response.khachHang;
+                    const customer = response.khachHang[0];
                     $('#customer-search-results').html(`
                         <div class="alert alert-success">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>${customer.ho_ten}</strong><br>
+                                    <strong>${customer.ho_ten}</strong>
                                     <small>SĐT: ${customer.sdt}</small>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-primary select-customer" 
@@ -900,6 +903,7 @@ $(function () {
                     showToast('success', 'Đơn hàng đã được tạo thành công', 'bi bi-check-circle-fill');
                     resetOrderForm();
                     setTimeout(() => $('#createOrderModal').modal('hide'), 1500);
+                    location.reload();
                 } else {
                     showToast('error', response.message || 'Lỗi khi tạo đơn hàng', 'bi bi-exclamation-triangle-fill');
                 }
