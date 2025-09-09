@@ -381,7 +381,7 @@ class DonBanLeController extends Controller
                             'kho_id' => $loThuoc->kho_id,
                             'don_ban_le_id' => $donBanLe->don_id,
                             'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
-                            'so_luong_thay_doi' => -$soLuongLayTuLo,
+                            'so_luong_thay_doi' => -$soLuongLayTuLo, // chỉnh lại kiểu dữ liệu nhé
                             'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
                             'nguoi_dung_id' => Auth::id(),
                             'loai_thay_doi' => 'ban',
