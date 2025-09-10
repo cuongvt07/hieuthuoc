@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BaoCaoTonKhoController;
+use App\Http\Controllers\BaoCaoKhachHangController;
 use App\Http\Controllers\DonBanLeController;
 use App\Http\Controllers\GiaThuocController;
 use App\Http\Controllers\KhachHangController;
@@ -93,4 +94,7 @@ Route::middleware('auth')->group(function () {
     
     // Báo cáo tồn kho
     Route::get('bao-cao/ton-kho', [BaoCaoTonKhoController::class, 'index'])->name('bao-cao.ton-kho.index');
+    
+    // Báo cáo khách hàng
+    Route::get('bao-cao/khach-hang', [BaoCaoKhachHangController::class, 'index'])->name('bao-cao.khach-hang.index');
 });

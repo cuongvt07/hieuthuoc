@@ -111,23 +111,22 @@ class BaoCaoTonKhoController extends Controller
                     DB::raw('thuoc.thuoc_id'),
                     DB::raw('thuoc.ma_thuoc'),
                     DB::raw('thuoc.ten_thuoc'),
-                    DB::raw('thuoc.don_vi_ban as don_vi_tinh'),
+                    DB::raw('thuoc.don_vi_goc as don_vi_tinh'),
                     DB::raw('SUM(lich_su_ton_kho.ton_kho_moi) as ton_kho_moi'),
                     DB::raw('AVG(gia_thuoc.gia_ban) as don_gia')
                 )
-                ->groupBy('thuoc.thuoc_id', 'thuoc.ma_thuoc', 'thuoc.ten_thuoc', 'thuoc.don_vi_ban');
+                ->groupBy('thuoc.thuoc_id', 'thuoc.ma_thuoc', 'thuoc.ten_thuoc', 'thuoc.don_vi_goc');
                 break;
                 
             case 'kho':
                 $query->select(
                     DB::raw('kho.kho_id'),
-                    DB::raw('kho.ma_kho'),
                     DB::raw('kho.ten_kho'),
                     DB::raw('COUNT(DISTINCT thuoc.thuoc_id) as so_loai_thuoc'),
                     DB::raw('SUM(lich_su_ton_kho.ton_kho_moi) as ton_kho_moi'),
                     DB::raw('SUM(lich_su_ton_kho.ton_kho_moi * IFNULL(gia_thuoc.gia_ban, 0)) as gia_tri_ton')
                 )
-                ->groupBy('kho.kho_id', 'kho.ma_kho', 'kho.ten_kho');
+                ->groupBy('kho.kho_id', 'kho.ten_kho');
                 break;
                 
             case 'khach_hang':
@@ -135,14 +134,13 @@ class BaoCaoTonKhoController extends Controller
                       ->leftJoin('khach_hang', 'don_ban_le.khach_hang_id', '=', 'khach_hang.khach_hang_id')
                       ->select(
                           DB::raw('khach_hang.khach_hang_id'),
-                          DB::raw('khach_hang.ma_khach_hang'),
                           DB::raw('khach_hang.ho_ten'),
                           DB::raw('COUNT(DISTINCT don_ban_le.don_id) as so_don'),
                           DB::raw('SUM(CASE WHEN lich_su_ton_kho.loai_thay_doi = "ban" THEN ABS(lich_su_ton_kho.so_luong_thay_doi) ELSE 0 END) as so_luong_mua'),
                           DB::raw('SUM(CASE WHEN lich_su_ton_kho.loai_thay_doi = "ban" THEN ABS(lich_su_ton_kho.so_luong_thay_doi * IFNULL(gia_thuoc.gia_ban, 0)) ELSE 0 END) as gia_tri_mua')
                       )
                       ->whereNotNull('khach_hang.khach_hang_id')
-                      ->groupBy('khach_hang.khach_hang_id', 'khach_hang.ma_khach_hang', 'khach_hang.ho_ten');
+                      ->groupBy('khach_hang.khach_hang_id', 'khach_hang.ho_ten');
                 break;
                 
             default: // 'lo' - báo cáo theo lô thuốc (mặc định)
@@ -151,9 +149,8 @@ class BaoCaoTonKhoController extends Controller
                     'lo_thuoc.*',
                     'thuoc.ma_thuoc',
                     'thuoc.ten_thuoc',
-                    'thuoc.don_vi_ban as don_vi_tinh',
+                    'thuoc.don_vi_goc as don_vi_tinh',
                     'kho.ten_kho',
-                    'kho.ma_kho',
                     'gia_thuoc.gia_ban as don_gia'
                 );
                 break;

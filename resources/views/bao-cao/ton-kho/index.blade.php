@@ -100,6 +100,15 @@
                             </select>
                         </div>
                         <div class="col-md-4">
+                            <label for="trang_thai" class="form-label small">Trạng thái</label>
+                            <select class="form-select form-select-sm" id="trang_thai" name="trang_thai">
+                                <option value="">-- Tất cả trạng thái --</option>
+                                <option value="het_han" {{ request('trang_thai') == 'het_han' ? 'selected' : '' }}>Đã hết hạn</option>
+                                <option value="sap_het_han" {{ request('trang_thai') == 'sap_het_han' ? 'selected' : '' }}>Sắp hết hạn (< 3 tháng)</option>
+                                <option value="con_han" {{ request('trang_thai') == 'con_han' ? 'selected' : '' }}>Còn hạn (> 3 tháng)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
                             <label for="khach_hang_id" class="form-label small">Khách hàng</label>
                             <select class="form-select form-select-sm select2" id="khach_hang_id" name="khach_hang_id">
                                 <option value="">-- Tất cả khách hàng --</option>
