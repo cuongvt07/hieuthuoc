@@ -113,6 +113,14 @@
                         <i class="bi bi-receipt"></i> Đơn Bán Lẻ
                     </a>
                     
+                    <!-- Báo Cáo -->
+                    <div class="menu-header text-muted px-3 py-2 small">
+                        <i class="bi bi-bar-chart-line me-2"></i> BÁO CÁO
+                    </div>
+                    <a href="{{ route('bao-cao.index') }}" class="menu-item {{ request()->routeIs('bao-cao.*') ? 'active' : '' }}">
+                        <i class="bi bi-clipboard-data"></i> Báo Cáo & Thống Kê
+                    </a>
+                    
                     <!-- Hệ thống -->
                     <div class="menu-header text-muted px-3 py-2 small">
                         <i class="bi bi-gear me-2"></i> HỆ THỐNG

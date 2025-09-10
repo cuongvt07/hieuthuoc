@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BaoCaoTonKhoController;
 use App\Http\Controllers\DonBanLeController;
 use App\Http\Controllers\GiaThuocController;
 use App\Http\Controllers\KhachHangController;
@@ -31,6 +32,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return view('dashboard');
     })->name('dashboard');
+    
+    // Báo cáo - trang chính
+    Route::get('bao-cao', function () {
+        return view('bao-cao.index');
+    })->name('bao-cao.index');
     
     // Thuốc routes (bao gồm cả quản lý nhóm thuốc)
     Route::resource('thuoc', ThuocController::class);
@@ -84,4 +90,7 @@ Route::middleware('auth')->group(function () {
     Route::post('don-ban-le/{donBanLe}/cancel', [DonBanLeController::class, 'cancel'])->name('don-ban-le.cancel');
     Route::get('don-ban-le/{donBanLe}/print', [DonBanLeController::class, 'print'])->name('don-ban-le.print');
     Route::get('don-ban-le-report', [DonBanLeController::class, 'report'])->name('don-ban-le.report');
+    
+    // Báo cáo tồn kho
+    Route::get('bao-cao/ton-kho', [BaoCaoTonKhoController::class, 'index'])->name('bao-cao.ton-kho.index');
 });

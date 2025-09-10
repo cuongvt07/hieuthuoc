@@ -54,4 +54,12 @@ class LoThuoc extends Model
     {
         return $this->hasMany(ChiTietLoNhap::class, 'lo_id', 'lo_id');
     }
+    
+    /**
+     * Get the lịch sử tồn kho for this lô
+     */
+    public function lichSuTonKho()
+    {
+        return $this->hasMany(LichSuTonKho::class, 'lo_id', 'lo_id');
+    }
 }
