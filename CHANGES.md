@@ -59,3 +59,37 @@ I've implemented the requested improvements to the "Don Ban Le" (Retail Order) i
 8. **Complete the order** when all items are added
 
 These changes create a more streamlined, user-friendly interface that should significantly improve the user experience when creating retail orders.
+
+
+
+- lô thuốc : giữ nguyên (hsd của thuốc)
+- thuốc : 2 option filter :  1 trạng thái hsd (số lượng)  ;  sort bán chạy/ bán ế (top 5) - (số đơn, doanh số)
+- kho : 2 option filter : 1 tất cả : giữ nguyên ; theo từng kho (list ds thuốc : sl , đơn vị auto gốc)
+- khách hàng :  2 option filter: sort top 5 ông mua nhiều nhất ; theo từng thằng (Mã KH	Tên khách hàng	Số đơn hàng	Tổng SL mua	Giá trị mua)
+
+				
+giá thuốc : list full theo DB : , có bộ lọc giữ nguyên --> list ds
+
+
+lịch sử tồn kho (ls truy xuất) :  loại thay đổi : bán , điều chỉnh
+
+NavBar : Danh mục -> Qly thuốc
+	 Đối tác -> Qly danh mục : qly ncc ; khách hàng ; nhân sự (xg cuối)
+	 Kho & hàng : Qly nhập bán : qly kho , qly phiếu nhập, qly đơn bán, qly lô
+	 BÁO CÁO : báo cáo lô thuốc , thuốc  , kho  , khách hàng , truy xuất (module : báo cáo ls truy xuất tồn:
+ filter : chọn loại truy xuất : bán --> đơn
+				điều chỉnh lô --> tăng ; giảm )
+	
+Dashboard : thêm khối doanh số bán , tổng nhập hàng ,khối sẽ có filter  từ ngày này - ngày này
+thay Thuốc sắp hết hàng = top sp bán chạy bán ế (3-5-10 + thời gian theo tháng/năm)
+top khách hàng mua nhiều nhất (3-5-10 + thời gian theo tháng/năm)
+
+dược sĩ : dash , khách hàng , qly đơn bán.
+
+Quản Lý Kho : về dạng table list ( sl hiện tại cảu kho) --> chi tiết --> thuốc list -- list lô của thuốc)
+
+Quản Lý Phiếu Nhập : auto trạng thái chờ xác nhận --> duyệt -> hoàn thành 
+
+Đình chỉnh  nhóm thuốc --> k thêm thuốc đó vào nhóm đó được nữa; đình chỉ thuốc --. k thêm được vào phiếu + đơn bán
+
+Phiếu nhập : thuốc - lô - kho : chọn thuốc -> check nằm trong kho nào ? render : select chọn  (đã có lô bỏ Lịch sử nhập của lô:)
