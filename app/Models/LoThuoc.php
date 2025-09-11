@@ -14,7 +14,7 @@ class LoThuoc extends Model
         'ma_lo',
         'thuoc_id',
         'kho_id',
-        'han_su_dung',
+        'notificationsDropdown',
         'tong_so_luong',
         'ton_kho_hien_tai',
         'gia_nhap_tb',

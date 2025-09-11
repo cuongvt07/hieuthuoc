@@ -13,6 +13,7 @@ use App\Http\Controllers\NhaCungCapController;
 use App\Http\Controllers\NhomThuocController;
 use App\Http\Controllers\PhieuNhapController;
 use App\Http\Controllers\ThuocController;
+use App\Http\Controllers\ThongBaoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes
 Route::middleware('auth')->group(function () {
+    // Notifications API
+    Route::get('/test-expired', [ThongBaoController::class, 'checkExpiredMedicines']);
+    Route::get('/api/notifications/unread', [ThongBaoController::class, 'getUnreadNotifications']);
+    Route::post('/api/notifications/{id}/read', [ThongBaoController::class, 'markAsRead']);
+
     // Dashboard
     Route::get('/', function () {
         return view('dashboard');

@@ -19,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->app->booted(function () {
+            $schedule = $this->app->make(\Illuminate\Console\Scheduling\Schedule::class);
+            
+            // Check for expiring medicines every day at midnight
+            $schedule->call(function() {
+                app(\App\Http\Controllers\ThongBaoController::class)->checkExpiredMedicines();
+            })->everyMinute();
+        });
     }
 }

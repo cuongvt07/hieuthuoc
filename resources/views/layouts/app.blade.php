@@ -7,6 +7,13 @@
     <title>@yield('title', 'Hệ Thống Quản Lý Hiệu Thuốc')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.10.7/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.10.7/locale/vi.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.10.7/plugin/relativeTime.js"></script>
+    <script>
+        dayjs.locale('vi');
+        dayjs.extend(window.dayjs_plugin_relativeTime);
+    </script>
     <style>
         body {
             min-height: 100vh;
@@ -159,32 +166,10 @@
                         <div class="dropdown-menu dropdown-menu-end shadow" style="min-width: 300px;" aria-labelledby="notificationsDropdown">
                             <div class="dropdown-header d-flex justify-content-between align-items-center">
                                 <span>Thông Báo</span>
-                                <a href="#" class="text-decoration-none small">Đánh dấu đã đọc tất cả</a>
                             </div>
-                            <div class="dropdown-item">
-                                <div class="d-flex">
-                                    <div class="me-2">
-                                        <i class="bi bi-exclamation-circle-fill text-warning"></i>
-                                    </div>
-                                    <div>
-                                        <div class="small text-muted">Hôm nay</div>
-                                        <div>Thuốc Paracetamol sắp hết hạn</div>
-                                    </div>
-                                </div>
+                            <div class="notification-list">
+                                <!-- Notifications will be dynamically inserted here -->
                             </div>
-                            <div class="dropdown-item">
-                                <div class="d-flex">
-                                    <div class="me-2">
-                                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                                    </div>
-                                    <div>
-                                        <div class="small text-muted">Hôm qua</div>
-                                        <div>Thuốc Amoxicillin đã hết hàng</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item text-center small" href="#">Xem tất cả thông báo</a>
                         </div>
                     </div>
                     <div class="dropdown">
@@ -269,5 +254,6 @@
         });
     </script>
     @yield('scripts')
+    <script src="{{ asset('js/thong-bao.js') }}"></script>
 </body>
 </html>
