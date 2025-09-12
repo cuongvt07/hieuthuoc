@@ -18,6 +18,7 @@ class Thuoc extends Model
         'don_vi_goc',
         'don_vi_ban',
         'ti_le_quy_doi',
+        'trang_thai',
     ];
 
     /**

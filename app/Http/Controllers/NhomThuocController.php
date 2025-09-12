@@ -17,10 +17,12 @@ class NhomThuocController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('ma_nhom', 'like', "%{$search}%")
-                  ->orWhere('ten_nhom', 'like', "%{$search}%");
-            });
+            if (!empty(trim($search))) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('ma_nhom', 'like', "%{$search}%")
+                      ->orWhere('ten_nhom', 'like', "%{$search}%");
+                });
+            }
         }
 
         $nhomThuoc = $query->paginate(10);
@@ -36,12 +38,24 @@ class NhomThuocController extends Controller
     }
 
     /**
+     * Get all active drug groups (for dropdowns)
+     */
+    public function getAllActive()
+    {
+        $nhomThuoc = NhomThuoc::orderBy('ten_nhom')->get();
+        
+        return response()->json([
+            'nhomThuoc' => $nhomThuoc
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(NhomThuocRequest $request)
     {
         $nhomThuoc = NhomThuoc::create($request->validated());
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -49,7 +63,7 @@ class NhomThuocController extends Controller
                 'message' => 'Nhóm thuốc đã được thêm thành công.'
             ]);
         }
-        
+
         return redirect()->route('nhom-thuoc.index')
             ->with('success', 'Nhóm thuốc đã được thêm thành công.');
     }
@@ -70,7 +84,7 @@ class NhomThuocController extends Controller
     public function update(NhomThuocRequest $request, NhomThuoc $nhomThuoc)
     {
         $nhomThuoc->update($request->validated());
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -78,7 +92,7 @@ class NhomThuocController extends Controller
                 'message' => 'Nhóm thuốc đã được cập nhật thành công.'
             ]);
         }
-        
+
         return redirect()->route('nhom-thuoc.index')
             ->with('success', 'Nhóm thuốc đã được cập nhật thành công.');
     }
@@ -89,7 +103,16 @@ class NhomThuocController extends Controller
     public function destroy(NhomThuoc $nhomThuoc)
     {
         try {
+            // Kiểm tra xem có thuốc nào đang sử dụng nhóm này không
+            if ($nhomThuoc->thuoc()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể xóa nhóm thuốc này vì còn có thuốc đang sử dụng.'
+                ], 422);
+            }
+
             $nhomThuoc->delete();
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Nhóm thuốc đã được xóa thành công.'
@@ -97,8 +120,22 @@ class NhomThuocController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể xóa nhóm thuốc này vì đã có thuốc thuộc nhóm.'
-            ], 422);
+                'message' => 'Có lỗi xảy ra khi xóa nhóm thuốc.'
+            ], 500);
         }
+    }
+
+    /**
+     * Suspend or unsuspend the specified resource.
+     */
+    public function suspend($id, Request $request)
+    {
+        $nhomThuoc = NhomThuoc::findOrFail($id);
+        $nhomThuoc->trang_thai = $request->input('trang_thai', 0);
+        $nhomThuoc->save();
+        
+        return response()->json([
+            'message' => $nhomThuoc->trang_thai == 1 ? 'Nhóm thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ nhóm thuốc.'
+        ]);
     }
 }

@@ -29,6 +29,7 @@ class ThuocRequest extends FormRequest
             'don_vi_goc' => ['required', 'string', 'max:50'],
             'don_vi_ban' => ['required', 'string', 'max:50'],
             'ti_le_quy_doi' => ['required', 'numeric', 'min:0.01'],
+            'trang_thai' => ['nullable', 'default:0', 'in:0,1']
         ];
 
         // Only validate uniqueness of ma_thuoc when creating or updating with a different ma_thuoc

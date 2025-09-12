@@ -35,6 +35,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/notifications/unread', [ThongBaoController::class, 'getUnreadNotifications']);
     Route::post('/api/notifications/{id}/read', [ThongBaoController::class, 'markAsRead']);
 
+    // Đình chỉ/Bỏ đình chỉ nhóm thuốc
+    Route::post('/nhom-thuoc/{id}/suspend', [App\Http\Controllers\NhomThuocController::class, 'suspend'])->name('nhom-thuoc.suspend');
+    // Đình chỉ/Bỏ đình chỉ thuốc
+    Route::post('/thuoc/{id}/suspend', [App\Http\Controllers\ThuocController::class, 'suspend'])->name('thuoc.suspend');
     // Dashboard
     Route::get('/', function () {
         return view('dashboard');

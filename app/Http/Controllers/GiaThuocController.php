@@ -6,6 +6,7 @@ use App\Http\Requests\GiaThuocRequest;
 use App\Models\GiaThuoc;
 use App\Models\Thuoc;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class GiaThuocController extends Controller
 {
@@ -25,15 +26,12 @@ class GiaThuocController extends Controller
         }
         
         if ($request->has('ngay_ket_thuc') && $request->ngay_ket_thuc) {
-            $query->where(function($q) use ($request) {
-                $q->where('ngay_ket_thuc', '<=', $request->ngay_ket_thuc)
-                  ->orWhereNull('ngay_ket_thuc');
-            });
+            $query->where('ngay_bat_dau', '<=', $request->ngay_ket_thuc);
         }
         
-        $giaThuoc = $query->orderBy('thuoc_id', 'asc')
-                           ->orderBy('ngay_bat_dau', 'desc')
-                           ->paginate(10);
+        $giaThuoc = $query->orderBy('thuoc_id')
+                         ->orderBy('created_at', 'desc')
+                         ->paginate(10);
         
         if ($request->ajax()) {
             return response()->json([
@@ -42,12 +40,10 @@ class GiaThuocController extends Controller
             ]);
         }
         
-        // Lấy danh sách các thuốc chưa có giá để hiển thị trong dropdown thêm mới
-        $existingThuocIds = GiaThuoc::pluck('thuoc_id')->toArray();
-        $thuoc = Thuoc::all();
-        $availableThuoc = Thuoc::whereNotIn('thuoc_id', $existingThuocIds)->get();
+        // Lấy danh sách thuốc cho dropdown
+        $thuoc = Thuoc::orderBy('ten_thuoc')->get();
         
-        return view('gia-thuoc.index', compact('giaThuoc', 'thuoc', 'availableThuoc'));
+        return view('gia-thuoc.index', compact('giaThuoc', 'thuoc'));
     }
 
     /**
@@ -56,32 +52,35 @@ class GiaThuocController extends Controller
     public function store(GiaThuocRequest $request)
     {
         // Kiểm tra xem thuốc đã có giá chưa
-        $existingPrice = GiaThuoc::where('thuoc_id', $request->thuoc_id)->first();
-        
+        $existingPrice = GiaThuoc::where('thuoc_id', $request->thuoc_id)
+            ->whereNull('ngay_ket_thuc')
+            ->latest('ngay_bat_dau')
+            ->first();
+
+        $now = now();
+
+        // Nếu đã có giá thì cập nhật ngày kết thúc của bản ghi cũ
         if ($existingPrice) {
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Thuốc này đã có giá. Vui lòng cập nhật giá hiện có thay vì thêm mới.'
-                ], 422);
-            }
-            
-            return redirect()->route('gia-thuoc.index')
-                ->with('error', 'Thuốc này đã có giá. Vui lòng cập nhật giá hiện có thay vì thêm mới.');
+            $existingPrice->ngay_ket_thuc = $now;
+            $existingPrice->save();
         }
-        
-        $giaThuoc = GiaThuoc::create($request->validated());
-        
+
+        // Tạo giá mới với ngày bắt đầu là thời điểm hiện tại
+        $giaThuoc = new GiaThuoc();
+        $giaThuoc->fill($request->validated());
+        $giaThuoc->ngay_bat_dau = $now;
+        $giaThuoc->save();
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'giaThuoc' => $giaThuoc,
-                'message' => 'Giá thuốc đã được thêm thành công.'
+                'message' => 'Giá thuốc đã được cập nhật thành công.'
             ]);
         }
-        
+
         return redirect()->route('gia-thuoc.index')
-            ->with('success', 'Giá thuốc đã được thêm thành công.');
+            ->with('success', 'Giá thuốc đã được cập nhật thành công.');
     }
 
     /**
@@ -100,18 +99,30 @@ class GiaThuocController extends Controller
      */
     public function update(GiaThuocRequest $request, GiaThuoc $giaThuoc)
     {
-        $giaThuoc->update($request->validated());
-        
+        // Đảm bảo ngày bắt đầu là thời điểm tạo bản ghi mới
+        $now = now();
+
+        // Cập nhật ngày kết thúc của bản ghi hiện tại
+        $giaThuoc->ngay_ket_thuc = $now;
+        $giaThuoc->save();
+
+        // Tạo bản ghi giá mới
+        $newGiaThuoc = new GiaThuoc();
+        $newGiaThuoc->thuoc_id = $giaThuoc->thuoc_id;
+        $newGiaThuoc->fill($request->validated());
+        $newGiaThuoc->ngay_bat_dau = $now;
+        $newGiaThuoc->save();
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'giaThuoc' => $giaThuoc,
-                'message' => 'Giá thuốc đã được cập nhật thành công.'
+                'giaThuoc' => $newGiaThuoc,
+                'message' => 'Đã thêm giá mới cho thuốc thành công.'
             ]);
         }
-        
+
         return redirect()->route('gia-thuoc.index')
-            ->with('success', 'Giá thuốc đã được cập nhật thành công.');
+            ->with('success', 'Đã thêm giá mới cho thuốc thành công.');
     }
 
     /**

@@ -14,12 +14,10 @@ class ThuocController extends Controller
      */
     public function index(Request $request)
     {
-        // Query cho Thuốc
         $query = Thuoc::with('nhomThuoc');
 
         if ($request->has('search')) {
             $search = $request->search;
-            // Chỉ áp dụng tìm kiếm khi từ khóa không rỗng
             if (!empty(trim($search))) {
                 $query->where(function ($q) use ($search) {
                     $q->where('ma_thuoc', 'like', "%{$search}%")
@@ -34,12 +32,10 @@ class ThuocController extends Controller
 
         $thuoc = $query->paginate(10);
         
-        // Query cho Nhóm Thuốc
         $nhomQuery = NhomThuoc::query();
         
         if ($request->has('search_nhom')) {
             $search = $request->search_nhom;
-            // Chỉ áp dụng tìm kiếm khi từ khóa không rỗng
             if (!empty(trim($search))) {
                 $nhomQuery->where(function ($q) use ($search) {
                     $q->where('ma_nhom', 'like', "%{$search}%")
@@ -74,7 +70,8 @@ class ThuocController extends Controller
     public function store(ThuocRequest $request)
     {
         $thuoc = Thuoc::create($request->validated());
-        
+        $thuoc->load('nhomThuoc');
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -82,7 +79,7 @@ class ThuocController extends Controller
                 'message' => 'Thuốc đã được thêm thành công.'
             ]);
         }
-        
+
         return redirect()->route('thuoc.index')
             ->with('success', 'Thuốc đã được thêm thành công.');
     }
@@ -104,6 +101,7 @@ class ThuocController extends Controller
     public function update(ThuocRequest $request, Thuoc $thuoc)
     {
         $thuoc->update($request->validated());
+        $thuoc->load('nhomThuoc'); // Load relationship để trả về đầy đủ thông tin
         
         if ($request->ajax()) {
             return response()->json([
@@ -134,5 +132,16 @@ class ThuocController extends Controller
                 'message' => 'Không thể xóa thuốc này vì đã có dữ liệu liên quan.'
             ], 422);
         }
+    }
+
+    /**
+     * Suspend or unsuspend the specified resource.
+     */
+    public function suspend($id, Request $request)
+    {
+        $thuoc = Thuoc::findOrFail($id);
+        $thuoc->trang_thai = $request->input('trang_thai', 0);
+        $thuoc->save();
+        return response()->json(['message' => $thuoc->trang_thai == 1 ? 'Thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ thuốc.']);
     }
 }

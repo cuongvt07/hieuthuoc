@@ -111,27 +111,31 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @php
+                                $currentThuocId = null;
+                            @endphp
                             @forelse ($giaThuoc as $item)
-                            <tr>
+                            <tr class="{{ $currentThuocId !== $item->thuoc_id && $loop->first ? 'table-success' : '' }}">
                                 <td>{{ $item->thuoc->ten_thuoc }}</td>
                                 <td class="text-end">{{ number_format($item->gia_ban, 0, ',', '.') }} đ</td>
-                                <td>{{ \Carbon\Carbon::parse($item->ngay_bat_dau)->format('d/m/Y') }}</td>
-                                <td>{{ $item->ngay_ket_thuc ? \Carbon\Carbon::parse($item->ngay_ket_thuc)->format('d/m/Y') : 'Hiện tại' }}</td>
+                                <td>{{ $item->created_at instanceof \Carbon\Carbon ? $item->created_at->format('d/m/Y H:i') : $item->created_at }}</td>
+                                <td>{{ $item->ngay_ket_thuc instanceof \Carbon\Carbon ? $item->ngay_ket_thuc->format('d/m/Y H:i') : $item->ngay_ket_thuc }}</td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-info edit-btn" data-id="{{ $item->gia_id }}">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-danger delete-btn" 
-                                        data-id="{{ $item->gia_id }}" 
+                                    <button type="button" class="btn btn-sm btn-info edit-btn" 
+                                        data-id="{{ $item->gia_id }}"
                                         data-thuoc="{{ $item->thuoc->ten_thuoc }}"
-                                        data-date="{{ \Carbon\Carbon::parse($item->ngay_bat_dau)->format('d/m/Y') }}">
-                                        <i class="bi bi-trash"></i>
+                                        data-thuoc-id="{{ $item->thuoc_id }}"
+                                        data-gia="{{ $item->gia_ban }}">
+                                        <i class="bi bi-pencil"></i> Cập nhật giá
                                     </button>
                                 </td>
                             </tr>
+                            @php
+                                $currentThuocId = $item->thuoc_id;
+                            @endphp
                             @empty
                             <tr>
-                                <td colspan="5" class="text-center">Không có dữ liệu</td>
+                                <td colspan="6" class="text-center">Không có dữ liệu</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -160,16 +164,13 @@
                         <label for="thuoc_id" class="form-label">Thuốc <span class="text-danger">*</span></label>
                         <select class="form-select" id="thuoc_id" name="thuoc_id" required>
                             <option value="">-- Chọn thuốc --</option>
-                            @foreach ($availableThuoc as $item)
-                            <option value="{{ $item->thuoc_id }}">{{ $item->ten_thuoc }}</option>
+                            @foreach ($thuoc as $item)
+                            <option value="{{ $item->thuoc_id }}">
+                                {{ $item->ten_thuoc }}
+                            </option>
                             @endforeach
                         </select>
                         <div class="invalid-feedback" id="thuoc_id_error"></div>
-                        @if(count($availableThuoc) == 0)
-                        <div class="alert alert-info mt-2">
-                            <i class="bi bi-info-circle me-1"></i> Tất cả thuốc đều đã có giá.
-                        </div>
-                        @endif
                     </div>
                     <div class="mb-3">
                         <label for="gia_ban" class="form-label">Giá Bán (VNĐ) <span class="text-danger">*</span></label>
@@ -180,14 +181,13 @@
                         <div class="invalid-feedback" id="gia_ban_error"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="ngay_bat_dau" class="form-label">Ngày Bắt Đầu <span class="text-danger">*</span></label>
+                        <label for="ngay_bat_dau" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="ngay_bat_dau" name="ngay_bat_dau" required>
                         <div class="invalid-feedback" id="ngay_bat_dau_error"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="ngay_ket_thuc" class="form-label">Ngày Kết Thúc</label>
+                        <label for="ngay_ket_thuc" class="form-label">Ngày kết thúc</label>
                         <input type="date" class="form-control" id="ngay_ket_thuc" name="ngay_ket_thuc">
-                        <small class="form-text text-muted">Để trống nếu giá áp dụng cho đến hiện tại.</small>
                         <div class="invalid-feedback" id="ngay_ket_thuc_error"></div>
                     </div>
                 </div>
@@ -205,40 +205,43 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="editGiaThuocForm">
+                <input type="hidden" id="edit_gia_id" name="gia_id">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editGiaThuocModalLabel">Chỉnh Sửa Giá Thuốc</h5>
+                    <h5 class="modal-title" id="editGiaThuocModalLabel">Cập Nhật Giá Mới</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="edit_gia_id" name="gia_id">
+                    <input type="hidden" id="edit_thuoc_id" name="thuoc_id">
                     <div class="mb-3">
-                        <label for="edit_thuoc_name" class="form-label">Thuốc</label>
+                        <label class="form-label">Thuốc</label>
                         <input type="text" class="form-control" id="edit_thuoc_name" readonly>
-                        <input type="hidden" id="edit_thuoc_id" name="thuoc_id">
+                    </div>
+                    <div class="mb-3" style="display: none;">
+                        <label class="form-label">Giá Hiện Tại</label>
+                        <input type="text" class="form-control" id="edit_gia_cu" readonly>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_gia_ban" class="form-label">Giá Bán (VNĐ) <span class="text-danger">*</span></label>
+                        <label for="edit_gia_ban" class="form-label">Giá Mới (VNĐ) <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" class="form-control money-format" id="edit_gia_ban" name="gia_ban" placeholder="Nhập giá bán" required>
+                            <input type="text" class="form-control money-format" id="edit_gia_ban" name="gia_ban" required>
                             <span class="input-group-text">VNĐ</span>
                         </div>
                         <div class="invalid-feedback" id="edit_gia_ban_error"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_ngay_bat_dau" class="form-label">Ngày Bắt Đầu <span class="text-danger">*</span></label>
+                        <label for="edit_ngay_bat_dau" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="edit_ngay_bat_dau" name="ngay_bat_dau" required>
                         <div class="invalid-feedback" id="edit_ngay_bat_dau_error"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_ngay_ket_thuc" class="form-label">Ngày Kết Thúc</label>
+                        <label for="edit_ngay_ket_thuc" class="form-label">Ngày kết thúc</label>
                         <input type="date" class="form-control" id="edit_ngay_ket_thuc" name="ngay_ket_thuc">
-                        <small class="form-text text-muted">Để trống nếu giá áp dụng cho đến hiện tại.</small>
                         <div class="invalid-feedback" id="edit_ngay_ket_thuc_error"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    <button type="submit" class="btn btn-primary">Lưu giá mới</button>
                 </div>
             </form>
         </div>

@@ -14,6 +14,7 @@ class NhomThuoc extends Model
         'ma_nhom',
         'ten_nhom',
         'mo_ta',
+        'trang_thai',
     ];
 
     /**
