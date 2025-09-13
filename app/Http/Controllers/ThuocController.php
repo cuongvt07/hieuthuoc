@@ -6,9 +6,53 @@ use App\Http\Requests\ThuocRequest;
 use App\Models\NhomThuoc;
 use App\Models\Thuoc;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ThuocController extends Controller
 {
+    /**
+     * Get medicine information
+     */
+    public function getInfo(Request $request): JsonResponse
+    {
+        $thuoc = Thuoc::with(['nhomThuoc', 'giaThuoc' => function($query) {
+            $query->orderBy('created_at', 'desc')->first();
+        }])->findOrFail($request->id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $thuoc
+        ]);
+    }
+
+    /**
+     * Get list of warehouses that have lots of this medicine
+     */
+    public function getKhoList($id): JsonResponse
+    {
+        
+        // Lấy danh sách tất cả các kho
+        $allKho = \DB::table('kho')
+            ->select('kho_id', 'ten_kho')
+            ->get();
+
+        // Lấy danh sách kho đã có lô của thuốc này
+        $existingKho = \DB::table('lo_thuoc')
+            ->join('kho', 'lo_thuoc.kho_id', '=', 'kho.kho_id')
+            ->where('lo_thuoc.thuoc_id', $id)
+            ->select('kho.kho_id', 'kho.ten_kho')
+            ->distinct()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'all_kho' => $allKho,
+                'existing_kho' => $existingKho
+            ]
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -43,7 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return view('dashboard');
     })->name('dashboard');
-    
+
     // Báo cáo - trang chính
     Route::get('bao-cao', function () {
         return view('bao-cao.index');
@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     
     // Thuốc routes (bao gồm cả quản lý nhóm thuốc)
     Route::resource('thuoc', ThuocController::class);
+    Route::get('api/thuoc/info', [ThuocController::class, 'getInfo'])->name('api.thuoc.info');
+    Route::get('api/thuoc/{id}/kho', [ThuocController::class, 'getKhoList'])->name('api.thuoc.kho');
     
     // Nhóm thuốc routes - chuyển hướng về trang quản lý thuốc và giữ các tham số tìm kiếm
     Route::get('nhom-thuoc', function(Request $request) {
@@ -85,6 +87,7 @@ Route::middleware('auth')->group(function () {
     // Phiếu nhập routes
     Route::resource('phieu-nhap', PhieuNhapController::class);
     Route::get('phieu-nhap/{id}/ajax', [PhieuNhapController::class, 'getPhieuNhapInfo'])->name('phieu-nhap.ajax');
+    Route::post('phieu-nhap/{id}/complete', [PhieuNhapController::class, 'complete'])->name('phieu-nhap.complete');
     Route::get('phieu-nhap-ton-kho', [PhieuNhapController::class, 'getTonKho'])->name('phieu-nhap.get-ton-kho');
     Route::get('phieu-nhap-lo-thuoc', [PhieuNhapController::class, 'getLoThuoc'])->name('phieu-nhap.get-lo-thuoc');
     Route::get('phieu-nhap-lot-history', [PhieuNhapController::class, 'getLotHistory'])->name('phieu-nhap.get-lot-history');

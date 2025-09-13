@@ -68,7 +68,7 @@ class PhieuNhapController extends Controller
     {
         // Lấy dữ liệu cần thiết
         $nhaCungCaps = NhaCungCap::orderBy('ten_ncc')->get();
-        $thuocs = Thuoc::orderBy('ten_thuoc')->get();
+        $thuocs = Thuoc::orderBy('ten_thuoc')->where('trang_thai', 0)->get();
         $khos = Kho::orderBy('ten_kho')->get();
 
         // Tạo mã phiếu tự động
@@ -149,7 +149,7 @@ class PhieuNhapController extends Controller
             $phieuNhap->vat = $request->vat;
             $phieuNhap->tong_cong = $request->tong_cong;
             $phieuNhap->ghi_chu = $request->ghi_chu;
-            $phieuNhap->trang_thai = 'hoan_tat'; // Mặc định là hoàn thành
+            $phieuNhap->trang_thai = 'cho_xu_ly'; // Mặc định là chờ xử lý
             $phieuNhap->save();
 
             // Lưu chi tiết lô nhập
@@ -241,7 +241,7 @@ class PhieuNhapController extends Controller
      */
     public function show(PhieuNhap $phieuNhap)
     {
-        $phieuNhap->load(['nhaCungCap', 'nguoiDung', 'chiTietLoNhap.loThuoc.thuoc']);
+        $phieuNhap->load(['nhaCungCap', 'nguoiDung', 'chiTietLoNhaps.loThuoc.thuoc']);
         return view('phieu-nhap.show', compact('phieuNhap'));
     }
 
@@ -316,7 +316,7 @@ class PhieuNhapController extends Controller
         if ($getAllLots) {
             // Lấy tất cả các lô có tồn kho > 0
             $tonKho = LoThuoc::with(['thuoc', 'kho'])
-                ->where('ton_kho_hien_tai', '>', 0)
+                ->where('han_su_dung', '>', now()) // Chỉ lấy lô còn hạn sử dụng
                 ->orderBy('han_su_dung', 'asc')
                 ->get();
                 
@@ -342,15 +342,20 @@ class PhieuNhapController extends Controller
                 ], 404);
             }
 
+            // Lấy tất cả các lô có tồn kho > 0 của thuốc trong kho này
             $tonKho = LoThuoc::where('thuoc_id', $thuocId)
                 ->where('kho_id', $khoId)
                 ->where('ton_kho_hien_tai', '>', 0)
                 ->orderBy('han_su_dung', 'asc')
                 ->get();
+
+            // Tính tổng tồn kho của tất cả các lô
+            $tongTonKho = $tonKho->sum('ton_kho_hien_tai');
             
             return response()->json([
                 'tonKho' => $tonKho,
-                'thuoc' => $thuoc
+                'thuoc' => $thuoc,
+                'tongTonKho' => $tongTonKho
             ]);
         }
     }
@@ -419,6 +424,46 @@ class PhieuNhapController extends Controller
                 'success' => false,
                 'message' => 'Không tìm thấy phiếu nhập hoặc có lỗi xảy ra: ' . $e->getMessage()
             ], 404);
+        }
+    }
+
+    /**
+     * Xác nhận hoàn thành phiếu nhập
+     */
+    public function complete($id)
+    {
+        try {
+            $phieuNhap = PhieuNhap::findOrFail($id);
+
+            // Kiểm tra trạng thái hiện tại
+            if ($phieuNhap->trang_thai === 'hoan_tat') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Phiếu nhập này đã được hoàn thành trước đó.'
+                ], 400);
+            }
+
+            if ($phieuNhap->trang_thai === 'huy') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể hoàn thành phiếu nhập đã bị hủy.'
+                ], 400);
+            }
+
+            // Cập nhật trạng thái phiếu nhập
+            $phieuNhap->trang_thai = 'hoan_tat';
+            $phieuNhap->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Phiếu nhập đã được xác nhận hoàn thành thành công.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xác nhận hoàn thành phiếu nhập: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -90,6 +90,18 @@
         overflow-y: auto;
         overflow-x: hidden;
     }
+
+    /* Fix dropdown menu positioning */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .table td {
+        position: relative;
+    }
+    .dropdown-menu {
+        position: absolute;
+        z-index: 1000;
+    }
 </style>
 @endsection
 
@@ -198,8 +210,8 @@
             <div class="card-header bg-light">
                 <h5 class="card-title mb-0">Danh Sách Phiếu Đã Chọn</h5>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
+            <div class="card-body p-0" style="overflow: visible">
+                <div class="table-responsive" style="overflow: visible">
                     <table class="table table-hover table-striped mb-0">
                         <thead class="table-light">
                             <tr>
@@ -359,10 +371,27 @@
                         <td>${formatCurrency(receipt.vat)}</td>
                         <td><strong>${formatCurrency(receipt.tong_cong)}</strong></td>
                         <td><span class="badge status-badge ${trangThaiClass}">${trangThaiText}</span></td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-info view-details-btn" data-id="${receipt.phieu_id}">
-                                <i class="bi bi-eye"></i> Chi tiết
-                            </button>
+                        <td style="overflow: visible !important;">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Hành động
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item view-details-btn" href="javascript:void(0)" data-id="${receipt.phieu_id}">
+                                            <i class="bi bi-eye"></i> Chi tiết
+                                        </a>
+                                    </li>
+                                    ${receipt.trang_thai !== 'hoan_tat' && receipt.trang_thai !== 'huy' ? `
+                                    <li>
+                                        <a class="dropdown-item complete-receipt-btn" href="javascript:void(0)" 
+                                        data-id="${receipt.phieu_id}" data-ma-phieu="${receipt.ma_phieu}">
+                                            <i class="bi bi-check-circle"></i> Xác nhận
+                                        </a>
+                                    </li>
+                                    ` : ''}
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                 `);
@@ -464,6 +493,7 @@
             
             if (chiTietList.length > 0) {
                 chiTietList.forEach((item, index) => {
+                    console.log('Chi Tiet Item:', item); // Debug log
                     const loThuoc = item.loThuoc || item.lo_thuoc;
                     const hanDung = loThuoc?.han_dung ? new Date(loThuoc.han_dung).toLocaleDateString('vi-VN') : 'N/A';
                     const thuoc = loThuoc?.thuoc;
@@ -482,7 +512,7 @@
                             </td>
                             <td>${hanDung}</td>
                             <td>${formatNumber(item.so_luong)}</td>
-                            <td>${formatCurrency(item.don_gia)}</td>
+                            <td>${formatCurrency(item.gia_nhap)}</td>
                             <td>${formatCurrency(item.tien_thue || 0)} (${item.thue_suat || 0}%)</td>
                             <td>${formatCurrency(item.thanh_tien)}</td>
                         </tr>
@@ -589,6 +619,47 @@
                 maximumFractionDigits: 2
             }).format(value || 0);
         }
+
+        // Handle complete receipt button click
+        $(document).on('click', '.complete-receipt-btn', function() {
+            const receiptId = $(this).data('id');
+            const maPhieu = $(this).data('ma-phieu');
+            
+            if (confirm(`Bạn có chắc chắn muốn xác nhận hoàn thành phiếu nhập ${maPhieu}?`)) {
+                // Show loading state
+                const $btn = $(this);
+                const originalHtml = $btn.html();
+                $btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...').prop('disabled', true);
+                
+                // Call API to complete the receipt
+                $.ajax({
+                    url: `/phieu-nhap/${receiptId}/complete`,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success message
+                            alert('Xác nhận hoàn thành phiếu nhập thành công!');
+                            // Reload the page to update the status
+                            window.location.reload();
+                        } else {
+                            // Show error message
+                            alert(response.message || 'Có lỗi xảy ra khi xác nhận hoàn thành phiếu nhập.');
+                            // Reset button state
+                            $btn.html(originalHtml).prop('disabled', false);
+                        }
+                    },
+                    error: function(xhr) {
+                        // Show error message
+                        alert('Có lỗi xảy ra khi xác nhận hoàn thành phiếu nhập.');
+                        // Reset button state
+                        $btn.html(originalHtml).prop('disabled', false);
+                    }
+                });
+            }
+        });
         
         // Month header click handling
         $(document).on('click', '.month-header, .year-header', function() {

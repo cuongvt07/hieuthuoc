@@ -83,6 +83,17 @@
         height: 28px;
         padding: 0;
     }
+
+    #modal_ton_kho_info {
+        min-width: 120px;
+        text-align: center;
+        border-left: 0;
+    }
+
+    #modal_ton_kho_detail {
+        margin-top: 0.25rem;
+        display: block;
+    }
 </style>
 @endsection
 
@@ -312,7 +323,9 @@
                         <select class="form-select" id="modal_thuoc_id" name="modal_thuoc_id">
                             <option value="">-- Chọn thuốc --</option>
                             @foreach($thuocs as $thuoc)
-                            <option value="{{ $thuoc->thuoc_id }}" data-don-vi="{{ $thuoc->don_vi_goc }}">{{ $thuoc->ten_thuoc }}</option>
+                            <option value="{{ $thuoc->thuoc_id }}" 
+                                data-don-vi-goc="{{ $thuoc->don_vi_goc }}"
+                                data-ten-thuoc="{{ $thuoc->ten_thuoc }}">{{ $thuoc->ten_thuoc }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -344,7 +357,7 @@
                             <option value="">-- Chọn lô hiện có --</option>
                             <!-- Các lô sẽ được điền động bằng Ajax -->
                         </select>
-                        <div class="mt-2">
+                        <div class="mt-2" style="display: none;">
                             <div id="selected_lot_info" class="small"></div>
                         </div>
                         <input type="hidden" id="modal_existing_lot_ma_lo" value="">
@@ -364,8 +377,8 @@
                 <div id="new_lot_container">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="modal_so_lo" class="form-label">Số lô</label>
-                            <input type="text" class="form-control" id="modal_so_lo" placeholder="Tự động tạo nếu để trống">
+                            <label for="modal_so_lo" class="form-label required-field">Số lô</label>
+                            <input type="text" class="form-control" id="modal_so_lo" placeholder="Yêu cầu nhập mã lô" required>
                             <small class="text-muted">Nếu để trống, hệ thống sẽ tạo số lô tự động</small>
                         </div>
                         <div class="col-md-6">
@@ -393,11 +406,15 @@
                         <div class="input-group">
                             <input type="number" step="0.01" min="0.01" class="form-control" id="modal_so_luong" name="modal_so_luong">
                             <span class="input-group-text" id="modal_don_vi_display"></span>
+                            <span class="input-group-text bg-light text-secondary" id="modal_ton_kho_info">
+                                <small>Tồn: 0 | Sau: 0</small>
+                            </span>
                         </div>
+                        <small class="text-muted" id="modal_ton_kho_detail"></small>
                     </div>
                     <div class="col-md-6">
                         <label for="modal_don_vi" class="form-label required-field">Đơn vị</label>
-                        <input type="text" class="form-control" id="modal_don_vi" name="modal_don_vi">
+                        <input type="text" class="form-control bg-light" id="modal_don_vi" name="modal_don_vi" readonly>
                     </div>
                 </div>
 
@@ -427,13 +444,6 @@
                     <textarea class="form-control" id="modal_ghi_chu" rows="2"></textarea>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center">
-                    <button type="button" class="btn btn-outline-primary" id="showInventoryBtn">
-                        <i class="bi bi-box me-1"></i> Kiểm Tra Tồn Kho
-                    </button>
-                    <span class="text-danger">* Thông tin bắt buộc</span>
-                </div>
-
                 <div id="inventory-container" class="mt-3" style="display: none;">
                     <div class="lot-info">
                         <h6>Thông Tin Tồn Kho</h6>
@@ -455,9 +465,30 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
+        console.log('Document ready initialized');
         // Biến toàn cục để lưu index của các chi tiết
         let rowIndex = 0;
         let selectedThuocData = null;
+
+        // Xử lý sự kiện khi chọn kho
+        $('#modal_kho_id').on('change', function() {
+            console.log('Kho được chọn thay đổi');
+            const khoId = $(this).val();
+            const thuocId = $('#modal_thuoc_id').val();
+            
+            if (thuocId && khoId) {
+                console.log('Cả thuốc và kho đã được chọn, kiểm tra tồn kho');
+                checkInventory();
+            } else {
+                console.log('Chưa đủ thông tin thuốc và kho để kiểm tra tồn kho');
+                $('#modal_ton_kho_info').html('<small>Tồn: 0 | Sau: 0</small>');
+                $('#modal_ton_kho_detail').text('');
+                currentTotalStock = 0;
+            }
+        });
+
+        // Debug: Kiểm tra sự tồn tại của select thuốc
+        console.log('Select thuốc exists:', $('#modal_thuoc_id').length);
 
         // Format số thành định dạng tiền tệ
         function formatCurrency(value) {
@@ -559,13 +590,86 @@
             $('#tong_cong').val(tongCong);
         }
 
-        // Hiển thị đơn vị khi chọn thuốc
-        $('#modal_thuoc_id').change(function() {
+        // Hàm xử lý khi chọn thuốc
+        function handleThuocChange() {
+            console.log('Thuốc được chọn thay đổi');
             const selectedOption = $(this).find('option:selected');
-            const donVi = selectedOption.data('don-vi') || '';
+            const thuocId = $(this).val();
+            const donViGoc = selectedOption.data('don-vi-goc') || '';
 
-            $('#modal_don_vi').val(donVi);
-            $('#modal_don_vi_display').text(donVi);
+            console.log('Đơn vị gốc của thuốc được chọn:', donViGoc);
+            $('#modal_don_vi').val(donViGoc);
+            $('#modal_don_vi_display').text(donViGoc);
+            
+            // Reset và disable select kho
+            $('#modal_kho_id').prop('disabled', true).html('<option value="">Đang tải...</option>');
+            
+            // Reset thông tin tồn kho khi chọn thuốc mới
+            $('#modal_ton_kho_info').html('<small>Tồn: 0 | Sau: 0</small>');
+            $('#modal_ton_kho_detail').text('');
+            currentTotalStock = 0;
+            
+            if (thuocId) {
+                // Lấy danh sách kho
+                $.get(`{{ route('api.thuoc.kho', ['id' => '_ID_']) }}`.replace('_ID_', thuocId), function(response) {
+                    console.log('Danh sách kho:', response);
+                    let options = '<option value="">-- Chọn kho --</option>';
+                    
+                    if (response.success) {
+                        const allKho = response.data.all_kho;
+                        const existingKho = response.data.existing_kho;
+                        
+                        if (existingKho && existingKho.length > 0) {
+                            // Nếu thuốc đã có trong một số kho, chỉ hiển thị những kho đó
+                            console.log('Thuốc đã có trong các kho:', existingKho);
+                            existingKho.forEach(kho => {
+                                options += `<option value="${kho.kho_id}">${kho.ten_kho} (Đã có lô)</option>`;
+                            });
+                            showToast('Chỉ hiển thị các kho đã có lô của thuốc này', 'info');
+                        } else {
+                            // Nếu thuốc chưa có trong kho nào, hiển thị tất cả các kho
+                            console.log('Thuốc chưa có trong kho nào, hiển thị tất cả kho');
+                            allKho.forEach(kho => {
+                                options += `<option value="${kho.kho_id}">${kho.ten_kho}</option>`;
+                            });
+                            showToast('Thuốc chưa có trong kho nào, bạn có thể chọn bất kỳ kho nào', 'info');
+                        }
+                        
+                        $('#modal_kho_id').prop('disabled', false).html(options);
+                    } else {
+                        $('#modal_kho_id').prop('disabled', true)
+                            .html('<option value="">-- Lỗi tải dữ liệu --</option>');
+                        showToast('Không thể tải danh sách kho', 'error');
+                    }
+                });
+            } else {
+                // Reset select kho khi không chọn thuốc
+                $('#modal_kho_id').prop('disabled', true)
+                    .html('<option value="">-- Chọn thuốc trước --</option>');
+            }
+            
+            // Tự động kiểm tra tồn kho
+            checkInventory();
+        }
+        
+        // Gắn sự kiện change cho select thuốc và kho
+        $('#modal_thuoc_id').off('change').on('change', function() {
+            console.log('Sự kiện change của thuốc được gọi');
+            handleThuocChange.call(this);
+        });
+
+        // Gắn sự kiện change cho select kho
+        $('#modal_kho_id').off('change').on('change', function() {
+            console.log('Sự kiện change của kho được gọi');
+            const khoId = $(this).val();
+            const thuocId = $('#modal_thuoc_id').val();
+
+            console.log('Kho được chọn:', khoId);
+            console.log('Thuốc hiện tại:', thuocId);
+            
+            if (thuocId && khoId) {
+                checkInventory();
+            }
         });
 
         // Khi chọn loại đơn vị, cập nhật hiển thị
@@ -582,12 +686,23 @@
 
         // Kiểm tra tồn kho của thuốc trong kho đã chọn
         function checkInventory() {
-            const thuocId = $('#quick_thuoc_id').val();
-            const khoId = $('#quick_kho_id').val();
+            console.log('Kiểm tra tồn kho được gọi');
+            const thuocId = $('#modal_thuoc_id').val();
+            const khoId = $('#modal_kho_id').val();
+            const donVi = $('#modal_don_vi').val() || '';
+
+            // Reset giá trị tồn kho mặc định
+            currentTotalStock = 0;
+            $('#modal_ton_kho_info').html(`<small>Tồn: 0 | Sau: 0 ${donVi}</small>`);
+            $('#modal_ton_kho_detail').text('');
+            $('#quick-product-total-stock').text(`Tồn: 0 ${donVi}`);
 
             if (!thuocId || !khoId) {
+                console.log('Thiếu thông tin thuốc hoặc kho, không thể kiểm tra tồn kho');
                 return;
             }
+
+            console.log('Đang kiểm tra tồn kho cho thuốc:', thuocId, 'tại kho:', khoId);
 
             // Gọi API để lấy thông tin tồn kho
             $.ajax({
@@ -598,15 +713,68 @@
                     kho_id: khoId
                 },
                 success: function(response) {
+                    console.log('Kết quả API tồn kho:', response);
                     const tonKho = response.tonKho;
                     const thuoc = response.thuoc;
 
                     if (tonKho && tonKho.length > 0) {
-                        let totalStock = 0;
-                        tonKho.forEach(lo => {
-                            totalStock += parseFloat(lo.ton_kho_hien_tai);
+                        // Tính tổng tồn kho một lần duy nhất
+                        const totalStock = tonKho.reduce((sum, item) => sum + parseFloat(item.ton_kho_hien_tai || 0), 0);
+                        
+                        // Tạo container cho danh sách lô với tiêu đề có thể click
+                        const detailContainer = `
+                            <div class="lot-list-container">
+                                <div class="d-flex align-items-center mb-2" id="toggleLotList" style="cursor: pointer;">
+                                    <i class="bi bi-caret-right-fill me-2"></i>
+                                    <span class="fw-bold">Danh sách lô (${tonKho.length})</span>
+                                </div>
+                                <div id="lotListDetail" style="display: none; padding-left: 20px;">
+                                    ${tonKho.map(item => 
+                                        `<div class="lot-item">Lô ${item.ma_lo}: ${item.ton_kho_hien_tai} ${thuoc.don_vi_goc}</div>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        `;
+
+                        // Cập nhật biến toàn cục và giao diện
+                        currentTotalStock = totalStock;
+                        const soLuong = parseFloat($('#modal_so_luong').val()) || 0;
+
+                        console.log('Cập nhật thông tin tồn kho:', {
+                            totalStock,
+                            donViGoc: thuoc.don_vi_goc,
                         });
 
+                        // Cập nhật giao diện
+                        updateStockInfo(soLuong);
+                        $('#modal_ton_kho_detail').html(detailContainer);
+                        
+                        // Thêm sự kiện click để toggle danh sách
+                        $('#toggleLotList').off('click').on('click', function() {
+                            const icon = $(this).find('i.bi');
+                            const lotList = $('#lotListDetail');
+                            
+                            if (lotList.is(':visible')) {
+                                icon.removeClass('bi-caret-down-fill').addClass('bi-caret-right-fill');
+                                lotList.slideUp();
+                            } else {
+                                icon.removeClass('bi-caret-right-fill').addClass('bi-caret-down-fill');
+                                lotList.slideDown();
+                            }
+                        });
+
+                        // Sự kiện toggle chi tiết lô
+                        $('#modal_ton_kho_detail').off('click', '.toggle-lot-detail').on('click', '.toggle-lot-detail', function() {
+                            const idx = $(this).data('lot-index');
+                            const detailDiv = $(this).closest('.lot-summary').find('.lot-detail');
+                            if (detailDiv.is(':visible')) {
+                                detailDiv.slideUp();
+                                $(this).text('Xem chi tiết');
+                            } else {
+                                detailDiv.slideDown();
+                                $(this).text('Thu gọn');
+                            }
+                        });
                         $('#quick-product-total-stock').text(`Tồn: ${totalStock} ${thuoc.don_vi_goc}`).show();
                     } else {
                         $('#quick-product-total-stock').text('Tồn: 0').show();
@@ -618,9 +786,48 @@
             });
         }
 
+        // Xử lý khi chọn thuốc
+        $('#modal_thuoc_id').change(function() {
+
+            console.log('Thuốc được chọn thay đổi');
+            const selectedOption = $(this).find('option:selected');
+            const thuocId = $(this).val();
+            
+            if (thuocId) {
+                const donViGoc = selectedOption.data('don-vi-goc');
+                console.log('Selected thuoc:', {
+                    thuocId: thuocId,
+                    donViGoc: donViGoc
+                });
+
+                if (donViGoc) {
+                    // Tự động điền đơn vị gốc
+                    $('#modal_don_vi').val(donViGoc);
+                    $('#modal_don_vi_display').text(donViGoc);
+                } else {
+                    // Nếu không có đơn vị gốc trong data attribute, gọi API để lấy thông tin
+                    $.get(`{{ route('api.thuoc.info') }}/${thuocId}`, function(response) {
+                        console.log('API response:', response);
+                        if (response && response.don_vi_goc) {
+                            $('#modal_don_vi').val(response.don_vi_goc);
+                            $('#modal_don_vi_display').text(response.don_vi_goc);
+                        }
+                    });
+                }
+            } else {
+                // Reset đơn vị nếu không chọn thuốc
+                $('#modal_don_vi').val('');
+                $('#modal_don_vi_display').text('');
+            }
+            
+            // Tự động kiểm tra tồn kho
+            checkInventory();
+        });
+
         // Hàm tải danh sách lô hiện có của thuốc và kho đã chọn
         function loadExistingLots(thuocId, khoId) {
             // Hiển thị loading
+            console.log('Tải lô hiện có cho thuốc:', thuocId, 'và kho:', khoId);
             $('#modal_existing_lot_id').html('<option value="">Đang tải...</option>');
 
             // Gọi API để lấy thông tin lô hiện có
@@ -632,6 +839,7 @@
                 },
                 success: function(response) {
                     const lots = response.tonKho;
+                    console.log('Lô hiện có:', lots);
                     let options = '<option value="">-- Chọn lô hiện có --</option>';
 
                     if (lots && lots.length > 0) {
@@ -655,7 +863,7 @@
                                 data-kho-ten="${khoTen}"
                                 data-thuoc-id="${lot.thuoc_id}"
                                 data-thuoc-ten="${thuocTen}"
-                                data-don-vi="${donVi}">
+                                data-don-vi-goc="${lot.thuoc ? lot.thuoc.don_vi_goc : donVi}">
                                 ${lotLabel}
                             </option>`;
                         });
@@ -703,12 +911,74 @@
                 // *** QUAN TRỌNG: Điền thông tin từ lô đã chọn vào form ***
                 $('#modal_thuoc_id').val(thuocId);
                 $('#modal_kho_id').val(khoId);
-                $('#modal_don_vi').val(donVi);
-                $('#modal_don_vi_display').text(donVi);
+                // Lấy đơn vị gốc từ option đã chọn hoặc từ lô hiện tại
+                const donViGoc = selectedOption.data('don-vi-goc') || donVi;
+                // Đảm bảo đơn vị luôn được điền
+                $('#modal_don_vi').val(donViGoc);
+                $('#modal_don_vi_display').text(donViGoc);
                 $('#modal_gia_nhap').val(giaNhap);
 
                 // *** Điền hạn sử dụng từ lô hiện có vào trường modal_han_su_dung ***
                 $('#modal_han_su_dung').val(hanSD);
+                
+                // Gọi API để lấy thông tin tồn kho của tất cả các lô của thuốc này trong kho
+                $.ajax({
+                    url: "{{ route('phieu-nhap.get-ton-kho') }}",
+                    type: "GET",
+                    data: {
+                        thuoc_id: thuocId,
+                        kho_id: khoId
+                    },
+                    success: function(response) {
+                        const allLots = response.tonKho;
+                        const thuoc = response.thuoc;
+                        
+                        // Tính tổng tồn kho từ tất cả các lô
+                        currentTotalStock = allLots.reduce((sum, item) => sum + parseFloat(item.ton_kho_hien_tai || 0), 0);
+                        const soLuong = parseFloat($('#modal_so_luong').val()) || 0;
+                        
+                        // Cập nhật thông tin tồn tổng
+                        updateStockInfo(soLuong);
+
+                        // Tạo container cho danh sách lô với tiêu đề có thể click
+                        const detailContainer = `
+                            <div class="lot-list-container">
+                                <div class="d-flex align-items-center mb-2" id="toggleLotList" style="cursor: pointer;">
+                                    <i class="bi bi-caret-right-fill me-2"></i>
+                                    <span class="fw-bold">Danh sách lô (${allLots.length})</span>
+                                </div>
+                                <div id="lotListDetail" style="display: none; padding-left: 20px;">
+                                    ${allLots.map(item => 
+                                        `<div class="lot-item">Lô ${item.ma_lo}: ${item.ton_kho_hien_tai} ${thuoc.don_vi_goc}</div>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        `;
+
+                        // Cập nhật giao diện
+                        $('#modal_ton_kho_detail').html(detailContainer);
+                        
+                        // Thêm sự kiện click để toggle danh sách
+                        $('#toggleLotList').off('click').on('click', function() {
+                            const icon = $(this).find('i.bi');
+                            const lotList = $('#lotListDetail');
+                            
+                            if (lotList.is(':visible')) {
+                                icon.removeClass('bi-caret-down-fill').addClass('bi-caret-right-fill');
+                                lotList.slideUp();
+                            } else {
+                                icon.removeClass('bi-caret-right-fill').addClass('bi-caret-down-fill');
+                                lotList.slideDown();
+                            }
+                        });
+                    },
+                    error: function() {
+                        currentTotalStock = parseFloat(tonKho);
+                        const soLuong = parseFloat($('#modal_so_luong').val()) || 0;
+                        updateStockInfo(soLuong);
+                        $('#modal_ton_kho_detail').html(`Lô ${maLo}: ${tonKho} ${donVi}`);
+                    }
+                });
 
                 // Hiển thị thông tin lô đã chọn
                 let infoHTML = `
@@ -733,6 +1003,7 @@
                         lo_id: selectedOption.val()
                     },
                     success: function(response) {
+                        console.log('Lịch sử lô:', response);
                         if (response.history && response.history.length > 0) {
                             let historyHTML = `
                             <div class="mt-3 p-2 border-start border-warning border-3">
@@ -816,6 +1087,14 @@
                 // Reset hạn sử dụng và giá nhập
                 $('#modal_han_su_dung').val('');
                 $('#modal_gia_nhap').val('');
+                // Reset thông tin tồn kho
+                $('#modal_ton_kho_info').html('<small>Tồn: 0 | Sau: 0</small>');
+                $('#modal_ton_kho_detail').text('');
+                currentTotalStock = 0;
+                // Cho phép checkInventory khi chọn thuốc và kho
+                $('#modal_thuoc_id, #modal_kho_id').off('change').on('change', function() {
+                    checkInventory();
+                });
             } else {
                 $('#new_lot_container').hide();
                 $('#existing_lot_container').show();
@@ -825,10 +1104,24 @@
                     $('#modal_kho_id').prop('disabled', true);
                     $('#modal_han_su_dung').prop('disabled', true);
                 }
+                // Tắt sự kiện checkInventory khi chọn thuốc và kho
+                $('#modal_thuoc_id, #modal_kho_id').off('change');
             }
         });
 
-        // Tính tiền khi thay đổi số lượng hoặc giá
+        let currentTotalStock = 0; // Biến lưu tổng tồn kho hiện tại
+        
+        // Hàm cập nhật thông tin tồn kho
+        function updateStockInfo(soLuong) {
+            const afterStock = currentTotalStock + soLuong;
+            const donVi = $('#modal_don_vi').val() || '';
+            console.log(`Cập nhật tồn kho: Tồn hiện tại = ${currentTotalStock}, Nhập thêm = ${soLuong}, Tồn sau = ${afterStock} ${donVi}`);
+            $('#modal_ton_kho_info').html(
+                `<small>Tồn: ${currentTotalStock} | Sau: ${afterStock} ${donVi}</small>`
+            );
+        }
+
+        // Tính tiền và cập nhật thông tin tồn kho khi thay đổi số lượng hoặc giá
         $('#modal_so_luong, #modal_gia_nhap, #modal_thue_suat').on('input', function() {
             const soLuong = parseFloat($('#modal_so_luong').val()) || 0;
             const giaNhap = parseFloat($('#modal_gia_nhap').val()) || 0;
@@ -840,13 +1133,63 @@
 
             $('#modal_tien_thue').val(tienThue);
             $('#modal_thanh_tien').val(thanhTien.toFixed(0));
+
+            // Cập nhật thông tin tồn kho khi thay đổi số lượng
+            if ($(this).attr('id') === 'modal_so_luong') {
+                updateStockInfo(soLuong);
+            }
         });
 
         // Mở modal thêm thuốc
         $('#addItemBtn').click(function() {
+            console.log('Opening add item modal');
+            
             // Reset form
             $('#modal_thuoc_id').val('').prop('disabled', false);
-            $('#modal_kho_id').val('').prop('disabled', false);
+            $('#modal_kho_id').val('').prop('disabled', true)
+                .html('<option value="">-- Chọn thuốc trước --</option>');
+            
+            $('#modal_so_lo').val('');
+            $('#modal_so_lo_nha_san_xuat').val('');
+            $('#modal_ngay_san_xuat').val('');
+            $('#modal_han_su_dung').val('').prop('disabled', false);
+            $('#modal_so_luong').val('');
+            $('#modal_don_vi').val('');
+            $('#modal_gia_nhap').val('');
+            $('#modal_thue_suat').val('10');
+            $('#modal_thanh_tien').val('');
+            $('#modal_ghi_chu').val('');
+            $('#modal_don_vi_display').text('');
+
+            // Reset các trường cho lô hiện có
+            $('#modal_existing_lot_id').html('<option value="">-- Chọn lô hiện có --</option>');
+            $('#selected_lot_info').html('');
+            $('#modal_existing_lot_ma_lo').val('');
+            $('#modal_existing_lot_so_lo_nsx').val('');
+            $('#modal_existing_lot_ngay_sx').val('');
+            $('#modal_existing_lot_han_sd').val('');
+            $('#modal_existing_lot_ghi_chu').val('');
+            $('#modal_existing_lot_kho_id').val('');
+            $('#modal_existing_lot_kho_text').val('');
+            $('#modal_existing_lot_thuoc_id').val('');
+            $('#modal_existing_lot_thuoc_text').val('');
+            $('#modal_existing_lot_don_vi').val('');
+
+            // Mặc định chọn lô mới
+            $('#new_lot').prop('checked', true);
+            $('#new_lot_container').show();
+            $('#existing_lot_container').hide();
+
+            // Reset thông tin tồn kho
+            $('#modal_ton_kho_info').html('<small>Tồn: 0 | Sau: 0</small>');
+            $('#modal_ton_kho_detail').text('');
+            currentTotalStock = 0;
+
+            // Ẩn thông tin tồn kho
+            $('#inventory-container').hide();
+
+            // Hiển thị modal
+            $('#addItemModal').modal('show');
             $('#modal_so_lo').val('');
             $('#modal_so_lo_nha_san_xuat').val('');
             $('#modal_ngay_san_xuat').val('');
@@ -878,8 +1221,15 @@
             $('#new_lot_container').show();
             $('#existing_lot_container').hide();
 
+            // Reset thông tin tồn kho
+            $('#modal_ton_kho_info').html('<small>Tồn: 0 | Sau: 0</small>');
+            $('#modal_ton_kho_detail').text('');
+            currentTotalStock = 0;
+
             // Ẩn thông tin tồn kho
             $('#inventory-container').hide();
+
+            // Event handler already set in document.ready
 
             // Tải danh sách lô hiện có (để sẵn sàng khi người dùng chọn tab lô hiện có)
             loadExistingLots();
@@ -993,12 +1343,14 @@
             if (isNewLot) {
                 // Lô mới - lấy thông tin từ các trường nhập
                 thuocId = $('#modal_thuoc_id').val();
-                thuocText = $('#modal_thuoc_id option:selected').text();
+                const selectedThuocOption = $('#modal_thuoc_id option:selected');
+                thuocText = selectedThuocOption.text();
                 khoId = $('#modal_kho_id').val();
                 khoText = $('#modal_kho_id option:selected').text();
-                donVi = $('#modal_don_vi').val();
+                // Lấy đơn vị gốc từ data attribute của option đã chọn
+                donVi = selectedThuocOption.data('don-vi-goc') || $('#modal_don_vi').val();
                 giaNhap = $('#modal_gia_nhap').val();
-                thueSuat = $('#modal_thue_suat').val();
+                thueSuat = $('#modal_thue_suat').val() || '0';
 
                 loId = '';
                 soLo = $('#modal_so_lo').val();
@@ -1026,12 +1378,15 @@
                     return;
                 }
 
+                console.log('Selected existing lot:', selectedLot);
+
                 loId = selectedLot;
                 thuocId = $('#modal_existing_lot_thuoc_id').val();
                 thuocText = $('#modal_existing_lot_thuoc_text').val();
                 khoId = $('#modal_existing_lot_kho_id').val();
                 khoText = $('#modal_existing_lot_kho_text').val();
-                donVi = $('#modal_existing_lot_don_vi').val();
+                // Lấy đơn vị gốc từ thuốc đã chọn
+                donVi = $('#modal_thuoc_id option:selected').data('don-vi-goc') || '';
                 soLo = $('#modal_existing_lot_ma_lo').val();
                 soLoNSX = $('#modal_existing_lot_so_lo_nsx').val();
                 ngaySX = $('#modal_existing_lot_ngay_sx').val();
@@ -1041,7 +1396,14 @@
                 // *** QUAN TRỌNG: Lấy giá nhập và thuế suất từ form modal ***
                 // Đối với lô hiện có, cho phép người dùng thay đổi giá nhập và thuế suất
                 giaNhap = $('#modal_gia_nhap').val();
-                thueSuat = $('#modal_thue_suat').val();
+                thueSuat = $('#modal_thue_suat').val() || '0';
+
+                console.log('Existing lot values:', {
+                    giaNhap,
+                    thueSuat,
+                    donVi,
+                    soLuong
+                });
 
                 // Nếu không có giá nhập được nhập, báo lỗi
                 if (!giaNhap) {
@@ -1050,9 +1412,38 @@
                 }
             }
 
+            // Đảm bảo lấy đơn vị gốc từ thuốc đã chọn cho cả 2 trường hợp
+            const selectedThuocOption = $('#modal_thuoc_id option:selected');
+            donVi = selectedThuocOption.data('don-vi-goc');
+            
             // Validate các trường bắt buộc chung
-            if (!thuocId || !khoId || !soLuong || !donVi || !giaNhap) {
-                showToast('Vui lòng điền đầy đủ các thông tin bắt buộc', 'warning');
+            console.log('Validating required fields:', {
+                thuocId,
+                khoId,
+                soLuong,
+                donVi,
+                giaNhap,
+                isNewLot
+            });
+
+            if (!thuocId) {
+                showToast('Vui lòng chọn thuốc', 'warning');
+                return;
+            }
+            if (!khoId) {
+                showToast('Vui lòng chọn kho', 'warning');
+                return;
+            }
+            if (!soLuong || soLuong <= 0) {
+                showToast('Vui lòng nhập số lượng hợp lệ', 'warning');
+                return;
+            }
+            if (!giaNhap || giaNhap <= 0) {
+                showToast('Vui lòng nhập giá nhập hợp lệ', 'warning');
+                return;
+            }
+            if (!donVi) {
+                showToast('Không lấy được đơn vị gốc của thuốc. Vui lòng chọn lại thuốc', 'warning');
                 return;
             }
 
@@ -1402,8 +1793,9 @@
             calculateTotals();
         });
 
-        // Kiểm tra trước khi submit form
+        // Xử lý submit form bình thường
         $('#createPhieuNhapForm').submit(function(e) {
+            // Kiểm tra có thuốc nào được thêm chưa
             if ($('.detail-row').length === 0) {
                 e.preventDefault();
                 showToast('Vui lòng thêm ít nhất một thuốc vào phiếu nhập', 'warning');
@@ -1414,6 +1806,7 @@
             $('#submitBtn').html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Đang xử lý...');
             $('#submitBtn').prop('disabled', true);
 
+            // Form sẽ được submit bình thường
             return true;
         });
     });
