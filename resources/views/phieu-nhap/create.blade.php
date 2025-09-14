@@ -622,9 +622,18 @@
                         if (existingKho && existingKho.length > 0) {
                             // Nếu thuốc đã có trong một số kho, chỉ hiển thị những kho đó
                             console.log('Thuốc đã có trong các kho:', existingKho);
-                            existingKho.forEach(kho => {
-                                options += `<option value="${kho.kho_id}">${kho.ten_kho} (Đã có lô)</option>`;
-                            });
+                            if (existingKho.length === 1) {
+                                const kho = existingKho[0];
+                                options += `<option value="${kho.kho_id}" selected>${kho.ten_kho} (Đã có lô)</option>`;
+                                // Chọn luôn kho này
+                                setTimeout(() => {
+                                    $('#modal_kho_id').val(kho.kho_id).trigger('change');
+                                }, 100);
+                            } else {
+                                existingKho.forEach(kho => {
+                                    options += `<option value="${kho.kho_id}">${kho.ten_kho} (Đã có lô)</option>`;
+                                });
+                            }
                             showToast('Chỉ hiển thị các kho đã có lô của thuốc này', 'info');
                         } else {
                             // Nếu thuốc chưa có trong kho nào, hiển thị tất cả các kho
@@ -994,66 +1003,6 @@
                     ${ghiChu ? '<div><strong>Ghi chú:</strong> ' + ghiChu + '</div>' : ''}
                 </div>
             `;
-
-                // Lấy lịch sử nhập của lô này
-                $.ajax({
-                    url: "{{ route('phieu-nhap.get-lot-history') }}",
-                    type: "GET",
-                    data: {
-                        lo_id: selectedOption.val()
-                    },
-                    success: function(response) {
-                        console.log('Lịch sử lô:', response);
-                        if (response.history && response.history.length > 0) {
-                            let historyHTML = `
-                            <div class="mt-3 p-2 border-start border-warning border-3">
-                                <div class="fw-bold mb-2">Lịch sử nhập của lô:</div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Phiếu nhập</th>
-                                                <th>Ngày nhập</th>
-                                                <th>SL nhập</th>
-                                                <th>Giá nhập</th>
-                                                <th>Thuế</th>
-                                                <th>Thành tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                            `;
-
-                            $.each(response.history, function(index, item) {
-                                historyHTML += `
-                                    <tr>
-                                        <td>${item.phieu_nhap.ma_phieu}</td>
-                                        <td>${formatDate(item.phieu_nhap.ngay_nhap)}</td>
-                                        <td>${item.so_luong} ${item.don_vi}</td>
-                                        <td>${formatCurrency(item.gia_nhap)}</td>
-                                        <td>${item.thue_suat}%</td>
-                                        <td>${formatCurrency(item.thanh_tien)}</td>
-                                    </tr>
-                                `;
-                            });
-
-                            historyHTML += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            `;
-
-                            infoHTML += historyHTML;
-                        }
-
-                        // Hiển thị thông tin
-                        $('#selected_lot_info').html(infoHTML);
-                    },
-                    error: function() {
-                        // Vẫn hiển thị thông tin cơ bản nếu không lấy được lịch sử
-                        $('#selected_lot_info').html(infoHTML);
-                    }
-                });
 
                 // Vô hiệu hóa trường thuốc, kho và hạn sử dụng vì đã được điền từ lô hiện có
                 $('#modal_thuoc_id').prop('disabled', true);

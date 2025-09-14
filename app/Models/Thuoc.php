@@ -12,6 +12,7 @@ class Thuoc extends Model
     
     protected $fillable = [
         'nhom_id',
+        'kho_id',
         'ma_thuoc',
         'ten_thuoc',
         'mo_ta',
@@ -43,6 +44,14 @@ class Thuoc extends Model
     public function loThuoc()
     {
         return $this->hasMany(LoThuoc::class, 'thuoc_id', 'thuoc_id');
+    }
+
+    /**
+     * Get the kho that this thuốc belongs to
+     */
+    public function kho()
+    {
+        return $this->belongsTo(Kho::class, 'kho_id', 'kho_id');
     }
 
     /**

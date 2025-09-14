@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ThuocRequest;
+use App\Models\Kho;
 use App\Models\NhomThuoc;
 use App\Models\Thuoc;
 use Illuminate\Http\Request;
@@ -38,8 +39,8 @@ class ThuocController extends Controller
 
         // Lấy danh sách kho đã có lô của thuốc này
         $existingKho = \DB::table('lo_thuoc')
+            ->where('thuoc_id', $id)
             ->join('kho', 'lo_thuoc.kho_id', '=', 'kho.kho_id')
-            ->where('lo_thuoc.thuoc_id', $id)
             ->select('kho.kho_id', 'kho.ten_kho')
             ->distinct()
             ->get();
@@ -58,7 +59,7 @@ class ThuocController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Thuoc::with('nhomThuoc');
+        $query = Thuoc::with(['nhomThuoc', 'kho']);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -74,9 +75,16 @@ class ThuocController extends Controller
             $query->where('nhom_id', $request->nhom_id);
         }
 
+        if ($request->has('kho_id') && $request->kho_id != '') {
+            $query->where('kho_id', $request->kho_id);
+        }
+
         $thuoc = $query->paginate(10);
         
         $nhomQuery = NhomThuoc::query();
+        $kho = Kho::all();
+
+        $khoQuery = Kho::query();
         
         if ($request->has('search_nhom')) {
             $search = $request->search_nhom;
@@ -85,6 +93,7 @@ class ThuocController extends Controller
                     $q->where('ma_nhom', 'like', "%{$search}%")
                       ->orWhere('ten_nhom', 'like', "%{$search}%");
                 });
+                
             }
         }
         
@@ -105,7 +114,7 @@ class ThuocController extends Controller
             }
         }
 
-        return view('thuoc.index', compact('thuoc', 'nhomThuoc'));
+        return view('thuoc.index', compact('thuoc', 'nhomThuoc', 'kho'));
     }
 
     /**
@@ -113,8 +122,11 @@ class ThuocController extends Controller
      */
     public function store(ThuocRequest $request)
     {
-        $thuoc = Thuoc::create($request->validated());
-        $thuoc->load('nhomThuoc');
+        $validated = $request->validated();
+        $validated['kho_id'] = $request->input('kho_id'); // Include kho_id
+
+        $thuoc = Thuoc::create($validated);
+        $thuoc->load('nhomThuoc', 'kho');
 
         if ($request->ajax()) {
             return response()->json([
@@ -144,9 +156,12 @@ class ThuocController extends Controller
      */
     public function update(ThuocRequest $request, Thuoc $thuoc)
     {
-        $thuoc->update($request->validated());
-        $thuoc->load('nhomThuoc'); // Load relationship để trả về đầy đủ thông tin
-        
+        $validated = $request->validated();
+        $validated['kho_id'] = $request->input('kho_id'); // Include kho_id
+
+        $thuoc->update($validated);
+        $thuoc->load('nhomThuoc', 'kho');
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -154,7 +169,7 @@ class ThuocController extends Controller
                 'message' => 'Thuốc đã được cập nhật thành công.'
             ]);
         }
-        
+
         return redirect()->route('thuoc.index')
             ->with('success', 'Thuốc đã được cập nhật thành công.');
     }
@@ -187,5 +202,20 @@ class ThuocController extends Controller
         $thuoc->trang_thai = $request->input('trang_thai', 0);
         $thuoc->save();
         return response()->json(['message' => $thuoc->trang_thai == 1 ? 'Thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ thuốc.']);
+    }
+
+    /**
+     * Get lot details for a specific medicine
+     */
+    public function getLots(Thuoc $thuoc): JsonResponse
+    {
+        $lots = $thuoc->loThuoc()
+            ->with(['kho', 'lichSuTonKho'])
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $lots
+        ]);
     }
 }

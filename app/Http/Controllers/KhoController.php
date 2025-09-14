@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kho;
 use App\Models\LoThuoc;
+use App\Models\Thuoc;
 use Illuminate\Http\Request;
 
 class KhoController extends Controller
@@ -13,7 +14,14 @@ class KhoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Kho::query();
+        $query = Kho::withSum(['loThuoc as total_items' => function($query) {
+            $query->where('ton_kho_hien_tai', '>', 0);
+        }], 'ton_kho_hien_tai')
+        ->withCount(['thuoc as total_medicines' => function($query) {
+            $query->whereHas('loThuoc', function($q) {
+                $q->where('ton_kho_hien_tai', '>', 0);
+            })->distinct();
+        }]);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -23,17 +31,13 @@ class KhoController extends Controller
             });
         }
 
-        $khos = $query->orderBy('ten_kho')->get();
+        $khos = $query->orderBy('ten_kho')->paginate(10);
 
         if ($request->ajax()) {
             return response()->json([
                 'khos' => $khos,
+                'links' => $khos->links()->toHtml()
             ]);
-        }
-
-        // Lấy tổng số thuốc trong kho
-        foreach ($khos as $kho) {
-            $kho->total_items = LoThuoc::where('kho_id', $kho->kho_id)->sum('ton_kho_hien_tai');
         }
 
         return view('kho.index', compact('khos'));
@@ -69,18 +73,62 @@ class KhoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Kho $kho)
+    public function show(Request $request, Kho $kho)
     {
-        $loThuoc = LoThuoc::with('thuoc')
-                ->where('kho_id', $kho->kho_id)
-                ->where('ton_kho_hien_tai', '>', 0)
-                ->orderBy('han_su_dung')
-                ->get();
+        if ($request->has('thuoc_id')) {
+            // Xem tồn kho của một thuốc trong tất cả các kho
+            $thuoc = Thuoc::with(['loThuoc' => function($query) {
+                $query->where('ton_kho_hien_tai', '>', 0)
+                      ->with('kho');
+            }])->findOrFail($request->thuoc_id);
 
-        return response()->json([
-            'kho' => $kho,
-            'loThuoc' => $loThuoc
-        ]);
+            // Tính tổng tồn kho theo từng kho
+            $tonKhoTheoKho = LoThuoc::where('thuoc_id', $request->thuoc_id)
+                ->where('ton_kho_hien_tai', '>', 0)
+                ->select('kho_id')
+                ->selectRaw('SUM(ton_kho_hien_tai) as tong_ton_kho')
+                ->with('kho:kho_id,ten_kho')
+                ->groupBy('kho_id')
+                ->get();
+            
+            return response()->json([
+                'thuoc' => $thuoc,
+                'tonKhoTheoKho' => $tonKhoTheoKho,
+                'loThuoc' => $thuoc->loThuoc
+            ]);
+        } else {
+            // Xem danh sách thuốc trong kho
+            $thuocs = Thuoc::with(['loThuoc' => function($query) use ($kho) {
+                $query->where('kho_id', $kho->kho_id)
+                      ->where('ton_kho_hien_tai', '>', 0)
+                      ->select('lo_id', 'thuoc_id', 'kho_id', 'ton_kho_hien_tai', 'ngay_san_xuat', 'han_su_dung');
+            }])
+            ->whereHas('loThuoc', function($query) use ($kho) {
+                $query->where('kho_id', $kho->kho_id)
+                      ->where('ton_kho_hien_tai', '>', 0);
+            })
+            ->select('thuoc_id', 'ma_thuoc', 'ten_thuoc', 'don_vi_goc', 'nhom_id')
+            ->with('nhomThuoc:nhom_id,ten_nhom')
+            ->withSum(['loThuoc' => function($query) use ($kho) {
+                $query->where('kho_id', $kho->kho_id)
+                      ->where('ton_kho_hien_tai', '>', 0);
+            }], 'ton_kho_hien_tai')
+            ->paginate(10);
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'kho' => $kho,
+                    'thuocs' => $thuocs,
+                    'links' => $thuocs->links()->toHtml()
+                ]);
+            }
+            
+            return response()->json([
+                'kho' => $kho,
+                'thuocs' => $thuocs,
+                'links' => $thuocs->links()->toHtml()
+            ]);
+        }
     }
 
     /**

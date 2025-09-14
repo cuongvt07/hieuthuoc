@@ -6,6 +6,63 @@
 
 @section('content')
 <div class="row">
+    <!-- Tổng số thuốc -->
+    <div class="col-md-4 mb-4">
+        <div class="card border-left-primary h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Tổng số thuốc</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ \App\Models\Thuoc::count() }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-capsule fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tổng số khách hàng -->
+    <div class="col-md-4 mb-4">
+        <div class="card border-left-success h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Tổng số khách hàng</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ \App\Models\KhachHang::count() }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tổng số nhà cung cấp -->
+    <div class="col-md-4 mb-4">
+        <div class="card border-left-info h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Tổng số nhà cung cấp</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ \App\Models\NhaCungCap::count() }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top khách hàng mua nhiều nhất -->
     <div class="col-md-6 mb-4">
         <div class="card border-left-primary h-100 py-2">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -78,6 +135,8 @@
             </div>
         </div>
     </div>
+
+    <!-- Tổng nhập hàng -->
     <div class="col-md-6 mb-4">
         <div class="card border-left-success h-100 py-2">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -111,59 +170,10 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-4">
-        <div class="card border-left-primary h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Tổng số thuốc</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ \App\Models\Thuoc::count() }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-capsule fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card border-left-success h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Tổng số khách hàng</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ \App\Models\KhachHang::count() }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-people fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card border-left-info h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Tổng số nhà cung cấp</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ \App\Models\NhaCungCap::count() }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-building fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row">
+    <!-- Doanh số bán -->
     <div class="col-md-6 mb-4">
         <div class="card border-left-warning h-100 py-2">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -200,7 +210,7 @@
 </div>
 
 <div class="row">
-
+    <!-- Top sản phẩm bán chạy / bán ế -->
     <div class="col-md-6 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -242,29 +252,35 @@
                     $month = request('product_month', now()->month);
                     $year = request('product_year', now()->year);
                     $top = request('product_top', 3);
-                    $startDate = now()->setDate($year, $month, 1)->startOfMonth()->format('Y-m-d');
-                    $endDate = now()->setDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
+
+                    $startDate = now()->setDate($year, $month, 1)->startOfMonth()->toDateString();
+                    $endDate = now()->setDate($year, $month, 1)->endOfMonth()->toDateString();
+
+                    // Top bán chạy
                     $topSelling = \App\Models\ChiTietDonBanLe::select('lo_thuoc.thuoc_id', \DB::raw('SUM(so_luong) as total_sold'))
                         ->whereHas('donBanLe', function($q) use ($startDate, $endDate) {
-                            $q->whereDate('ngay_ban', '>=', $startDate)
-                              ->whereDate('ngay_ban', '<=', $endDate);
+                            $q->whereBetween('ngay_ban', [$startDate, $endDate]);
                         })
                         ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
                         ->groupBy('lo_thuoc.thuoc_id')
                         ->orderByDesc('total_sold')
                         ->take($top)
+                        ->with('loThuoc.thuoc') // eager load để lấy thông tin thuốc
                         ->get();
+
+                    // Top bán ế
                     $leastSelling = \App\Models\ChiTietDonBanLe::select('lo_thuoc.thuoc_id', \DB::raw('SUM(so_luong) as total_sold'))
                         ->whereHas('donBanLe', function($q) use ($startDate, $endDate) {
-                            $q->whereDate('ngay_ban', '>=', $startDate)
-                              ->whereDate('ngay_ban', '<=', $endDate);
+                            $q->whereBetween('ngay_ban', [$startDate, $endDate]);
                         })
                         ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
                         ->groupBy('lo_thuoc.thuoc_id')
                         ->orderBy('total_sold', 'asc')
                         ->take($top)
+                        ->with('loThuoc.thuoc')
                         ->get();
                 @endphp
+
                 <div class="row">
                     <div class="col-md-6">
                         <h6 class="text-success">Bán chạy nhất</h6>
@@ -316,22 +332,63 @@
     <div class="col-md-6 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold">Thuốc sắp hết hàng</h6>
+                <h6 class="m-0 font-weight-bold">Cảnh báo tồn kho & hạn dùng</h6>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     @php
-                        // Lấy tổng số lượng tồn kho theo từng loại thuốc
-                        $lowStock = \App\Models\LoThuoc::with('thuoc')
-                            ->select('thuoc_id', 
-                                \DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
-                                \DB::raw('MIN(han_su_dung) as earliest_expiry'))
-                            ->whereDate('han_su_dung', '>=', now())
-                            ->where('ton_kho_hien_tai', '>', 0)
-                            ->groupBy('thuoc_id')
-                            ->having('total_stock', '<=', 10)
-                            ->get();
+                    use Illuminate\Support\Facades\DB;
+                    use App\Models\LoThuoc;
+
+                    $today = now()->toDateString();
+                    $next30days = now()->addDays(30)->toDateString();
+
+                    // Thuốc sắp hết hàng
+                    $lowStock = LoThuoc::with('thuoc')
+                        ->select('thuoc_id',
+                            DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
+                            DB::raw('MIN(han_su_dung) as earliest_expiry'))
+                        ->where('ton_kho_hien_tai', '>', 0)
+                        ->groupBy('thuoc_id')
+                        ->having('total_stock', '<=', 10)
+                        ->get()
+                        ->map(function($item) {
+                            $item->status = $item->total_stock <= 5 ? 'critical_stock' : 'low_stock';
+                            return $item;
+                        });
+
+                    // Thuốc sắp hết hạn (≤ 30 ngày nữa)
+                    $nearlyExpired = LoThuoc::with('thuoc')
+                        ->select('thuoc_id',
+                            DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
+                            DB::raw('MIN(han_su_dung) as earliest_expiry'))
+                        ->where('ton_kho_hien_tai', '>', 0)
+                        ->whereBetween('han_su_dung', [$today, $next30days])
+                        ->groupBy('thuoc_id')
+                        ->get()
+                        ->map(function($item) {
+                            $item->status = 'nearly_expired';
+                            return $item;
+                        });
+
+                    // Thuốc đã hết hạn
+                    $expired = LoThuoc::with('thuoc')
+                        ->select('thuoc_id',
+                            DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
+                            DB::raw('MIN(han_su_dung) as earliest_expiry'))
+                        ->where('ton_kho_hien_tai', '>', 0)
+                        ->whereDate('han_su_dung', '<', $today)
+                        ->groupBy('thuoc_id')
+                        ->get()
+                        ->map(function($item) {
+                            $item->status = 'expired';
+                            return $item;
+                        });
+
+                    // Gộp tất cả
+                    $alerts = $lowStock->merge($nearlyExpired)->merge($expired);
                     @endphp
+
                     <table class="table table-sm">
                         <thead>
                             <tr>
@@ -342,23 +399,39 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($lowStock as $item)
-                            <tr class="{{ $item->total_stock <= 5 ? 'table-danger' : 'table-warning' }}">
-                                <td>{{ $item->thuoc->ten_thuoc }}</td>
-                                <td>{{ $item->total_stock }}</td>
-                                <td>{{ date('d/m/Y', strtotime($item->earliest_expiry)) }}</td>
-                                <td>
-                                    @if($item->total_stock <= 5)
-                                        <span class="badge bg-danger">Cần nhập thêm gấp</span>
-                                    @else
-                                        <span class="badge bg-warning text-dark">Sắp hết hàng</span>
-                                    @endif
-                                </td>
-                            </tr>
+                            @forelse($alerts as $item)
+                                @php
+                                    $rowClass = '';
+                                    $badge = '';
+                                    switch ($item->status) {
+                                        case 'critical_stock':
+                                            $rowClass = 'table-danger';
+                                            $badge = '<span class="badge bg-danger">Cần nhập thêm gấp</span>';
+                                            break;
+                                        case 'low_stock':
+                                            $rowClass = 'table-warning';
+                                            $badge = '<span class="badge bg-warning text-dark">Sắp hết hàng</span>';
+                                            break;
+                                        case 'nearly_expired':
+                                            $rowClass = 'table-info';
+                                            $badge = '<span class="badge bg-info text-dark">Sắp hết hạn</span>';
+                                            break;
+                                        case 'expired':
+                                            $rowClass = 'table-secondary';
+                                            $badge = '<span class="badge bg-secondary">Đã hết hạn</span>';
+                                            break;
+                                    }
+                                @endphp
+                                <tr class="{{ $rowClass }}">
+                                    <td>{{ $item->thuoc->ten_thuoc ?? 'Không rõ' }}</td>
+                                    <td>{{ $item->total_stock }} {{ $item->thuoc->don_vi_goc ?? '' }}</td>
+                                    <td>{{ $item->earliest_expiry ? date('d/m/Y', strtotime($item->earliest_expiry)) : '---' }}</td>
+                                    <td>{!! $badge !!}</td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="4" class="text-center">Không có thuốc sắp hết hàng</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="4" class="text-center">Không có cảnh báo nào</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LichSuTonKho;
 use App\Models\LoThuoc;
 use App\Models\NhaCungCap;
 use App\Models\PhieuNhap;
@@ -252,7 +253,7 @@ class PhieuNhapController extends Controller
     public function edit(PhieuNhap $phieuNhap)
     {
         // Chỉ cho phép sửa phiếu nhập trong trạng thái nháp
-        if ($phieuNhap->trang_thai !== 'nháp') {
+        if ($phieuNhap->trang_thai !== 'cho_xu_ly') {
             return redirect()->route('phieu-nhap.show', $phieuNhap->phieu_id)
                 ->with('error', 'Không thể chỉnh sửa phiếu nhập đã hoàn thành.');
         }
@@ -266,8 +267,8 @@ class PhieuNhapController extends Controller
      */
     public function update(Request $request, PhieuNhap $phieuNhap)
     {
-        // Chỉ cho phép sửa phiếu nhập trong trạng thái nháp
-        if ($phieuNhap->trang_thai !== 'nháp') {
+        // Chỉ cho phép sửa phiếu nhập trong trạng thái chờ xử lý
+        if ($phieuNhap->trang_thai !== 'cho_xu_ly') {
             return redirect()->route('phieu-nhap.show', $phieuNhap->phieu_id)
                 ->with('error', 'Không thể chỉnh sửa phiếu nhập đã hoàn thành.');
         }
@@ -346,6 +347,7 @@ class PhieuNhapController extends Controller
             $tonKho = LoThuoc::where('thuoc_id', $thuocId)
                 ->where('kho_id', $khoId)
                 ->where('ton_kho_hien_tai', '>', 0)
+                ->where('han_su_dung', '>', now())
                 ->orderBy('han_su_dung', 'asc')
                 ->get();
 
@@ -358,31 +360,6 @@ class PhieuNhapController extends Controller
                 'tongTonKho' => $tongTonKho
             ]);
         }
-    }
-
-    /**
-     * API để lấy lịch sử nhập của một lô
-     */
-    public function getLotHistory(Request $request)
-    {
-        $loId = $request->lo_id;
-        
-        if (!$loId) {
-            return response()->json([
-                'error' => 'Thiếu thông tin lô'
-            ], 400);
-        }
-        
-        // Lấy lịch sử nhập của lô
-        $history = ChiTietLoNhap::with(['phieuNhap' => function($query) {
-            $query->select('phieu_id', 'ma_phieu', 'ngay_nhap');
-        }])->where('lo_id', $loId)
-           ->orderBy('phieu_id', 'desc')
-           ->get();
-        
-        return response()->json([
-            'history' => $history
-        ]);
     }
     
     /**
@@ -465,5 +442,51 @@ class PhieuNhapController extends Controller
                 'message' => 'Có lỗi xảy ra khi xác nhận hoàn thành phiếu nhập: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * API để lấy lịch sử nhập kho của một lô
+     */
+    public function getLotAdditions($loId)
+    {
+        $additions = ChiTietLoNhap::with(['phieuNhap', 'phieuNhap.nguoiDung'])
+            ->where('lo_id', $loId)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'created_at' => $item->phieuNhap->created_at,
+                    'ma_phieu' => $item->phieuNhap->ma_phieu,
+                    'so_luong' => $item->so_luong,
+                    'don_vi' => $item->don_vi,
+                    'gia_nhap' => $item->gia_nhap,
+                    'thanh_tien' => $item->thanh_tien,
+                    'nguoi_nhap' => $item->phieuNhap->nguoiDung->ho_ten ?? 'N/A'
+                ];
+            });
+
+        return response()->json(['additions' => $additions]);
+    }
+
+    /**
+     * API để lấy lịch sử điều chỉnh của một lô
+     */
+    public function getLotHistory($loId)
+    {
+        $history = LichSuTonKho::with('nguoiDung')
+            ->where('lo_id', $loId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'created_at' => $item->created_at,
+                    'loai_thay_doi' => $item->loai_thay_doi,
+                    'so_luong_thay_doi' => $item->so_luong_thay_doi,
+                    'ton_kho_moi' => $item->ton_kho_moi,
+                    'nguoi_dung' => $item->nguoiDung->ho_ten ?? 'N/A',
+                    'mo_ta' => $item->mo_ta
+                ];
+            });
+
+        return response()->json(['history' => $history]);
     }
 }

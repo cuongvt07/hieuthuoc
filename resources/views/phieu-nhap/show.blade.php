@@ -182,7 +182,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($phieuNhap->chiTietLoNhap as $index => $chiTiet)
+                        @foreach($phieuNhap->chiTietLoNhaps as $index => $chiTiet)
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
                             <td>

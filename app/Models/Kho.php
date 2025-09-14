@@ -23,4 +23,14 @@ class Kho extends Model
     {
         return $this->hasMany(LoThuoc::class, 'kho_id', 'kho_id');
     }
+
+    /**
+     * Get all thuốc in this kho through lô thuốc
+     */
+    public function thuoc()
+    {
+        return $this->belongsToMany(Thuoc::class, 'lo_thuoc', 'kho_id', 'thuoc_id', 'kho_id', 'thuoc_id')
+                    ->withPivot(['ton_kho_hien_tai', 'ngay_san_xuat', 'han_su_dung'])
+                    ->distinct();
+    }
 }

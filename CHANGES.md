@@ -85,10 +85,10 @@ top khách hàng mua nhiều nhất (3-5-10 + thời gian theo tháng/năm)
 
 dược sĩ : dash , khách hàng , qly đơn bán.  // done
 
-Quản Lý Kho : về dạng table list ( sl hiện tại cảu kho) --> chi tiết --> thuốc list -- list lô của thuốc
+Quản Lý Kho : về dạng table list ( sl hiện tại cảu kho) --> chi tiết --> thuốc list -- list lô của thuốc  // done
 
-Quản Lý Phiếu Nhập : auto trạng thái chờ xác nhận --> duyệt -> hoàn thành 
+Quản Lý Phiếu Nhập : auto trạng thái chờ xác nhận --> duyệt -> hoàn thành   //  done
 
-Đình chỉnh  nhóm thuốc --> k thêm thuốc đó vào nhóm đó được nữa; đình chỉ thuốc --. k thêm được vào phiếu + đơn bán  // done đình chỉ  chưa làm  k thêm được vào phiếu + đơn bán 
+Đình chỉnh  nhóm thuốc --> done
 
-Phiếu nhập : thuốc - lô - kho : chọn thuốc -> check nằm trong kho nào ? render : select chọn  (đã có lô bỏ Lịch sử nhập của lô:)
+Phiếu nhập : // done

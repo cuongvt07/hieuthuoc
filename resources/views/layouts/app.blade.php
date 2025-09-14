@@ -319,7 +319,6 @@
     </script>
     @yield('scripts')
     <script src="{{ asset('js/thong-bao.js') }}"></script>
-    <script src="{{ asset('js/gia-thuoc.js') }}"></script>
 </body>
 
 </html>

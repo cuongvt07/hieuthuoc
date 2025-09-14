@@ -249,6 +249,72 @@
     </div>
 </div>
 
+<!-- Modal lịch sử lô -->
+<div class="modal fade" id="lotHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lịch sử thay đổi lô <span id="lot-info"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="lotHistoryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="additions-tab" data-bs-toggle="tab" data-bs-target="#additions" type="button" role="tab">
+                            <i class="bi bi-box-arrow-in-down me-1"></i>Lịch sử nhập kho
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="adjustments-tab" data-bs-toggle="tab" data-bs-target="#adjustments" type="button" role="tab">
+                            <i class="bi bi-pencil-square me-1"></i>Lịch sử điều chỉnh
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="lotHistoryContent">
+                    <div class="tab-pane fade show active" id="additions" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="lotAdditionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Thời Gian</th>
+                                        <th>Mã Phiếu</th>
+                                        <th>Số Lượng</th>
+                                        <th>Đơn Vị</th>
+                                        <th>Giá Nhập</th>
+                                        <th>Thành Tiền</th>
+                                        <th>Người Nhập</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="adjustments" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="lotAdjustmentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Thời Gian</th>
+                                        <th>Loại Thay Đổi</th>
+                                        <th>Số Lượng Thay Đổi</th>
+                                        <th>Tồn Kho Mới</th>
+                                        <th>Người Thực Hiện</th>
+                                        <th>Mô Tả</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal xác nhận xóa -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
@@ -390,6 +456,14 @@
                                         </a>
                                     </li>
                                     ` : ''}
+                                    ${receipt.trang_thai !== 'hoan_tat' && receipt.trang_thai !== 'huy' ? `
+                                    <li>
+                                        <a class="dropdown-item edit-receipt-btn" href="javascript:void(0)" 
+                                        data-id="${receipt.phieu_id}">
+                                            <i class="bi bi-pencil"></i> Sửa thông tin
+                                        </a>
+                                    </li>
+                                    ` : ''}
                                 </ul>
                             </div>
                         </td>
@@ -507,7 +581,15 @@
                             <td>${tenThuoc}</td>
                             <td>
                                 ${loId ? 
-                                `<a href="/lo-thuoc/${loId}" class="text-primary">${maLo}</a>` : 
+                                `<div class="d-flex align-items-center">
+                                    <a href="/lo-thuoc/${loId}" class="text-primary me-2">${maLo}</a>
+                                    <button class="btn btn-sm btn-outline-info view-lot-history-btn" 
+                                        data-lo-id="${loId}" 
+                                        data-ten-thuoc="${tenThuoc}"
+                                        data-ma-lo="${maLo}">
+                                        <i class="bi bi-clock-history"></i>
+                                    </button>
+                                </div>` : 
                                 maLo}
                             </td>
                             <td>${hanDung}</td>
@@ -619,6 +701,101 @@
                 maximumFractionDigits: 2
             }).format(value || 0);
         }
+
+        // Xử lý nút sửa thông tin phiếu nhập
+        $(document).on('click', '.edit-receipt-btn', function() {
+            const receiptId = $(this).data('id');
+            // Chuyển hướng đến trang edit phiếu nhập
+            window.location.href = `/phieu-nhap/${receiptId}/edit`;
+        });
+
+        // Xử lý nút xem lịch sử lô
+        $(document).on('click', '.view-lot-history-btn', function() {
+            const loId = $(this).data('lo-id');
+            const tenThuoc = $(this).data('ten-thuoc');
+            const maLo = $(this).data('ma-lo');
+
+            // Hiển thị thông tin lô trong tiêu đề modal
+            $('#lot-info').text(`${maLo} (${tenThuoc})`);
+
+            // Xóa dữ liệu cũ và hiển thị trạng thái đang tải
+            $('#lotAdditionsTable tbody').html('<tr><td colspan="7" class="text-center">Đang tải dữ liệu...</td></tr>');
+            $('#lotAdjustmentsTable tbody').html('<tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>');
+
+            // Hiển thị modal
+            $('#lotHistoryModal').modal('show');
+
+            // Khi modal đã hiển thị xong, lấy dữ liệu
+            $('#lotHistoryModal').on('shown.bs.modal', function () {
+                // Lấy lịch sử nhập kho của lô
+                $.ajax({
+                    url: `/phieu-nhap/lot-additions/${loId}`,
+                    method: 'GET',
+                    success: function(response) {
+                        const tbody = $('#lotAdditionsTable tbody');
+                        tbody.empty();
+
+                        if (response.additions && response.additions.length > 0) {
+                            response.additions.forEach(item => {
+                                tbody.append(`
+                                    <tr>
+                                        <td>${new Date(item.created_at).toLocaleString('vi-VN')}</td>
+                                        <td>${item.ma_phieu}</td>
+                                        <td>${item.so_luong}</td>
+                                        <td>${item.don_vi}</td>
+                                        <td>${item.gia_nhap}</td>
+                                        <td>${item.thanh_tien}</td>
+                                        <td>${item.nguoi_nhap}</td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            tbody.append('<tr><td colspan="7" class="text-center">Không có dữ liệu</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        $('#lotAdditionsTable tbody').html('<tr><td colspan="7" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>');
+                    }
+                });
+
+                // Lấy lịch sử điều chỉnh của lô
+                $.ajax({
+                    url: `/phieu-nhap/lot-history/${loId}`,
+                    method: 'GET',
+                    success: function(response) {
+                        const tbody = $('#lotAdjustmentsTable tbody');
+                        tbody.empty();
+
+                        if (response.history && response.history.length > 0) {
+                            response.history.forEach(item => {
+                                tbody.append(`
+                                    <tr>
+                                        <td>${new Date(item.created_at).toLocaleString('vi-VN')}</td>
+                                        <td>${
+                                            item.loai_thay_doi === 'nhap' ? 'Nhập kho' :
+                                            item.loai_thay_doi === 'ban' ? 'Bán hàng' :
+                                            item.loai_thay_doi === 'dieu_chinh' ? 'Điều chỉnh' :
+                                            item.loai_thay_doi === 'chuyen_kho' ? 'Chuyển kho' :
+                                            item.loai_thay_doi === 'hoan_tra' ? 'Hoàn trả' :
+                                            (item.loai_thay_doi ?? 'N/A')
+                                        }</td>
+                                        <td>${item.so_luong_thay_doi}</td>
+                                        <td>${item.ton_kho_moi}</td>
+                                        <td>${item.nguoi_dung}</td>
+                                        <td>${item.mo_ta}</td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            tbody.append('<tr><td colspan="6" class="text-center">Không có dữ liệu</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        $('#lotAdjustmentsTable tbody').html('<tr><td colspan="6" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>');
+                    }
+                });
+            });
+        });
 
         // Handle complete receipt button click
         $(document).on('click', '.complete-receipt-btn', function() {

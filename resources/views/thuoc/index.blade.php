@@ -71,13 +71,13 @@
                     <h6 class="m-0 font-weight-bold">Danh Sách Thuốc <span id="selected-nhom-name"></span></h6>
                     <small class="text-muted" id="filter-status">Đang hiển thị tất cả thuốc</small>
                 </div>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addThuocModal">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addThuocModal">
                     <i class="bi bi-plus-circle me-1"></i> Thêm Thuốc
                 </button>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <div class="input-group">
                             <input type="text" id="search-thuoc" class="form-control" placeholder="Tìm kiếm thuốc...">
                             <button class="btn btn-outline-secondary" type="button" id="searchThuocBtn">
@@ -88,7 +88,20 @@
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <select id="filter-kho" class="form-select">
+                                <option value="">-- Tất cả kho --</option>
+                                @foreach ($kho as $k)
+                                <option value="{{ $k->kho_id }}">{{ $k->ten_kho }}</option>
+                                @endforeach
+                            </select>
+                            <button class="btn btn-outline-danger" type="button" id="resetKhoBtn" title="Xóa bộ lọc kho">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="input-group">
                             <select id="filter-nhom" class="form-select">
                                 <option value="">-- Tất cả nhóm --</option>
@@ -110,6 +123,7 @@
                                     <th>Mã Thuốc</th>
                                     <th>Tên Thuốc</th>
                                     <th>Nhóm Thuốc</th>
+                                    <th>Kho</th>
                                     <th>Đơn Vị Gốc</th>
                                     <th>Đơn Vị Bán</th>
                                     <th>Tỉ Lệ</th>
@@ -127,6 +141,7 @@
                                         @endif
                                     </td>
                                     <td>{{ $item->nhomThuoc->ten_nhom }}</td>
+                                    <td>{{ $item->kho->ten_kho }}</td>
                                     <td>{{ $item->don_vi_goc }}</td>
                                     <td>{{ $item->don_vi_ban }}</td>
                                     <td>{{ $item->ti_le_quy_doi }}</td>
@@ -281,6 +296,16 @@
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback" id="nhom_id_error"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="kho_id" class="form-label">Kho <span class="text-danger">*</span></label>
+                                <select class="form-select" id="kho_id" name="kho_id" required>
+                                    <option value="">-- Chọn kho --</option>
+                                    @foreach ($kho as $k)
+                                    <option value="{{ $k->kho_id }}">{{ $k->ten_kho }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback" id="kho_id_error"></div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -678,10 +703,23 @@
             });
             $('#resetFilterBtn').click(function() {
                 $('#filter-nhom').val('');
+                $('#filter-kho').val('');
                 selectedNhomId = '';
                 $('#selected-nhom-name').text('');
                 $('.nhom-thuoc-item').removeClass('active');
                 $('#filter-status').text('Đang hiển thị tất cả thuốc');
+                currentThuocPage = 1;
+                loadThuoc();
+            });
+
+            // Xử lý lọc theo kho
+            $('#filter-kho').change(function() {
+                currentThuocPage = 1;
+                loadThuoc();
+            });
+            
+            $('#resetKhoBtn').click(function() {
+                $('#filter-kho').val('');
                 currentThuocPage = 1;
                 loadThuoc();
             });
@@ -740,6 +778,7 @@
                         $('#edit_thuoc_id').val(thuoc.thuoc_id);
                         $('#edit_ma_thuoc').val(thuoc.ma_thuoc);
                         $('#edit_nhom_id').val(thuoc.nhom_id);
+                        $('#edit_kho_id').val(thuoc.kho_id);
                         $('#edit_ten_thuoc').val(thuoc.ten_thuoc);
                         $('#edit_don_vi_goc').val(thuoc.don_vi_goc);
                         $('#edit_don_vi_ban').val(thuoc.don_vi_ban);
@@ -805,7 +844,8 @@
                         <tr>
                             <td>${item.ma_thuoc}</td>
                             <td>${item.ten_thuoc} ${item.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
-                            <td>${item.nhom_thuoc.ten_nhom}</td>
+                            <td>${item.nhom_thuc.ten_nhom}</td>
+                            <td>${item.kho.ten_kho}</td>
                             <td>${item.don_vi_goc}</td>
                             <td>${item.don_vi_ban}</td>
                             <td>${item.ti_le_quy_doi}</td>
@@ -868,6 +908,7 @@
                     <td>${thuoc.ma_thuoc}</td>
                     <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
                     <td>${thuoc.nhom_thuoc.ten_nhom}</td>
+                    <td>${thuoc.kho.ten_kho}</td>
                     <td>${thuoc.don_vi_goc}</td>
                     <td>${thuoc.don_vi_ban}</td>
                     <td>${thuoc.ti_le_quy_doi}</td>
@@ -875,7 +916,9 @@
                     <td>
                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
                         <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
-                        <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                        <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}">
+                            <i class="bi bi-ban"></i> ${thuoc.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
+                        </button>
                     </td>
                 </tr>`;
 
@@ -1012,6 +1055,7 @@
                 const formData = {
                     ma_thuoc: $('#ma_thuoc').val(),
                     nhom_id: $('#nhom_id').val(),
+                    kho_id: $('#kho_id').val(),
                     ten_thuoc: $('#ten_thuoc').val(),
                     don_vi_goc: $('#don_vi_goc').val(),
                     don_vi_ban: $('#don_vi_ban').val(),
@@ -1067,6 +1111,7 @@
                 const formData = {
                     ma_thuoc: $('#edit_ma_thuoc').val(),
                     nhom_id: $('#edit_nhom_id').val(),
+                    kho_id: $('#edit_kho_id').val(),
                     ten_thuoc: $('#edit_ten_thuoc').val(),
                     don_vi_goc: $('#edit_don_vi_goc').val(),
                     don_vi_ban: $('#edit_don_vi_ban').val(),
@@ -1115,7 +1160,8 @@
                     const html = `
             <td>${thuoc.ma_thuoc}</td>
             <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
-            <td>${thuoc.nhom_thuoc.ten_nhom}</td>
+            <td>${thuoc.nhom_thuc.ten_nhom}</td>
+            <td>${thuoc.kho.ten_kho}</td>
             <td>${thuoc.don_vi_goc}</td>
             <td>${thuoc.don_vi_ban}</td>
             <td>${thuoc.ti_le_quy_doi}</td>

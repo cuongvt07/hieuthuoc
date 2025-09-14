@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     
     // Thuốc routes (bao gồm cả quản lý nhóm thuốc)
     Route::resource('thuoc', ThuocController::class);
+    Route::get('thuoc/{thuoc}/lots', [ThuocController::class, 'getLots'])->name('thuoc.lots');
     Route::get('api/thuoc/info', [ThuocController::class, 'getInfo'])->name('api.thuoc.info');
     Route::get('api/thuoc/{id}/kho', [ThuocController::class, 'getKhoList'])->name('api.thuoc.kho');
     
@@ -90,7 +91,8 @@ Route::middleware('auth')->group(function () {
     Route::post('phieu-nhap/{id}/complete', [PhieuNhapController::class, 'complete'])->name('phieu-nhap.complete');
     Route::get('phieu-nhap-ton-kho', [PhieuNhapController::class, 'getTonKho'])->name('phieu-nhap.get-ton-kho');
     Route::get('phieu-nhap-lo-thuoc', [PhieuNhapController::class, 'getLoThuoc'])->name('phieu-nhap.get-lo-thuoc');
-    Route::get('phieu-nhap-lot-history', [PhieuNhapController::class, 'getLotHistory'])->name('phieu-nhap.get-lot-history');
+    Route::get('phieu-nhap/lot-additions/{loId}', [PhieuNhapController::class, 'getLotAdditions'])->name('phieu-nhap.lot-additions');
+    Route::get('phieu-nhap/lot-history/{loId}', [PhieuNhapController::class, 'getLotHistory'])->name('phieu-nhap.lot-history');
     
     // Lô thuốc routes
     Route::resource('lo-thuoc', LoThuocController::class);
