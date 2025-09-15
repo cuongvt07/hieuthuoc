@@ -65,7 +65,7 @@ These changes create a more streamlined, user-friendly interface that should sig
 - lô thuốc : giữ nguyên (hsd của thuốc)
 - thuốc : 2 option filter :  1 trạng thái hsd (số lượng)  ;  sort bán chạy/ bán ế (top 5) - (số đơn, doanh số)
 - kho : 2 option filter : 1 tất cả : giữ nguyên ; theo từng kho (list ds thuốc : sl , đơn vị auto gốc)
-- khách hàng :  2 option filter: sort top 5 ông mua nhiều nhất ; theo từng thằng (Mã KH	Tên khách hàng	Số đơn hàng	Tổng SL mua	Giá trị mua)
+- khách hàng :  2 option filter: sort top 5 ông mua nhiều nhất ; theo từng thằng (Mã KH	Tên khách hàng	Số đơn hàng	Tổng SL mua	Giá trị mua)  // sắp done
 
 				
 giá thuốc : list full theo DB : , có bộ lọc giữ nguyên --> list ds   //  done
