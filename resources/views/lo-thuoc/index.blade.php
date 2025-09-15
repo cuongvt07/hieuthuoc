@@ -219,9 +219,7 @@
                 </table>
             </div>
             
-            <div class="d-flex justify-content-end mt-3">
-                {{ $loThuocs->appends(request()->query())->links() }}
-            </div>
+            {{ $loThuocs->onEachSide(1)->links('vendor.pagination.custom') }}
         </div>
     </div>
 </div>

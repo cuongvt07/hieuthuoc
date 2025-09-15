@@ -3,6 +3,9 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BaoCaoTonKhoController;
 use App\Http\Controllers\BaoCaoKhachHangController;
+use App\Http\Controllers\BaoCaoLoThuocController;
+use App\Http\Controllers\BaoCaoThuocController;
+use App\Http\Controllers\BaoCaoKhoController;
 use App\Http\Controllers\DonBanLeController;
 use App\Http\Controllers\GiaThuocController;
 use App\Http\Controllers\KhachHangController;
@@ -101,6 +104,7 @@ Route::middleware('auth')->group(function () {
     
     // Đơn bán lẻ routes
     Route::resource('don-ban-le', DonBanLeController::class);
+    
     Route::get('don-ban-le-thuoc-info', [DonBanLeController::class, 'getThuocInfo'])->name('don-ban-le.thuoc-info');
     Route::get('don-ban-le-search-thuoc', [DonBanLeController::class, 'searchThuoc'])->name('don-ban-le.search-thuoc');
     Route::post('don-ban-le/{donBanLe}/cancel', [DonBanLeController::class, 'cancel'])->name('don-ban-le.cancel');
@@ -111,5 +115,9 @@ Route::middleware('auth')->group(function () {
     Route::get('bao-cao/ton-kho', [BaoCaoTonKhoController::class, 'index'])->name('bao-cao.ton-kho.index');
     
     // Báo cáo khách hàng
+    // Báo cáo routes
     Route::get('bao-cao/khach-hang', [BaoCaoKhachHangController::class, 'index'])->name('bao-cao.khach-hang.index');
+    Route::get('bao-cao/lo-thuoc', [BaoCaoLoThuocController::class, 'index'])->name('bao-cao.lo-thuoc.index');
+    Route::get('bao-cao/thuoc', [BaoCaoThuocController::class, 'index'])->name('bao-cao.thuoc.index');
+    Route::get('bao-cao/kho', [BaoCaoKhoController::class, 'index'])->name('bao-cao.kho.index');
 });

@@ -187,11 +187,6 @@
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Danh sách đơn bán lẻ</h6>
-            <div>
-                <a href="{{ route('don-ban-le.report') }}" class="btn btn-sm btn-info">
-                    <i class="fas fa-chart-line"></i> Báo cáo doanh số
-                </a>
-            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive" id="orders-table-container">

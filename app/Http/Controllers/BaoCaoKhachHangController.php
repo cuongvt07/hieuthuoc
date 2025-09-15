@@ -22,27 +22,27 @@ class BaoCaoKhachHangController extends Controller
         }
 
         $query = DonBanLe::with(['chiTietDonBanLe.loThuoc.thuoc', 'khachHang'])
-            ->select('don_ban_le.*')
+            ->select('don_ban_le.don_id', 'don_ban_le.ngay_tao', 'don_ban_le.khach_hang_id')
             ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don_hang')
             ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
-            ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as tong_tien')
+            ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as thanh_tien_don_hang')
             ->join('chi_tiet_don_ban_le', 'don_ban_le.don_id', '=', 'chi_tiet_don_ban_le.don_id')
             ->whereNotNull('khach_hang_id')
-            ->groupBy('don_ban_le.don_id');
+            ->groupBy('don_ban_le.don_id', 'don_ban_le.ngay_tao', 'don_ban_le.khach_hang_id');
 
         if ($request->filled('khach_hang_id')) {
             $query->where('khach_hang_id', $request->khach_hang_id);
         }
 
         if ($request->filled('tu_ngay')) {
-            $query->whereDate('created_at', '>=', Carbon::createFromFormat('d/m/Y', $request->tu_ngay));
+            $query->whereDate('ngay_tao', '>=', Carbon::createFromFormat('d/m/Y', $request->tu_ngay));
         }
 
         if ($request->filled('den_ngay')) {
-            $query->whereDate('created_at', '<=', Carbon::createFromFormat('d/m/Y', $request->den_ngay));
+            $query->whereDate('ngay_tao', '<=', Carbon::createFromFormat('d/m/Y', $request->den_ngay));
         }
 
-        $donHangs = $query->orderBy('created_at', 'desc')->paginate(10);
+        $donHangs = $query->orderBy('ngay_tao', 'desc')->paginate(10);
 
         return view('bao-cao.khach-hang.index', compact('khachHangs', 'donHangs'));
     }
@@ -80,14 +80,14 @@ class BaoCaoKhachHangController extends Controller
         }
 
         if ($request->filled('tu_ngay')) {
-            $query->whereDate('created_at', '>=', Carbon::createFromFormat('d/m/Y', $request->tu_ngay));
+            $query->whereDate('ngay_tao', '>=', Carbon::createFromFormat('d/m/Y', $request->tu_ngay));
         }
 
         if ($request->filled('den_ngay')) {
-            $query->whereDate('created_at', '<=', Carbon::createFromFormat('d/m/Y', $request->den_ngay));
+            $query->whereDate('ngay_tao', '<=', Carbon::createFromFormat('d/m/Y', $request->den_ngay));
         }
 
-        $donHangs = $query->orderBy('created_at', 'desc')->get();
+        $donHangs = $query->orderBy('ngay_tao', 'desc')->get();
 
         $row = 5;
         $stt = 1;
@@ -97,7 +97,7 @@ class BaoCaoKhachHangController extends Controller
         foreach ($donHangs as $donHang) {
             foreach ($donHang->chiTietDonBanLe as $chiTiet) {
                 $sheet->setCellValue('A' . $row, $stt++);
-                $sheet->setCellValue('B' . $row, Carbon::parse($donHang->created_at)->format('d/m/Y'));
+                $sheet->setCellValue('B' . $row, Carbon::parse($donHang->ngay_tao)->format('d/m/Y'));
                 $sheet->setCellValue('C' . $row, $chiTiet->loThuoc->thuoc->ten_thuoc);
                 $sheet->setCellValue('D' . $row, $chiTiet->so_luong);
                 $sheet->setCellValue('E' . $row, number_format($chiTiet->don_gia));

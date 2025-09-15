@@ -39,9 +39,6 @@
                     <button type="button" class="btn btn-sm btn-primary view-order-btn" data-id="{{ $don->don_id }}">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <a href="{{ route('don-ban-le.print', $don->don_id) }}" class="btn btn-sm btn-info" target="_blank">
-                        <i class="bi bi-printer"></i>
-                    </a>
                     @if(in_array($don->trang_thai, ['hoan_thanh', 'hoan_tat']))
                     <button type="button" class="btn btn-sm btn-danger cancel-order-btn" data-id="{{ $don->don_id }}">
                         <i class="bi bi-ban"></i>

@@ -178,8 +178,14 @@
                                         </h2>
                                         <div id="collapseBaoCao" class="accordion-collapse collapse" aria-labelledby="headingBaoCao">
                                             <div class="accordion-body p-0">
-                                                <a href="{{ route('bao-cao.ton-kho.index') }}" class="menu-item {{ request()->routeIs('bao-cao.ton-kho.*') ? 'active' : '' }}">
-                                                    <i class="bi bi-box"></i> Báo Cáo Tồn Kho
+                                                <a href="{{ route('bao-cao.lo-thuoc.index') }}" class="menu-item {{ request()->routeIs('bao-cao.lo-thuoc.*') ? 'active' : '' }}">
+                                                    <i class="bi bi-box2"></i> Báo Cáo Lô Thuốc
+                                                </a>
+                                                <a href="{{ route('bao-cao.thuoc.index') }}" class="menu-item {{ request()->routeIs('bao-cao.thuoc.*') ? 'active' : '' }}">
+                                                    <i class="bi bi-capsule"></i> Báo Cáo Thuốc
+                                                </a>
+                                                <a href="{{ route('bao-cao.kho.index') }}" class="menu-item {{ request()->routeIs('bao-cao.kho.*') ? 'active' : '' }}">
+                                                    <i class="bi bi-building"></i> Báo Cáo Kho
                                                 </a>
                                                 <a href="{{ route('bao-cao.khach-hang.index') }}" class="menu-item {{ request()->routeIs('bao-cao.khach-hang.*') ? 'active' : '' }}">
                                                     <i class="bi bi-people"></i> Báo Cáo Khách Hàng
