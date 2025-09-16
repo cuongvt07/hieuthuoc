@@ -71,7 +71,7 @@ $(document).ready(function() {
                                     </button>
                                     <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" 
                                         data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}">
-                                        <i class="bi bi-ban"></i> ${nhom.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
+                                        <i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
                                     </button>
                                 </div>
                             </a>`;
@@ -239,7 +239,7 @@ $(document).ready(function() {
                     if (response.trang_thai !== undefined) {
                         const button = $(`.suspend-nhom-btn[data-id="${id}"]`);
                         button.data('status', response.trang_thai);
-                        if (response.trang_thai == 1) {
+                        if (response.trang_thai == 0) {
                             button.html('<i class="bi bi-ban"></i> Bỏ đình chỉ');
                         } else {
                             button.html('<i class="bi bi-ban"></i> Đình chỉ');
@@ -551,7 +551,7 @@ $(document).ready(function() {
                                     <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" 
                                         data-id="${item.thuoc_id}" data-status="${item.trang_thai}">
                                         <i class="bi bi-ban"></i> 
-                                        ${item.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
+                                        ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
                                     </button>
                                 </td>
                             </tr>`;

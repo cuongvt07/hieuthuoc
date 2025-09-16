@@ -10,36 +10,15 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('lich-su-ton-kho.index') }}" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Thuốc</label>
-                    <select name="thuoc_id" class="form-select">
-                        <option value="">Tất cả thuốc</option>
-                        @foreach($thuocs as $thuoc)
-                            <option value="{{ $thuoc->thuoc_id }}" {{ request('thuoc_id') == $thuoc->thuoc_id ? 'selected' : '' }}>
-                                {{ $thuoc->ten_thuoc }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label">Loại thay đổi</label>
-                    <select name="loai_thay_doi" class="form-select">
-                        <option value="">Tất cả</option>
-                        <option value="nhap" {{ request('loai_thay_doi') == 'nhap' ? 'selected' : '' }}>Nhập hàng</option>
-                        <option value="ban" {{ request('loai_thay_doi') == 'ban' ? 'selected' : '' }}>Bán hàng</option>
-                    </select>
-                </div>
-
                 <div class="col-md-2">
                     <label class="form-label">Từ ngày</label>
-                    <input type="text" class="form-control datepicker" name="tu_ngay" 
+                    <input type="date" class="form-control datepicker" name="tu_ngay" 
                            value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
                 </div>
 
                 <div class="col-md-2">
                     <label class="form-label">Đến ngày</label>
-                    <input type="text" class="form-control datepicker" name="den_ngay" 
+                    <input type="date" class="form-control datepicker" name="den_ngay" 
                            value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
                 </div>
 

@@ -14,6 +14,26 @@
     <script>
         dayjs.locale('vi');
         dayjs.extend(window.dayjs_plugin_relativeTime);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tìm tất cả các menu item đang active
+            const activeItems = document.querySelectorAll('.menu-item.active');
+            
+            activeItems.forEach(item => {
+                // Tìm accordion collapse chứa menu item này
+                const collapse = item.closest('.accordion-collapse');
+                if (collapse) {
+                    // Thêm class show để mở accordion
+                    collapse.classList.add('show');
+                    // Tìm nút toggle tương ứng và loại bỏ class collapsed
+                    const toggleButton = document.querySelector(`[data-bs-target="#${collapse.id}"]`);
+                    if (toggleButton) {
+                        toggleButton.classList.remove('collapsed');
+                        toggleButton.setAttribute('aria-expanded', 'true');
+                    }
+                }
+            });
+        });
     </script>
     <style>
         .accordion-body {

@@ -38,7 +38,7 @@
                         data-id="{{ $nhom->nhom_id }}">
                         <div>
                             <span class="fw-bold">{{ $nhom->ma_nhom }}</span> - {{ $nhom->ten_nhom }}
-                            @if($nhom->trang_thai == 1)
+                            @if($nhom->trang_thai == 0)
                             <span class="badge bg-danger ms-2">Đã đình chỉ</span>
                             @endif
                         </div>
@@ -51,7 +51,7 @@
                                 <i class="bi bi-trash"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="{{ $nhom->nhom_id }}" data-status="{{ $nhom->trang_thai }}">
-                                <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
+                                <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                             </button>
                         </div>
                     </a>
@@ -136,7 +136,7 @@
                                 <tr>
                                     <td>{{ $item->ma_thuoc }}</td>
                                     <td>{{ $item->ten_thuoc }}
-                                        @if($item->trang_thai == 1)
+                                        @if($item->trang_thai == 0)
                                         <span class="badge bg-danger ms-2">Đã đình chỉ</span>
                                         @endif
                                     </td>
@@ -146,7 +146,7 @@
                                     <td>{{ $item->don_vi_ban }}</td>
                                     <td>{{ $item->ti_le_quy_doi }}</td>
                                     <td>
-                                        @if($item->trang_thai == 1)
+                                        @if($item->trang_thai == 0)
                                         <span class="badge bg-danger">Đã đình chỉ</span>
                                         @else
                                         <span class="badge bg-success">Đang hoạt động</span>
@@ -161,7 +161,7 @@
                                             <i class="bi bi-trash"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="{{ $item->thuoc_id }}" data-status="{{ $item->trang_thai }}">
-                                            <i class="bi bi-ban"></i> {{ $item->trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
+                                            <i class="bi bi-ban"></i> {{ $item->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                                         </button>
                                     </td>
                                 </tr>
@@ -494,12 +494,12 @@
                         <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item ${selectedNhomId == nhom.nhom_id ? 'active' : ''}" data-id="${nhom.nhom_id}">
                             <div>
                                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
-                                ${nhom.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
+                                ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
                             </div>
                             <div>
                                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
                                 <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
-                                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </div>
                         </a>`;
                             });
@@ -853,7 +853,7 @@
                             <td>
                                 <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${item.thuoc_id}"><i class="bi bi-pencil"></i></button>
                                 <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${item.thuoc_id}" data-name="${item.ten_thuoc}"><i class="bi bi-trash"></i></button>
-                                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}"><i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}"><i class="bi bi-ban"></i> ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </td>
                         </tr>`;
                             });
@@ -883,12 +883,12 @@
         <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item" data-id="${nhom.nhom_id}">
             <div>
                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
-                ${nhom.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
+                ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
             </div>
             <div>
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
                 <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
-                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>
         </a>`;
 
@@ -906,18 +906,18 @@
                 const html = `
                 <tr>
                     <td>${thuoc.ma_thuoc}</td>
-                    <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
+                    <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
                     <td>${thuoc.nhom_thuoc.ten_nhom}</td>
                     <td>${thuoc.kho.ten_kho}</td>
                     <td>${thuoc.don_vi_goc}</td>
                     <td>${thuoc.don_vi_ban}</td>
                     <td>${thuoc.ti_le_quy_doi}</td>
-                    <td>${thuoc.trang_thai == 1 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
+                    <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
                         <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
                         <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}">
-                            <i class="bi bi-ban"></i> ${thuoc.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
+                            <i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
                         </button>
                     </td>
                 </tr>`;
@@ -937,12 +937,12 @@
                     const html = `
             <div>
                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
-                ${nhom.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
+                ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
             </div>
             <div>
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
                 <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
-                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>`;
                     item.html(html);
                     bindNhomThuocEvents();
@@ -1159,17 +1159,17 @@
                 if (row.length) {
                     const html = `
             <td>${thuoc.ma_thuoc}</td>
-            <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
+            <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
             <td>${thuoc.nhom_thuc.ten_nhom}</td>
             <td>${thuoc.kho.ten_kho}</td>
             <td>${thuoc.don_vi_goc}</td>
             <td>${thuoc.don_vi_ban}</td>
             <td>${thuoc.ti_le_quy_doi}</td>
-            <td>${thuoc.trang_thai == 1 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
+            <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
             <td>
                 <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
                 <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
-                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </td>`;
                     row.html(html);
                 }

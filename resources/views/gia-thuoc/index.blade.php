@@ -100,43 +100,41 @@
                 </div>
                 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="gia-thuoc-table" width="100%" cellspacing="0">
+                                        <table class="table table-bordered table-striped" id="gia-thuoc-table" width="100%" cellspacing="0">
                         <thead>
                             <tr>
+                                <th>Mã Thuốc</th>
                                 <th>Tên Thuốc</th>
                                 <th>Giá Bán</th>
                                 <th>Ngày Bắt Đầu</th>
                                 <th>Ngày Kết Thúc</th>
-                                <th>Thao Tác</th>
+                                <th width="120px">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @php
-                                $currentThuocId = null;
-                            @endphp
-                            @forelse ($giaThuoc as $item)
-                            <tr class="{{ $currentThuocId !== $item->thuoc_id && $loop->first ? 'table-success' : '' }}">
-                                <td>{{ $item->thuoc->ten_thuoc }}</td>
-                                <td class="text-end">{{ number_format($item->gia_ban, 0, ',', '.') }} đ</td>
-                                <td>{{ $item->created_at instanceof \Carbon\Carbon ? $item->created_at->format('d/m/Y H:i') : $item->created_at }}</td>
-                                <td>{{ $item->ngay_ket_thuc instanceof \Carbon\Carbon ? $item->ngay_ket_thuc->format('d/m/Y H:i') : $item->ngay_ket_thuc }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-info edit-btn" 
-                                        data-id="{{ $item->gia_id }}"
-                                        data-thuoc="{{ $item->thuoc->ten_thuoc }}"
-                                        data-thuoc-id="{{ $item->thuoc_id }}"
-                                        data-gia="{{ $item->gia_ban }}">
-                                        <i class="bi bi-pencil"></i> Cập nhật giá
-                                    </button>
-                                </td>
-                            </tr>
-                            @php
-                                $currentThuocId = $item->thuoc_id;
-                            @endphp
+                            @forelse($giaThuoc as $gia)
+                                <tr>
+                                    <td>{{ $gia->thuoc->ma_thuoc }}</td>
+                                    <td>{{ $gia->thuoc->ten_thuoc }}</td>
+                                    <td>{{ number_format($gia->gia_ban) }} đ</td>
+                                    <td>{{ $gia->ngay_bat_dau ? date('d/m/Y', strtotime($gia->ngay_bat_dau)) : '' }}</td>
+                                    <td>{{ $gia->ngay_ket_thuc ? date('d/m/Y', strtotime($gia->ngay_ket_thuc)) : 'Hiện tại' }}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-primary edit-btn me-1" data-id="{{ $gia->gia_id }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-btn" 
+                                                data-id="{{ $gia->gia_id }}"
+                                                data-thuoc="{{ $gia->thuoc->ten_thuoc }}"
+                                                data-date="{{ date('d/m/Y', strtotime($gia->ngay_bat_dau)) }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="6" class="text-center">Không có dữ liệu</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="6" class="text-center">Không có dữ liệu</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>

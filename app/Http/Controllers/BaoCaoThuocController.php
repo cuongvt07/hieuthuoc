@@ -28,7 +28,7 @@ class BaoCaoThuocController extends Controller
             $query = Thuoc::with(['loThuoc' => function($q) {
                 $q->where('ton_kho_hien_tai', '>', 0);
             }])
-            ->where('trang_thai', 0)
+            ->where('trang_thai', 1)
             ->select('thuoc.*')
             ->selectRaw('
                 SUM(CASE 

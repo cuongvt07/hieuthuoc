@@ -24,6 +24,8 @@ class BaoCaoLoThuocController extends Controller
         }
 
         $query = LoThuoc::with(['thuoc', 'kho'])
+            ->select('lo_thuoc.*')
+            ->selectRaw('(ton_kho_hien_tai * gia_von) as gia_tri_ton')
             ->where('ton_kho_hien_tai', '>', 0);
 
         if ($request->filled('thuoc_id')) {
@@ -59,6 +61,8 @@ class BaoCaoLoThuocController extends Controller
     private function exportExcel(Request $request)
     {
         $query = LoThuoc::with(['thuoc', 'kho'])
+            ->select('lo_thuoc.*')
+            ->selectRaw('(ton_kho_hien_tai * gia_von) as gia_tri_ton')
             ->where('ton_kho_hien_tai', '>', 0);
 
         // Apply filters
@@ -93,7 +97,21 @@ class BaoCaoLoThuocController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Set title
-        $sheet->setCellValue('A1', 'BÁO CÁO LÔ THUỐC');
+        $title = 'BÁO CÁO LÔ THUỐC';
+        if ($request->filled('trang_thai')) {
+            switch($request->trang_thai) {
+                case 'het_han':
+                    $title .= ' HẾT HẠN';
+                    break;
+                case 'sap_het_han':
+                    $title .= ' SẮP HẾT HẠN';
+                    break;
+                case 'con_han':
+                    $title .= ' CÒN HẠN';
+                    break;
+            }
+        }
+        $sheet->setCellValue('A1', $title);
         $sheet->mergeCells('A1:F1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -122,11 +140,13 @@ class BaoCaoLoThuocController extends Controller
         $sheet->setCellValue('B' . $row, 'Tên thuốc');
         $sheet->setCellValue('C' . $row, 'Kho');
         $sheet->setCellValue('D' . $row, 'Số lượng tồn');
-        $sheet->setCellValue('E' . $row, 'Hạn sử dụng');
-        $sheet->setCellValue('F' . $row, 'Trạng thái');
+        $sheet->setCellValue('E' . $row, 'Giá vốn');
+        $sheet->setCellValue('F' . $row, 'Thành tiền');
+        $sheet->setCellValue('G' . $row, 'Hạn sử dụng');
+        $sheet->setCellValue('H' . $row, 'Trạng thái');
 
         // Style the header row
-        $sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -134,6 +154,8 @@ class BaoCaoLoThuocController extends Controller
         ]);
 
         $row++;
+        $tongSoLuong = 0;
+        $tongGiaTri = 0;
 
         // Add data
         foreach ($loThuocs as $lo) {
@@ -149,14 +171,20 @@ class BaoCaoLoThuocController extends Controller
                 $trangThai = 'Còn hạn';
             }
 
-            $sheet->setCellValue('A' . $row, $lo->so_lo);
+            $thanhTien = $lo->ton_kho_hien_tai * $lo->gia_von;
+            $tongSoLuong += $lo->ton_kho_hien_tai;
+            $tongGiaTri += $thanhTien;
+
+            $sheet->setCellValue('A' . $row, $lo->ma_lo);
             $sheet->setCellValue('B' . $row, $lo->thuoc->ten_thuoc);
             $sheet->setCellValue('C' . $row, $lo->kho->ten_kho);
             $sheet->setCellValue('D' . $row, $lo->ton_kho_hien_tai);
-            $sheet->setCellValue('E' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
-            $sheet->setCellValue('F' . $row, $trangThai);
+            $sheet->setCellValue('E' . $row, number_format($lo->gia_von));
+            $sheet->setCellValue('F' . $row, number_format($thanhTien));
+            $sheet->setCellValue('G' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
+            $sheet->setCellValue('H' . $row, $trangThai);
 
-            $sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray([
+            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
                 'borders' => [
                     'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                 ]
@@ -165,8 +193,28 @@ class BaoCaoLoThuocController extends Controller
             $row++;
         }
 
+        // Add totals row
+        $sheet->setCellValue('A' . $row, 'Tổng cộng');
+        $sheet->mergeCells('A' . $row . ':C' . $row);
+        $sheet->setCellValue('D' . $row, $tongSoLuong);
+        $sheet->mergeCells('E' . $row . ':E' . $row);
+        $sheet->setCellValue('F' . $row, number_format($tongGiaTri));
+        $sheet->mergeCells('G' . $row . ':H' . $row);
+
+        // Style the totals row
+        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+            'font' => ['bold' => true],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E6E6E6']
+            ]
+        ]);
+
         // Auto size columns
-        foreach (range('A', 'F') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

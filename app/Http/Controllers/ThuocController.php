@@ -27,16 +27,11 @@ class ThuocController extends Controller
     }
 
     /**
-     * Get list of warehouses that have lots of this medicine
+     * Get list of warehouses that have lots of this medicine,
+     * or if no lots exist, get the warehouse set by kho_id in Thuoc
      */
     public function getKhoList($id): JsonResponse
     {
-        
-        // Lấy danh sách tất cả các kho
-        $allKho = \DB::table('kho')
-            ->select('kho_id', 'ten_kho')
-            ->get();
-
         // Lấy danh sách kho đã có lô của thuốc này
         $existingKho = \DB::table('lo_thuoc')
             ->where('thuoc_id', $id)
@@ -44,6 +39,22 @@ class ThuocController extends Controller
             ->select('kho.kho_id', 'kho.ten_kho')
             ->distinct()
             ->get();
+
+        if ($existingKho->isEmpty()) {
+            // Nếu chưa có lô, lấy kho theo kho_id của thuốc
+            $thuoc = Thuoc::findOrFail($id);
+            $kho = Kho::where('kho_id', $thuoc->kho_id)
+                ->select('kho_id', 'ten_kho')
+                ->get();
+            $allKho = $kho;
+        } else {
+            // Nếu đã có lô, lấy danh sách tất cả các kho có liên kết với thuốc qua lô
+            $allKho = Kho::with(['thuoc' => function($q) use ($id) {
+                    $q->where('thuoc.thuoc_id', $id);
+                }])
+                ->select('kho_id', 'ten_kho')
+                ->get();
+        }
 
         return response()->json([
             'success' => true,
@@ -199,9 +210,9 @@ class ThuocController extends Controller
     public function suspend($id, Request $request)
     {
         $thuoc = Thuoc::findOrFail($id);
-        $thuoc->trang_thai = $request->input('trang_thai', 0);
+        $thuoc->trang_thai = $request->input('trang_thai', 1);
         $thuoc->save();
-        return response()->json(['message' => $thuoc->trang_thai == 1 ? 'Thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ thuốc.']);
+        return response()->json(['message' => $thuoc->trang_thai == 0 ? 'Thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ thuốc.']);
     }
 
     /**

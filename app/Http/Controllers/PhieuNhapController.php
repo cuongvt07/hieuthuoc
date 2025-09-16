@@ -69,7 +69,7 @@ class PhieuNhapController extends Controller
     {
         // Lấy dữ liệu cần thiết
         $nhaCungCaps = NhaCungCap::orderBy('ten_ncc')->get();
-        $thuocs = Thuoc::orderBy('ten_thuoc')->where('trang_thai', 0)->get();
+        $thuocs = Thuoc::orderBy('ten_thuoc')->where('trang_thai', 1)->get();
         $khos = Kho::orderBy('ten_kho')->get();
 
         // Tạo mã phiếu tự động

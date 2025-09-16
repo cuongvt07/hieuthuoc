@@ -25,7 +25,7 @@ class NhomThuocRequest extends FormRequest
         $rules = [
             'ten_nhom' => ['required', 'string', 'max:255'],
             'mo_ta' => ['nullable', 'string'],
-            'trang_thai' => ['nullable', 'default:0', 'in:0,1']
+            'trang_thai' => ['nullable', 'default:1', 'in:0,1']
         ];
 
         // Only validate uniqueness of ma_nhom when creating or updating with a different ma_nhom

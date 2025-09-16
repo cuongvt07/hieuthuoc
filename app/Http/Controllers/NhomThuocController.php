@@ -131,11 +131,11 @@ class NhomThuocController extends Controller
     public function suspend($id, Request $request)
     {
         $nhomThuoc = NhomThuoc::findOrFail($id);
-        $nhomThuoc->trang_thai = $request->input('trang_thai', 0);
+        $nhomThuoc->trang_thai = $request->input('trang_thai', 1);
         $nhomThuoc->save();
         
         return response()->json([
-            'message' => $nhomThuoc->trang_thai == 1 ? 'Nhóm thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ nhóm thuốc.'
+            'message' => $nhomThuoc->trang_thai == 0 ? 'Nhóm thuốc đã bị đình chỉ.' : 'Đã bỏ đình chỉ nhóm thuốc.'
         ]);
     }
 }

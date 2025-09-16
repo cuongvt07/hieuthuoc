@@ -14,13 +14,20 @@ class KhoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Kho::withSum(['loThuoc as total_items' => function($query) {
+        $query = Kho::query();
+
+        // Tính tổng số lượng tồn kho từ relationship loThuoc
+        $query->withSum(['loThuoc as total_items' => function($query) {
             $query->where('ton_kho_hien_tai', '>', 0);
-        }], 'ton_kho_hien_tai')
-        ->withCount(['thuoc as total_medicines' => function($query) {
-            $query->whereHas('loThuoc', function($q) {
-                $q->where('ton_kho_hien_tai', '>', 0);
-            })->distinct();
+        }], 'ton_kho_hien_tai');
+
+        // Đếm số lượng thuốc thông qua subquery
+        $query->addSelect(['total_medicines' => function($query) {
+            $query->selectRaw('COUNT(DISTINCT t.thuoc_id)')
+                  ->from('lo_thuoc as lt')
+                  ->join('thuoc as t', 't.thuoc_id', '=', 'lt.thuoc_id')
+                  ->whereColumn('lt.kho_id', 'kho.kho_id')
+                  ->where('t.trang_thai', 1);
         }]);
 
         if ($request->has('search')) {

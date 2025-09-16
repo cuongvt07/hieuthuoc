@@ -15,7 +15,10 @@ class GiaThuocController extends Controller
      */
     public function index(Request $request)
     {
-        $query = GiaThuoc::with('thuoc');
+        $query = GiaThuoc::with(['thuoc' => function($q) {
+            $q->select('thuoc_id', 'ten_thuoc', 'ma_thuoc');
+        }])
+        ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'ngay_tao']);
         
         if ($request->has('thuoc_id') && $request->thuoc_id) {
             $query->where('thuoc_id', $request->thuoc_id);
@@ -30,7 +33,7 @@ class GiaThuocController extends Controller
         }
         
         $giaThuoc = $query->orderBy('thuoc_id')
-                         ->orderBy('created_at', 'desc')
+                         ->orderBy('ngay_bat_dau', 'desc')
                          ->paginate(10);
         
         if ($request->ajax()) {

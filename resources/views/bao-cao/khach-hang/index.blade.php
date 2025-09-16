@@ -30,23 +30,19 @@
                     
                     <div class="col-md-3">
                         <label class="form-label">Từ ngày</label>
-                        <input type="text" name="tu_ngay" class="form-control datepicker" value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
+                        <input type="date" name="tu_ngay" class="form-control datepicker" value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
                     </div>
                     
                     <div class="col-md-3">
                         <label class="form-label">Đến ngày</label>
-                        <input type="text" name="den_ngay" class="form-control datepicker" value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
+                        <input type="date" name="den_ngay" class="form-control datepicker" value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
                     </div>
                     
                     <div class="col-md-3 d-flex align-items-end">
-                        <div class="btn-group">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-filter"></i> Lọc
-                            </button>
-                            <a href="{{ route('bao-cao.khach-hang.index', ['export' => 'excel'] + request()->all()) }}" class="btn btn-success">
-                                <i class="fas fa-file-excel"></i> Xuất Excel
-                            </a>
-                        </div>
+                        <button type="submit" class="btn btn-primary me-2">Lọc</button>
+                        <a href="{{ route('bao-cao.khach-hang.index', ['export' => 'excel'] + request()->all()) }}" class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                        </a>
                     </div>
                 </form>
             </div>
