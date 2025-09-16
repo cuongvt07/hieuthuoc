@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use Illuminate\Support\Facades\DB;
+use function number_format;
 
 class BaoCaoKhoController extends Controller
 {
@@ -25,16 +26,42 @@ public function index(Request $request)
 
     // Nếu chọn kho cụ thể
     if ($request->filled('kho_id')) {
-        $thuocs = Thuoc::select('thuoc.*')
-            ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
-            ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton')
-            ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
-            ->where('lo_thuoc.kho_id', $request->kho_id)
-            ->where('thuoc.trang_thai', 1)
-            ->groupBy('thuoc.thuoc_id')
-            ->having('tong_ton_kho', '>', 0)
-            ->orderBy('thuoc.ten_thuoc')
-            ->paginate(10);
+        $now = Carbon::now();
+        $sixMonthsLater = $now->copy()->addMonths(6);
+
+        $thuocs = Thuoc::with(['loThuoc' => function($query) use ($request) {
+            $query->where('kho_id', $request->kho_id)
+                  ->where('ton_kho_hien_tai', '>', 0);
+        }])
+        ->select('thuoc.*')
+        ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai) FROM lo_thuoc 
+            WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
+            AND lo_thuoc.kho_id = ' . $request->kho_id . '
+            AND lo_thuoc.ton_kho_hien_tai > 0) as tong_ton_kho'))
+        ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai * gia_nhap_tb) FROM lo_thuoc 
+            WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
+            AND lo_thuoc.kho_id = ' . $request->kho_id . '
+            AND lo_thuoc.ton_kho_hien_tai > 0) as gia_tri_ton'))
+        ->addSelect(DB::raw('(SELECT COUNT(*) FROM lo_thuoc 
+            WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
+            AND lo_thuoc.kho_id = ' . $request->kho_id . '
+            AND lo_thuoc.ton_kho_hien_tai > 0
+            AND lo_thuoc.han_su_dung < "' . $sixMonthsLater->format('Y-m-d') . '"
+            AND lo_thuoc.han_su_dung >= "' . $now->format('Y-m-d') . '") as sap_het_han'))
+        ->addSelect(DB::raw('(SELECT COUNT(*) FROM lo_thuoc 
+            WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
+            AND lo_thuoc.kho_id = ' . $request->kho_id . '
+            AND lo_thuoc.ton_kho_hien_tai > 0
+            AND lo_thuoc.han_su_dung < "' . $now->format('Y-m-d') . '") as da_het_han'))
+        ->whereExists(function($query) use ($request) {
+            $query->select(DB::raw(1))
+                  ->from('lo_thuoc')
+                  ->whereColumn('lo_thuoc.thuoc_id', 'thuoc.thuoc_id')
+                  ->where('lo_thuoc.kho_id', $request->kho_id)
+                  ->where('ton_kho_hien_tai', '>', 0);
+        })
+        ->orderBy('thuoc.ten_thuoc')
+        ->paginate(10);
 
         return view('bao-cao.kho.chi-tiet', compact('khos', 'thuocs'));
     }

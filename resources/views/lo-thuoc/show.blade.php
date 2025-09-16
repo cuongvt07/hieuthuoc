@@ -217,12 +217,6 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export-tab-pane" type="button" role="tab">Lịch Sử Xuất</button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="adjustment-tab" data-bs-toggle="tab" data-bs-target="#adjustment-tab-pane" type="button" role="tab">Điều Chỉnh Tồn Kho</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane" type="button" role="tab">Chuyển Kho</button>
-            </li>
         </ul>
         <div class="tab-content" id="lotTabContent">
             <!-- Tab Lịch sử nhập -->

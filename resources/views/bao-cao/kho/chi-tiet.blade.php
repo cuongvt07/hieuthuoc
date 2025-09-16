@@ -48,6 +48,7 @@
                             <th>Đơn vị</th>
                             <th class="text-end">Số lượng tồn</th>
                             <th class="text-end">Giá trị tồn</th>
+                            <th>Trạng thái HSD</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -66,6 +67,17 @@
                                 <td>{{ $thuoc->don_vi_goc }}</td>
                                 <td class="text-end">{{ number_format($thuoc->tong_ton_kho) }}</td>
                                 <td class="text-end">{{ number_format($thuoc->gia_tri_ton) }} VNĐ</td>
+                                <td>
+                                    @if($thuoc->da_het_han > 0)
+                                        <span class="badge bg-danger">{{ $thuoc->da_het_han }} lô hết hạn</span>
+                                    @endif
+                                    @if($thuoc->sap_het_han > 0)
+                                        <span class="badge bg-warning">{{ $thuoc->sap_het_han }} lô sắp hết hạn</span>
+                                    @endif
+                                    @if($thuoc->da_het_han == 0 && $thuoc->sap_het_han == 0)
+                                        <span class="badge bg-success">Còn hạn</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>

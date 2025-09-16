@@ -16,7 +16,7 @@
         <div class="card">
             <div class="card-body">
                 <form id="filterForm" method="GET" class="row g-3">
-                    <div class="col-md-4">
+                    <!-- <div class="col-md-4">
                         <label class="form-label">Thuốc</label>
                         <select name="thuoc_id" class="form-select select2">
                             <option value="">-- Tất cả --</option>
@@ -26,9 +26,9 @@
                                 </option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> -->
 
-                    <div class="col-md-4">
+                    <!-- <div class="col-md-4">
                         <label class="form-label">Kho</label>
                         <select name="kho_id" class="form-select select2">
                             <option value="">-- Tất cả --</option>
@@ -38,14 +38,14 @@
                                 </option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> -->
 
                     <div class="col-md-4">
                         <label class="form-label">Trạng thái</label>
                         <select name="trang_thai" class="form-select">
                             <option value="">-- Tất cả --</option>
                             <option value="con_han" {{ request('trang_thai') == 'con_han' ? 'selected' : '' }}>Còn hạn</option>
-                            <option value="sap_het_han" {{ request('trang_thai') == 'sap_het_han' ? 'selected' : '' }}>Sắp hết hạn (< 6 tháng)</option>
+                            <option value="sap_het_han" {{ request('trang_thai') == 'sap_het_han' ? 'selected' : '' }}>Sắp hết hạn (<  tháng)</option>
                             <option value="het_han" {{ request('trang_thai') == 'het_han' ? 'selected' : '' }}>Hết hạn</option>
                         </select>
                     </div>
@@ -83,10 +83,10 @@
                 <tbody>
                     @forelse($loThuocs as $lo)
                         <tr>
-                            <td>{{ $lo->so_lo }}</td>
+                            <td>{{ $lo->ma_lo }}</td>
                             <td>{{ $lo->thuoc->ten_thuoc }}</td>
                             <td>{{ $lo->kho->ten_kho }}</td>
-                            <td class="text-end">{{ number_format($lo->ton_kho_hien_tai) }}</td>
+                            <td class="text-end">{{ number_format($lo->ton_kho_hien_tai) }} / {{ $lo->thuoc->don_vi_goc}}</td>
                             <td>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</td>
                             <td>
                                 @php

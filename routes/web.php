@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     // Báo cáo - trang chính
+    Route::get('/lich-su-ton-kho', [App\Http\Controllers\LichSuTonKhoController::class, 'index'])->name('lich-su-ton-kho.index');
     Route::get('bao-cao', function () {
         return view('bao-cao.index');
     })->name('bao-cao.index');

@@ -103,6 +103,9 @@
                         <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
+                        <a href="{{ route('lich-su-ton-kho.index') }}" class="menu-item {{ request()->routeIs('lich-su-ton-kho.*') ? 'active' : '' }}">
+                            <i class="bi bi-clock-history"></i> Lịch Sử Tồn Kho
+                        </a>
                         @if(Auth::user()->vai_tro == 'admin')
                             <div class="accordion" id="sidebarAccordion">
                                 <div class="accordion" id="sidebarAccordion">

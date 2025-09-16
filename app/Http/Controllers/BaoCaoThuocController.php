@@ -25,25 +25,25 @@ class BaoCaoThuocController extends Controller
         
         if ($loaiBaoCao == 'trang_thai') {
             // Báo cáo theo trạng thái HSD
-            $query = Thuoc::with(['loThuocs' => function($q) {
+            $query = Thuoc::with(['loThuoc' => function($q) {
                 $q->where('ton_kho_hien_tai', '>', 0);
             }])
-            ->where('trang_thai', 1)
+            ->where('trang_thai', 0)
             ->select('thuoc.*')
             ->selectRaw('
                 SUM(CASE 
-                    WHEN lo_thuoc.han_su_dung <= NOW() THEN lo_thuoc.ton_kho_hien_tai 
+                    WHEN lo_thuoc.ton_kho_hien_tai > 0 AND lo_thuoc.han_su_dung < CURDATE() THEN lo_thuoc.ton_kho_hien_tai 
                     ELSE 0 
                 END) as sl_het_han,
                 SUM(CASE 
-                    WHEN lo_thuoc.han_su_dung > NOW() AND lo_thuoc.han_su_dung <= DATE_ADD(NOW(), INTERVAL 6 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
+                    WHEN lo_thuoc.ton_kho_hien_tai > 0 AND lo_thuoc.han_su_dung >= CURDATE() AND lo_thuoc.han_su_dung <= DATE_ADD(CURDATE(), INTERVAL 3 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
                     ELSE 0 
                 END) as sl_sap_het_han,
                 SUM(CASE 
-                    WHEN lo_thuoc.han_su_dung > DATE_ADD(NOW(), INTERVAL 6 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
+                    WHEN lo_thuoc.ton_kho_hien_tai > 0 AND lo_thuoc.han_su_dung > DATE_ADD(CURDATE(), INTERVAL 3 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
                     ELSE 0 
                 END) as sl_con_han,
-                SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho
+                SUM(CASE WHEN lo_thuoc.ton_kho_hien_tai > 0 THEN lo_thuoc.ton_kho_hien_tai ELSE 0 END) as tong_ton_kho
             ')
             ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
             ->groupBy('thuoc.thuoc_id');
@@ -113,23 +113,22 @@ class BaoCaoThuocController extends Controller
             $sheet->setCellValue('F3', 'SL Còn hạn');
 
             // Get data
-            $query = Thuoc::with(['loThuocs'])
-                ->where('trang_thai', 1)
+            $query = Thuoc::with(['loThuoc'])
                 ->select('thuoc.*')
                 ->selectRaw('
                     SUM(CASE 
-                        WHEN lo_thuoc.han_su_dung <= NOW() THEN lo_thuoc.ton_kho_hien_tai 
+                        WHEN lo_thuoc.ton_kho_hien_tai > 0 AND lo_thuoc.han_su_dung < CURDATE() THEN lo_thuoc.ton_kho_hien_tai 
                         ELSE 0 
                     END) as sl_het_han,
                     SUM(CASE 
-                        WHEN lo_thuoc.han_su_dung > NOW() AND lo_thuoc.han_su_dung <= DATE_ADD(NOW(), INTERVAL 6 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
+                        WHEN lo_thuoc.ton_kho_hien_tai > 0 AND lo_thuoc.han_su_dung >= CURDATE() AND lo_thuoc.han_su_dung <= DATE_ADD(CURDATE(), INTERVAL 3 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
                         ELSE 0 
                     END) as sl_sap_het_han,
                     SUM(CASE 
-                        WHEN lo_thuoc.han_su_dung > DATE_ADD(NOW(), INTERVAL 6 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
+                        WHEN lo_thuoc.ton_kho_hien_tai > 0 AND lo_thuoc.han_su_dung > DATE_ADD(CURDATE(), INTERVAL 3 MONTH) THEN lo_thuoc.ton_kho_hien_tai 
                         ELSE 0 
                     END) as sl_con_han,
-                    SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho
+                    SUM(CASE WHEN lo_thuoc.ton_kho_hien_tai > 0 THEN lo_thuoc.ton_kho_hien_tai ELSE 0 END) as tong_ton_kho
                 ')
                 ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
                 ->groupBy('thuoc.thuoc_id');
