@@ -46,10 +46,6 @@
                             <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="{{ $nhom->nhom_id }}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-danger delete-nhom-btn"
-                                data-id="{{ $nhom->nhom_id }}" data-name="{{ $nhom->ten_nhom }}">
-                                <i class="bi bi-trash"></i>
-                            </button>
                             <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="{{ $nhom->nhom_id }}" data-status="{{ $nhom->trang_thai }}">
                                 <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                             </button>
@@ -155,10 +151,6 @@
                                     <td>
                                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="{{ $item->thuoc_id }}">
                                             <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn"
-                                            data-id="{{ $item->thuoc_id }}" data-name="{{ $item->ten_thuoc }}">
-                                            <i class="bi bi-trash"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="{{ $item->thuoc_id }}" data-status="{{ $item->trang_thai }}">
                                             <i class="bi bi-ban"></i> {{ $item->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
@@ -498,7 +490,6 @@
                             </div>
                             <div>
                                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
                                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </div>
                         </a>`;
@@ -852,7 +843,6 @@
                             <td>${item.trang_thai == 1 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${item.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${item.thuoc_id}" data-name="${item.ten_thuoc}"><i class="bi bi-trash"></i></button>
                                 <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}"><i class="bi bi-ban"></i> ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </td>
                         </tr>`;
@@ -887,7 +877,6 @@
             </div>
             <div>
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>
         </a>`;
@@ -915,7 +904,6 @@
                     <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
                         <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}">
                             <i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
                         </button>
@@ -941,7 +929,6 @@
             </div>
             <div>
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>`;
                     item.html(html);
@@ -1168,7 +1155,6 @@
             <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
             <td>
                 <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </td>`;
                     row.html(html);

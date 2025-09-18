@@ -61,7 +61,7 @@
         .sidebar {
             width: 280px;
             min-height: 100vh;
-            background-color: #343a40;
+            background-color: #198754;
             position: fixed;
             left: 0;
             top: 0;
@@ -84,7 +84,7 @@
         .menu-item:hover,
         .menu-item.active {
             color: white;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgb(255 0 0);
         }
 
         .menu-item i {

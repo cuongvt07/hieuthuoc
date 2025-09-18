@@ -2,6 +2,25 @@
 
 @section('title', 'Dashboard - Hệ Thống Quản Lý Hiệu Thuốc')
 
+@section('styles')
+<style>
+    #sales_year {
+        border: 1px solid #d1d3e2;
+        border-radius: 0.2rem;
+        padding: 0.25rem 1rem;
+        font-size: 0.875rem;
+        height: 32px;
+        width: auto;
+        cursor: pointer;
+        background-color: #fff;
+    }
+    #sales_year:focus {
+        border-color: #bac8f3;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+</style>
+@endsection
+
 @section('page-title', 'Dashboard')
 
 @section('content')
@@ -185,7 +204,42 @@
         <div class="col-md-12 mb-4">
             <div class="card border-left-warning h-100 py-2">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold">Doanh số bán theo tháng ({{ now()->year }})</h6>
+                                        <h6 class="m-0 font-weight-bold">Doanh số bán theo tháng</h6>
+                    <form id="yearFilterForm" class="d-flex align-items-center">
+                        <select class="form-select form-select-sm" id="sales_year" name="sales_year" onchange="this.form.submit()">
+                            @for($y = now()->year; $y >= now()->year - 5; $y--)
+                                <option value="{{ $y }}" {{ request('sales_year', now()->year) == $y ? 'selected' : '' }}>
+                                    Năm {{ $y }}
+                                </option>
+                            @endfor
+                        </select>
+                    </form>
+                </div>
+                <div class="card-body">
+                    @php
+                        // Lấy năm được chọn từ request hoặc mặc định là năm hiện tại
+                        $selectedYear = request('sales_year', now()->year);
+                        $monthlyData = [];
+                        $maxValue = 0;
+
+                        // Kiểm tra xem năm được chọn có dữ liệu không
+                        $hasData = \App\Models\DonBanLe::whereYear('ngay_ban', $selectedYear)->exists();
+
+                        // Lặp qua từng tháng trong năm được chọn
+                        for ($month = 1; $month <= 12; $month++) {
+                            if ($hasData) {
+                                $total = \App\Models\DonBanLe::whereYear('ngay_ban', $selectedYear)
+                                    ->whereMonth('ngay_ban', $month)
+                                    ->sum('tong_tien');
+                            } else {
+                                $total = 0;
+                            }
+
+                            $monthlyData[$month] = $total;
+                            $maxValue = max($maxValue, $total); 
+                        }
+                            
+                    @endphp
                 </div>
                 <div class="card-body">
                     <style>
@@ -321,25 +375,31 @@
                     @endphp
 
                     <div style="position: relative;">
-                        <!-- Trục Y với các mốc giá trị -->
-                        <div class="chart-y-axis">
-                            @php
-                                $steps = 5; // Số mốc giá trị trên trục Y
-                                for ($i = 0; $i <= $steps; $i++) {
-                                    $value = ($maxValue / $steps) * $i;
-                                    echo "<span>" . number_format($value / 1000000, 1, ',', '.') . "tr</span>";
-                                }
-                            @endphp
-                        </div>
+                        @if($hasData)
+                            <!-- Trục Y với các mốc giá trị -->
+                            <div class="chart-y-axis">
+                                @php
+                                    $steps = 5; // Số mốc giá trị trên trục Y
+                                    for ($i = 0; $i <= $steps; $i++) {
+                                        $value = ($maxValue / $steps) * $i;
+                                        echo "<span>" . number_format($value / 1000000, 1, ',', '.') . "tr</span>";
+                                    }
+                                @endphp
+                            </div>
 
-                        <div class="simple-bar-chart">
-                            @foreach($monthlyPercentages as $month => $percentage)
-                                <div class="item" style="--clr: {{ $colors[$month - 1] }}; --val: {{ $percentage }}">
-                                    <div class="label">T.{{ $month }}</div>
-                                    <div class="value">{{ number_format($monthlyData[$month], 0, ',', '.') }}</div>
-                                </div>
-                            @endforeach
-                        </div>
+                            <div class="simple-bar-chart">
+                                @foreach($monthlyPercentages as $month => $percentage)
+                                    <div class="item" style="--clr: {{ $colors[$month - 1] }}; --val: {{ $percentage }}">
+                                        <div class="label">T.{{ $month }}</div>
+                                        <div class="value">{{ number_format($monthlyData[$month], 0, ',', '.') }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="alert alert-info text-center my-4">
+                                Không có dữ liệu doanh số cho năm {{ $selectedYear }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
