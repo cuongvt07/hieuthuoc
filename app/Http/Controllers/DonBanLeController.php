@@ -158,7 +158,7 @@ class DonBanLeController extends Controller
                 ON l.thuoc_id = t.thuoc_id 
             AND l.han_su_dung >= CURDATE()
             AND l.ton_kho_hien_tai > 0
-            WHERE t.ten_thuoc LIKE ? OR t.ma_thuoc LIKE ?
+            WHERE (t.ten_thuoc LIKE ? OR t.ma_thuoc LIKE ?) AND t.trang_thai = 1
             GROUP BY 
                 t.thuoc_id, t.ten_thuoc, t.ma_thuoc, 
                 t.don_vi_ban, t.don_vi_goc, t.ti_le_quy_doi, g.gia_ban

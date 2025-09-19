@@ -19,8 +19,8 @@ class NguoiDung extends Authenticatable
         'email',
         'sdt',
         'vai_tro',
-        'trang_thai',
         'mat_khau_hash',
+        'trang_thai',
     ];
 
     protected $hidden = [

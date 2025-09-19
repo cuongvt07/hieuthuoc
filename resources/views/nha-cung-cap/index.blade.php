@@ -115,10 +115,10 @@
                                     <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->ncc_id }}">
                                         <i class="bi bi-pencil"></i> Sửa
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-danger delete-btn" 
+                                    <button type="button" class="btn btn-sm btn-warning suspend-btn" 
                                         data-id="{{ $item->ncc_id }}" 
-                                        data-ten="{{ $item->ten_ncc }}">
-                                        <i class="bi bi-trash"></i> Xóa
+                                        data-ten="{{ $item->ten_ncc }}" data-status="{{ $item->trang_thai }}">
+                                        <i class="bi bi-ban"></i> {{ $item->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                                     </button>
                                 </td>
                             </tr>
@@ -732,6 +732,25 @@
             });
         }
 
+        // Đình chỉ/bỏ đình chỉ nhà cung cấp
+        $('.suspend-btn').click(function() {
+            var id = $(this).data('id');
+            var status = $(this).data('status');
+            var btn = $(this);
+            $.ajax({
+                url: '/nha-cung-cap/' + id + '/suspend',
+                type: 'POST',
+                data: {_token: $('meta[name="csrf-token"]').attr('content')},
+                success: function(res) {
+                    if(res.success) {
+                        btn.data('status', res.trang_thai);
+                        btn.html('<i class="bi bi-ban"></i> ' + (res.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'));
+                        showToast(res.message, 'info');
+                    }
+                }
+            });
+        });
+        
         // Khởi tạo
         bindButtons();
         

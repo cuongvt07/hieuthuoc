@@ -10,10 +10,11 @@ class KhachHang extends Model
     protected $primaryKey = 'khach_hang_id';
     public $timestamps = false;
     
-    protected $fillable = [
-        'sdt',
-        'ho_ten',
-    ];
+        protected $fillable = [
+            'sdt',
+            'ho_ten',
+            'trang_thai',
+        ];
 
     /**
      * Get all đơn bán lẻ for this khách hàng

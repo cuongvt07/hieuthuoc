@@ -133,4 +133,18 @@ class NhaCungCapController extends Controller
             'nhaCungCap' => $nhaCungCap
         ]);
     }
+
+    /**
+     * Đình chỉ hoặc bỏ đình chỉ nhà cung cấp
+     */
+    public function suspend(Request $request, NhaCungCap $nhaCungCap)
+    {
+        $nhaCungCap->trang_thai = $nhaCungCap->trang_thai == 1 ? 0 : 1;
+        $nhaCungCap->save();
+        return response()->json([
+            'success' => true,
+            'trang_thai' => $nhaCungCap->trang_thai,
+            'message' => $nhaCungCap->trang_thai == 1 ? 'Đã đình chỉ nhà cung cấp.' : 'Đã bỏ đình chỉ nhà cung cấp.'
+        ]);
+    }
 }

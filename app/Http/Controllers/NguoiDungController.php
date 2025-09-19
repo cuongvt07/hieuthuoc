@@ -173,6 +173,20 @@ class NguoiDungController extends Controller
     }
 
     /**
+     * Đình chỉ hoặc bỏ đình chỉ người dùng
+     */
+    public function suspend(Request $request, NguoiDung $nguoiDung)
+    {
+        $nguoiDung->trang_thai = $nguoiDung->trang_thai == 1 ? 0 : 1;
+        $nguoiDung->save();
+        return response()->json([
+            'success' => true,
+            'trang_thai' => $nguoiDung->trang_thai,
+            'message' => $nguoiDung->trang_thai == 1 ? 'Đã đình chỉ người dùng.' : 'Đã bỏ đình chỉ người dùng.'
+        ]);
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(NguoiDung $nguoiDung)

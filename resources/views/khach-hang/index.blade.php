@@ -81,10 +81,10 @@
                                     <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->khach_hang_id }}">
                                         <i class="bi bi-pencil"></i> Sửa
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-danger delete-btn" 
+                                    <button type="button" class="btn btn-sm btn-warning suspend-btn" 
                                         data-id="{{ $item->khach_hang_id }}" 
-                                        data-ten="{{ $item->ho_ten }}">
-                                        <i class="bi bi-trash"></i> Xóa
+                                        data-ten="{{ $item->ho_ten }}" data-status="{{ $item->trang_thai }}">
+                                        <i class="bi bi-ban"></i> {{ $item->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                                     </button>
                                 </td>
                             </tr>
@@ -543,6 +543,25 @@
                 
                 $('#delete_ho_ten').text(hoTen);
                 $('#deleteKhachHangModal').modal('show');
+            });
+            
+            // Đình chỉ/bỏ đình chỉ khách hàng
+            $('.suspend-btn').click(function() {
+                var id = $(this).data('id');
+                var status = $(this).data('status');
+                var btn = $(this);
+                $.ajax({
+                    url: '/khach-hang/' + id + '/suspend',
+                    type: 'POST',
+                    data: {_token: $('meta[name="csrf-token"]').attr('content')},
+                    success: function(res) {
+                        if(res.success) {
+                            btn.data('status', res.trang_thai);
+                            btn.html('<i class="bi bi-ban"></i> ' + (res.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'));
+                            showToast(res.message, 'info');
+                        }
+                    }
+                });
             });
         }
         
