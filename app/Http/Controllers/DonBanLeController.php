@@ -137,7 +137,7 @@ class DonBanLeController extends Controller
             $keyword = \Normalizer::normalize($keyword, \Normalizer::FORM_C);
         }
 
-        // Truy vấn cơ bản để lấy thông tin thuốc
+        // Truy vấn để lấy thông tin thuốc với giá mới nhất - CHỈ THUỐC CÓ HÀNG
         $thuocs = DB::select("
             SELECT 
                 t.thuoc_id,
@@ -146,22 +146,37 @@ class DonBanLeController extends Controller
                 t.don_vi_ban,
                 t.don_vi_goc,
                 t.ti_le_quy_doi,
-                COALESCE(g.gia_ban, 0) AS gia_ban,
-                COALESCE(SUM(l.ton_kho_hien_tai), 0) AS tong_ton_kho,
+                COALESCE(latest_price.gia_ban, 0) AS gia_ban,
+                inventory.tong_ton_kho,
                 0 AS vat
             FROM thuoc t
-            LEFT JOIN gia_thuoc g 
-                ON g.thuoc_id = t.thuoc_id 
-            AND g.ngay_bat_dau <= CURDATE()
-            AND (g.ngay_ket_thuc IS NULL OR g.ngay_ket_thuc >= CURDATE())
-            LEFT JOIN lo_thuoc l 
-                ON l.thuoc_id = t.thuoc_id 
-            AND l.han_su_dung >= CURDATE()
-            AND l.ton_kho_hien_tai > 0
-            WHERE (t.ten_thuoc LIKE ? OR t.ma_thuoc LIKE ?) AND t.trang_thai = 1
-            GROUP BY 
-                t.thuoc_id, t.ten_thuoc, t.ma_thuoc, 
-                t.don_vi_ban, t.don_vi_goc, t.ti_le_quy_doi, g.gia_ban
+            LEFT JOIN (
+                SELECT 
+                    thuoc_id,
+                    gia_ban
+                FROM gia_thuoc g1
+                WHERE g1.ngay_bat_dau = (
+                    SELECT MAX(g2.ngay_bat_dau)
+                    FROM gia_thuoc g2 
+                    WHERE g2.thuoc_id = g1.thuoc_id
+                    AND g2.ngay_bat_dau <= CURDATE()
+                    AND (g2.ngay_ket_thuc IS NULL OR g2.ngay_ket_thuc >= CURDATE())
+                )
+                AND g1.ngay_bat_dau <= CURDATE()
+                AND (g1.ngay_ket_thuc IS NULL OR g1.ngay_ket_thuc >= CURDATE())
+            ) latest_price ON latest_price.thuoc_id = t.thuoc_id
+            INNER JOIN (
+                SELECT 
+                    thuoc_id,
+                    SUM(ton_kho_hien_tai) as tong_ton_kho
+                FROM lo_thuoc 
+                WHERE han_su_dung >= CURDATE()
+                AND ton_kho_hien_tai > 0
+                GROUP BY thuoc_id
+            ) inventory ON inventory.thuoc_id = t.thuoc_id
+            WHERE (t.ten_thuoc LIKE ? OR t.ma_thuoc LIKE ?) 
+            AND t.trang_thai = 1
+            ORDER BY t.ten_thuoc ASC
             LIMIT 20
         ", ["%{$keyword}%", "%{$keyword}%"]);
 
@@ -193,9 +208,9 @@ class DonBanLeController extends Controller
                 'gia_ban'      => $thuoc->gia_ban,
                 'tong_ton_kho' => $thuoc->tong_ton_kho,
                 'co_hang'      => $thuoc->tong_ton_kho > 0,
-                'vat'          => 0, // Gán giá trị VAT mặc định là 0
+                'vat'          => 0,
                 'search_text'  => $thuoc->ten_thuoc . ' ' . $thuoc->ma_thuoc,
-                'lo_thuocs'    => $loThuocs // Thêm thông tin chi tiết các lô
+                'lo_thuocs'    => $loThuocs
             ];
         })->values();
 
@@ -279,7 +294,7 @@ class DonBanLeController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate đầu vào cơ bản (trừ lo_id sẽ xử lý đặc biệt)
+        // Validate đầu vào cơ bản
         $request->validate([
             'khach_hang_id' => 'nullable|exists:khach_hang,khach_hang_id',
             'khach_hang_moi.ho_ten' => 'required_without:khach_hang_id|string|max:100',
@@ -299,7 +314,6 @@ class DonBanLeController extends Controller
             $khachHangId = $request->khach_hang_id;
 
             if (!$khachHangId && isset($request->khach_hang_moi)) {
-                // Tạo khách hàng mới
                 $khachHang = KhachHang::create([
                     'ho_ten' => $request->khach_hang_moi['ho_ten'],
                     'sdt' => $request->khach_hang_moi['sdt'],
@@ -307,7 +321,7 @@ class DonBanLeController extends Controller
                 $khachHangId = $khachHang->khach_hang_id;
             }
 
-            // Tạo mã đơn bán lẻ (DBL + yyyymmdd + 4 số tự động tăng)
+            // Tạo mã đơn bán lẻ
             $today = Carbon::now()->format('Ymd');
             $latestDon = DonBanLe::where('ma_don', 'like', "DBL{$today}%")
                 ->orderBy('ma_don', 'desc')
@@ -330,262 +344,57 @@ class DonBanLeController extends Controller
                 $tongVat += $item['tien_thue'] ?? 0;
             }
 
-            // Tạo đơn bán lẻ
+            // Tạo đơn bán lẻ với trạng thái CHỜ XỬ LÝ
             $donBanLe = DonBanLe::create([
                 'ma_don' => $maDon,
                 'nguoi_dung_id' => Auth::id(),
                 'khach_hang_id' => $khachHangId,
                 'ngay_ban' => Carbon::now(),
-                'trang_thai' => 'hoan_tat',
+                'trang_thai' => 'cho_xu_ly', // Thay đổi từ 'hoan_tat' thành 'cho_xu_ly'
                 'tong_tien' => $tongTien - $tongVat,
                 'vat' => $tongVat,
                 'tong_cong' => $tongTien,
             ]);
 
-            // Thêm chi tiết đơn bán lẻ và cập nhật tồn kho
+            // Chỉ thêm chi tiết đơn bán lẻ, KHÔNG cập nhật tồn kho và lịch sử
             foreach ($request->items as $item) {
                 $thuocId = $item['thuoc_id'];
                 $soLuongCanBan = $item['so_luong'];
                 $donViItem = $item['don_vi'];
 
-                // Tính hệ số quy đổi nếu cần
-                $thuoc = Thuoc::find($thuocId);
-
-                // Kiểm tra nếu đơn vị là đơn vị bán (dựa trên don_vi từ JavaScript)
-                $heSoQuyDoi = 1; // Mặc định là 1 (không cần quy đổi)
-                $isDonViBan = ($donViItem === 'don_vi_ban');
-
-                if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $thuoc->ti_le_quy_doi > 0) {
-                    $heSoQuyDoi = $thuoc->ti_le_quy_doi;
-                }
-
-                // Quy đổi số lượng cần bán về đơn vị gốc (chia thay vì nhân)
-                $soLuongQuyDoiDonViGoc = $soLuongCanBan;
-                if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $heSoQuyDoi > 0) {
-                    $soLuongQuyDoiDonViGoc = $soLuongCanBan / $heSoQuyDoi;
-                }
-
-                // Kiểm tra nếu lo_id là "temporary", xử lý đặc biệt bằng cách tự động chọn lô cũ nhất
-                if (isset($item['lo_id']) && $item['lo_id'] === 'temporary') {
-                    // Lấy tất cả các lô của thuốc còn hạn sử dụng và có tồn kho, ưu tiên lô cũ nhất (HSD gần hết hạn nhất)
-                    $cacLoThuoc = $thuoc->getLoThuocConHang()->sortBy('han_su_dung');
-
-                    if ($cacLoThuoc->isEmpty()) {
-                        throw new Exception('Không có lô thuốc nào khả dụng cho sản phẩm ' . $thuoc->ten_thuoc);
-                    }
-
-                    $tongTonKho = $cacLoThuoc->sum('ton_kho_hien_tai');
-                    if ($tongTonKho < $soLuongQuyDoiDonViGoc) {
-                        throw new Exception('Tổng số lượng tồn kho không đủ cho sản phẩm ' . $thuoc->ten_thuoc . ' (Yêu cầu: ' . $soLuongQuyDoiDonViGoc . ' ' . $thuoc->don_vi_goc . ', Tồn kho: ' . $tongTonKho . ' ' . $thuoc->don_vi_goc . ')');
-                    }
-
-                    // Biến để theo dõi số lượng còn cần lấy
-                    $soLuongConLai = $soLuongQuyDoiDonViGoc;
-
-                    // Duyệt qua các lô theo thứ tự cũ nhất đến mới nhất (HSD tăng dần)
-                    foreach ($cacLoThuoc as $loThuoc) {
-                        if ($soLuongConLai <= 0) break;
-
-                        // Số lượng có thể lấy từ lô này
-                        $soLuongLayTuLo = min($loThuoc->ton_kho_hien_tai, $soLuongConLai);
-
-                        // Quy đổi số lượng hiển thị nếu là đơn vị bán
-                        $soLuongHienThi = $soLuongLayTuLo;
-                        if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $heSoQuyDoi > 0) {
-                            $soLuongHienThi = $soLuongLayTuLo / $heSoQuyDoi;
-                        }
-
-                        // Sử dụng thanh_tien từ request thay vì tính lại
-                        $thanhTien = $item['thanh_tien'] * ($soLuongHienThi / $soLuongCanBan); // Phân bổ thanh_tien theo số lượng
-                        $tienThue = ($item['tien_thue'] ?? 0) * ($soLuongHienThi / $soLuongCanBan);
-
-                        $chiTiet = ChiTietDonBanLe::create([
-                            'don_id' => $donBanLe->don_id,
-                            'lo_id' => $loThuoc->lo_id,
-                            'don_vi' => $donViItem === 'don_vi_goc' ? 0 : 1, // Chuyển thành 0 hoặc 1
-                            'so_luong' => $soLuongHienThi,
-                            'gia_ban' => $item['gia_ban'],
-                            'thue_suat' => $item['thue_suat'] ?? 0,
-                            'tien_thue' => $tienThue,
-                            'thanh_tien' => $thanhTien,
-                        ]);
-
-                        // Cập nhật tồn kho
-                        $loThuoc->ton_kho_hien_tai -= $soLuongLayTuLo;
-                        $loThuoc->save();
-
-                        // Thêm vào lịch sử tồn kho
-                        LichSuTonKho::create([
-                            'lo_id' => $loThuoc->lo_id,
-                            'thuoc_id' => $thuocId,
-                            'don_ban_le_id' => $donBanLe->don_id,
-                            'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
-                            'so_luong_thay_doi' => -$soLuongLayTuLo, // chỉnh lại kiểu dữ liệu nhé
-                            'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
-                            'nguoi_dung_id' => Auth::id(),
-                            'loai_thay_doi' => 'ban',
-                            'mo_ta' => 'Bán thuốc: ' . $thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
-                        ]);
-
-                        // Cập nhật số lượng còn lại cần lấy
-                        $soLuongConLai -= $soLuongLayTuLo;
-                    }
+                // Xác định lô thuốc để lưu vào chi tiết đơn
+                $loId = null;
+                
+                if (isset($item['lo_id']) && $item['lo_id'] !== 'temporary' && is_numeric($item['lo_id'])) {
+                    // Nếu có chỉ định lô cụ thể
+                    $loId = $item['lo_id'];
                 } else {
-                    // Nếu lo_id là một giá trị thực, kiểm tra xem nó có tồn tại không
-                    if (!isset($item['lo_id']) || !is_numeric($item['lo_id'])) {
-                        throw new Exception('Không có thông tin lô thuốc hợp lệ cho sản phẩm ' . $thuoc->ten_thuoc);
-                    }
-
-                    $loThuoc = LoThuoc::find($item['lo_id']);
-                    if (!$loThuoc) {
-                        throw new Exception('Không tìm thấy lô thuốc cho sản phẩm ' . $thuoc->ten_thuoc);
-                    }
-
-                    // Kiểm tra nếu lô được chỉ định không đủ, sẽ lấy thêm từ lô khác
-                    if ($loThuoc->ton_kho_hien_tai < $soLuongQuyDoiDonViGoc) {
-                        // Lấy tất cả các lô còn hạn sử dụng và có tồn kho, sắp xếp theo ngày hết hạn
-                        $cacLoThuoc = $thuoc->getLoThuocConHang()->sortBy('han_su_dung');
-
-                        $tongTonKho = $cacLoThuoc->sum('ton_kho_hien_tai');
-
-                        if ($tongTonKho < $soLuongQuyDoiDonViGoc) {
-                            throw new Exception('Tổng số lượng tồn kho không đủ cho sản phẩm ' . $thuoc->ten_thuoc . ' (Yêu cầu: ' . $soLuongQuyDoiDonViGoc . ', Tồn kho: ' . $tongTonKho . ')');
-                        }
-
-                        $soLuongConLai = $soLuongQuyDoiDonViGoc;
-
-                        // Ưu tiên lấy từ lô được chỉ định trước
-                        $soLuongLayTuLo = min($loThuoc->ton_kho_hien_tai, $soLuongConLai);
-
-                        $soLuongHienThi = $soLuongLayTuLo;
-                        if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $heSoQuyDoi > 0) {
-                            $soLuongHienThi = $soLuongLayTuLo / $heSoQuyDoi;
-                        }
-
-                        $thanhTien = $item['thanh_tien'] * ($soLuongHienThi / $soLuongCanBan);
-                        $tienThue = ($item['tien_thue'] ?? 0) * ($soLuongHienThi / $soLuongCanBan);
-
-                        $chiTiet = ChiTietDonBanLe::create([
-                            'don_id' => $donBanLe->don_id,
-                            'lo_id' => $loThuoc->lo_id,
-                            'don_vi' => $donViItem === 'don_vi_goc' ? 0 : 1, // Chuyển thành 0 hoặc 1
-                            'so_luong' => $soLuongHienThi,
-                            'gia_ban' => $item['gia_ban'],
-                            'thue_suat' => $item['thue_suat'] ?? 0,
-                            'tien_thue' => $tienThue,
-                            'thanh_tien' => $thanhTien,
-                        ]);
-
-                        // Cập nhật tồn kho
-                        $loThuoc->ton_kho_hien_tai -= $soLuongLayTuLo;
-                        $loThuoc->save();
-
-                        // Thêm vào lịch sử tồn kho
-                        LichSuTonKho::create([
-                            'lo_id' => $loThuoc->lo_id,
-                            'thuoc_id' => $thuocId,
-                            'don_ban_le_id' => $donBanLe->don_id,
-                            'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
-                            'so_luong_thay_doi' => -$soLuongLayTuLo,
-                            'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
-                            'nguoi_dung_id' => Auth::id(),
-                            'loai_thay_doi' => 'ban',
-                            'mo_ta' => 'Bán thuốc: ' . $thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
-                        ]);
-
-                        // Cập nhật số lượng còn lại
-                        $soLuongConLai -= $soLuongLayTuLo;
-
-                        // Nếu vẫn cần lấy thêm từ các lô khác
-                        if ($soLuongConLai > 0) {
-                            // Duyệt qua các lô khác theo thứ tự cũ nhất đến mới nhất (ngoại trừ lô đã lấy)
-                            foreach ($cacLoThuoc as $lo) {
-                                if ($lo->lo_id === $loThuoc->lo_id) continue;
-                                if ($soLuongConLai <= 0) break;
-
-                                $soLuongLayTuLo = min($lo->ton_kho_hien_tai, $soLuongConLai);
-
-                                $soLuongHienThi = $soLuongLayTuLo;
-                                if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $heSoQuyDoi > 0) {
-                                    $soLuongHienThi = $soLuongLayTuLo / $heSoQuyDoi;
-                                }
-
-                                $thanhTien = $item['thanh_tien'] * ($soLuongHienThi / $soLuongCanBan);
-                                $tienThue = ($item['tien_thue'] ?? 0) * ($soLuongHienThi / $soLuongCanBan);
-
-                                $chiTiet = ChiTietDonBanLe::create([
-                                    'don_id' => $donBanLe->don_id,
-                                    'lo_id' => $lo->lo_id,
-                                    'don_vi' => $donViItem === 'don_vi_goc' ? 0 : 1, // Chuyển thành 0 hoặc 1
-                                    'so_luong' => $soLuongHienThi,
-                                    'gia_ban' => $item['gia_ban'],
-                                    'thue_suat' => $item['thue_suat'] ?? 0,
-                                    'tien_thue' => $tienThue,
-                                    'thanh_tien' => $thanhTien,
-                                ]);
-
-                                // Cập nhật tồn kho
-                                $lo->ton_kho_hien_tai -= $soLuongLayTuLo;
-                                $lo->save();
-
-                                // Thêm vào lịch sử tồn kho
-                                LichSuTonKho::create([
-                                    'lo_id' => $lo->lo_id,
-                                    'thuoc_id' => $thuocId,
-                                    'don_ban_le_id' => $donBanLe->don_id,
-                                    'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
-                                    'so_luong_thay_doi' => -$soLuongLayTuLo,
-                                    'ton_kho_moi' => $lo->ton_kho_hien_tai,
-                                    'nguoi_dung_id' => Auth::id(),
-                                    'loai_thay_doi' => 'ban',
-                                    'mo_ta' => 'Bán thuốc: ' . $thuoc->ten_thuoc . ' - Lô: ' . $lo->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
-                                ]);
-
-                                $soLuongConLai -= $soLuongLayTuLo;
-                            }
-                        }
-                    } else {
-                        // Lô đủ số lượng
-                        $soLuongHienThi = $soLuongCanBan;
-                        $thanhTien = $item['thanh_tien']; // Sử dụng giá trị từ request
-                        $tienThue = $item['tien_thue'] ?? 0;
-
-                        $chiTiet = ChiTietDonBanLe::create([
-                            'don_id' => $donBanLe->don_id,
-                            'lo_id' => $loThuoc->lo_id,
-                            'don_vi' => $donViItem === 'don_vi_goc' ? 0 : 1, // Chuyển thành 0 hoặc 1
-                            'so_luong' => $soLuongHienThi,
-                            'gia_ban' => $item['gia_ban'],
-                            'thue_suat' => $item['thue_suat'] ?? 0,
-                            'tien_thue' => $tienThue,
-                            'thanh_tien' => $thanhTien,
-                        ]);
-
-                        // Cập nhật tồn kho
-                        $loThuoc->ton_kho_hien_tai -= $soLuongQuyDoiDonViGoc;
-                        $loThuoc->save();
-
-                        // Thêm vào lịch sử tồn kho
-                        LichSuTonKho::create([
-                            'lo_id' => $loThuoc->lo_id,
-                            'thuoc_id' => $thuocId,
-                            'don_ban_le_id' => $donBanLe->don_id,
-                            'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
-                            'so_luong_thay_doi' => -$soLuongQuyDoiDonViGoc,
-                            'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
-                            'nguoi_dung_id' => Auth::id(),
-                            'loai_thay_doi' => 'ban',
-                            'mo_ta' => 'Bán thuốc: ' . $thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
-                        ]);
+                    // Nếu là 'temporary' hoặc không có lô, lấy lô cũ nhất có tồn kho
+                    $thuoc = Thuoc::find($thuocId);
+                    $loCuNhat = $thuoc->getLoThuocConHang()->sortBy('han_su_dung')->first();
+                    if ($loCuNhat) {
+                        $loId = $loCuNhat->lo_id;
                     }
                 }
+
+                // Tạo chi tiết đơn (chưa trừ tồn kho)
+                ChiTietDonBanLe::create([
+                    'don_id' => $donBanLe->don_id,
+                    'lo_id' => $loId,
+                    'don_vi' => $donViItem === 'don_vi_goc' ? 0 : 1,
+                    'so_luong' => $soLuongCanBan,
+                    'gia_ban' => $item['gia_ban'],
+                    'thue_suat' => $item['thue_suat'] ?? 0,
+                    'tien_thue' => $item['tien_thue'] ?? 0,
+                    'thanh_tien' => $item['thanh_tien'],
+                ]);
             }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đơn hàng đã được tạo thành công',
+                'message' => 'Đơn hàng đã được tạo thành công với trạng thái chờ xử lý',
                 'don_id' => $donBanLe->don_id,
                 'ma_don' => $donBanLe->ma_don
             ]);
@@ -597,6 +406,141 @@ class DonBanLeController extends Controller
                 'message' => 'Lỗi: ' . $e->getMessage()
             ], 422);
         }
+    }
+
+    public function completeOrder($orderId)
+    {
+        DB::beginTransaction();
+
+        try {
+            $donBanLe = DonBanLe::with('chiTietDonBanLe')->find($orderId);
+            
+            if (!$donBanLe) {
+                throw new Exception('Không tìm thấy đơn hàng');
+            }
+
+            if ($donBanLe->trang_thai === 'hoan_tat') {
+                throw new Exception('Đơn hàng đã được hoàn tất trước đó');
+            }
+
+            if ($donBanLe->trang_thai !== 'cho_xu_ly') {
+                throw new Exception('Chỉ có thể hoàn tất đơn hàng có trạng thái chờ xử lý');
+            }
+
+            // Lấy tất cả chi tiết đơn
+            $chiTietDons = $donBanLe->chiTietDonBanLe;
+
+            foreach($chiTietDons as $chiTiet) {
+                $thuoc = $chiTiet->loThuoc->thuoc;
+                $soLuongCanBan = $chiTiet->so_luong;
+                $isDonViBan = ($chiTiet->don_vi == 1);
+
+                // Tính hệ số quy đổi
+                $heSoQuyDoi = 1;
+                if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $thuoc->ti_le_quy_doi > 0) {
+                    $heSoQuyDoi = $thuoc->ti_le_quy_doi;
+                }
+
+                // Quy đổi về đơn vị gốc
+                $soLuongQuyDoiDonViGoc = $soLuongCanBan;
+                if ($isDonViBan && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $heSoQuyDoi > 0) {
+                    $soLuongQuyDoiDonViGoc = $soLuongCanBan / $heSoQuyDoi;
+                }
+
+                // Kiểm tra và xử lý trừ tồn kho
+                $this->processInventoryDeduction($chiTiet, $thuoc, $soLuongQuyDoiDonViGoc, $donBanLe);
+            }
+
+            // Cập nhật trạng thái đơn hàng
+            $donBanLe->update([
+                'trang_thai' => 'hoan_tat',
+                'ngay_hoan_tat' => Carbon::now()
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đơn hàng đã được hoàn tất và trừ tồn kho thành công'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    private function processInventoryDeduction($chiTiet, $thuoc, $soLuongQuyDoiDonViGoc, $donBanLe)
+    {
+        $loThuocGoc = $chiTiet->loThuoc;
+
+        // Kiểm tra nếu lô gốc không đủ
+        if ($loThuocGoc->ton_kho_hien_tai < $soLuongQuyDoiDonViGoc) {
+            // Lấy tất cả lô khả dụng
+            $cacLoThuoc = $thuoc->getLoThuocConHang()->sortBy('han_su_dung');
+            
+            $tongTonKho = $cacLoThuoc->sum('ton_kho_hien_tai');
+            if ($tongTonKho < $soLuongQuyDoiDonViGoc) {
+                throw new Exception('Tổng số lượng tồn kho không đủ cho sản phẩm ' . $thuoc->ten_thuoc);
+            }
+
+            $soLuongConLai = $soLuongQuyDoiDonViGoc;
+
+            // Ưu tiên trừ từ lô gốc trước
+            if ($loThuocGoc->ton_kho_hien_tai > 0) {
+                $soLuongTru = min($loThuocGoc->ton_kho_hien_tai, $soLuongConLai);
+                $this->deductInventoryFromLot($loThuocGoc, $soLuongTru, $donBanLe, $chiTiet);
+                $soLuongConLai -= $soLuongTru;
+            }
+
+            // Trừ từ các lô khác nếu cần
+            foreach ($cacLoThuoc as $lo) {
+                if ($lo->lo_id === $loThuocGoc->lo_id || $soLuongConLai <= 0) continue;
+
+                $soLuongTru = min($lo->ton_kho_hien_tai, $soLuongConLai);
+                
+                // Tạo chi tiết đơn bổ sung cho lô này
+                $chiTietMoi = ChiTietDonBanLe::create([
+                    'don_id' => $donBanLe->don_id,
+                    'lo_id' => $lo->lo_id,
+                    'don_vi' => $chiTiet->don_vi,
+                    'so_luong' => $soLuongTru,
+                    'gia_ban' => $chiTiet->gia_ban,
+                    'thue_suat' => $chiTiet->thue_suat,
+                    'tien_thue' => 0, // Phân bổ lại nếu cần
+                    'thanh_tien' => 0, // Phân bổ lại nếu cần
+                ]);
+
+                $this->deductInventoryFromLot($lo, $soLuongTru, $donBanLe, $chiTietMoi);
+                $soLuongConLai -= $soLuongTru;
+            }
+        } else {
+            // Lô đủ số lượng
+            $this->deductInventoryFromLot($loThuocGoc, $soLuongQuyDoiDonViGoc, $donBanLe, $chiTiet);
+        }
+    }
+
+    private function deductInventoryFromLot($loThuoc, $soLuong, $donBanLe, $chiTiet)
+    {
+        // Trừ tồn kho
+        $loThuoc->ton_kho_hien_tai -= $soLuong;
+        $loThuoc->save();
+
+        // Tạo lịch sử tồn kho
+        LichSuTonKho::create([
+            'lo_id' => $loThuoc->lo_id,
+            'thuoc_id' => $loThuoc->thuoc_id,
+            'don_ban_le_id' => $donBanLe->don_id,
+            'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
+            'so_luong_thay_doi' => -$soLuong,
+            'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
+            'nguoi_dung_id' => Auth::id(),
+            'loai_thay_doi' => 'ban',
+            'mo_ta' => 'Bán thuốc: ' . $loThuoc->thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
+        ]);
     }
     
     /**
@@ -624,80 +568,92 @@ class DonBanLeController extends Controller
     /**
      * Hủy đơn bán lẻ
      */
-    public function cancel(DonBanLe $donBanLe)
+    public function cancel($donBanLe)
     {
-        // Kiểm tra xem đơn có thể hủy không
-        if (!in_array($donBanLe->trang_thai, ['hoan_thanh', 'hoan_tat', 'cho_xu_ly'])) {
+        // Tìm bản ghi DonBanLe
+        $donBanLeS = DonBanLe::with('chiTietDonBanLe.loThuoc.thuoc')->findOrFail($donBanLe);
+
+        // Kiểm tra trạng thái đơn
+        if (!in_array($donBanLeS->trang_thai, ['hoan_thanh', 'cho_xu_ly'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Chỉ có thể hủy đơn hàng ở trạng thái hoàn thành hoặc chờ xử lý'
+                'message' => 'Chỉ có thể hủy đơn hàng ở trạng thái hoàn thành hoặc chờ xử lý.'
             ], 422);
         }
-        
+
         DB::beginTransaction();
-        
+
         try {
-            // Cập nhật trạng thái đơn
-            $donBanLe->trang_thai = 'huy';
-            $donBanLe->save();
-            
-            // Hoàn lại tồn kho và ghi lại lịch sử tồn kho
-            foreach ($donBanLe->chiTietDonBanLe as $chiTiet) {
-                $loThuoc = $chiTiet->loThuoc;
-                $thuoc = $loThuoc->thuoc;
-                
-                // Tính số lượng cần hoàn trả theo đơn vị gốc
-                $soLuongHoanTra = $chiTiet->so_luong;
-                
-                // Quy đổi số lượng về đơn vị gốc nếu cần
-                if ($chiTiet->don_vi == 1 && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $thuoc->ti_le_quy_doi > 0) {
-                    $soLuongHoanTra = $chiTiet->so_luong / $thuoc->ti_le_quy_doi;
+            if ($donBanLeS->trang_thai === 'cho_xu_ly') {
+                $donBanLeS->trang_thai = 'huy';
+                $donBanLeS->save();
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đơn hàng đã được xóa thành công.'
+                ]);
+            } else {
+                // Cập nhật trạng thái đơn
+                $donBanLeS->trang_thai = 'huy';
+                $donBanLeS->save();
+
+                // Hoàn lại tồn kho và ghi lịch sử tồn kho
+                foreach ($donBanLeS->chiTietDonBanLe as $chiTiet) {
+                    $loThuoc = $chiTiet->loThuoc;
+                    $thuoc = $loThuoc->thuoc;
+
+                    // Tính số lượng cần hoàn trả theo đơn vị gốc
+                    $soLuongHoanTra = $chiTiet->so_luong;
+
+                    // Quy đổi số lượng về đơn vị gốc nếu cần
+                    if ($chiTiet->don_vi == 1 && $thuoc->don_vi_ban != $thuoc->don_vi_goc && $thuoc->ti_le_quy_doi > 0) {
+                        $soLuongHoanTra = $chiTiet->so_luong / $thuoc->ti_le_quy_doi;
+                    }
+
+                    // Cập nhật tồn kho
+                    $loThuoc->ton_kho_hien_tai += $soLuongHoanTra;
+                    $loThuoc->save();
+
+                    // Ghi lịch sử tồn kho
+                    LichSuTonKho::create([
+                        'lo_id' => $loThuoc->lo_id,
+                        'thuoc_id' => $thuoc->thuoc_id,
+                        'don_ban_le_id' => $donBanLeS->don_id,
+                        'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
+                        'so_luong_thay_doi' => $soLuongHoanTra,
+                        'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
+                        'nguoi_dung_id' => auth()->id(),
+                        'loai_thay_doi' => 'hoan_tra',
+                        'mo_ta' => 'Hoàn trả thuốc do hủy đơn: ' . $thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLeS->ma_don
+                    ]);
                 }
-                
-                // Cập nhật tồn kho
-                $loThuoc->ton_kho_hien_tai += $soLuongHoanTra;
-                $loThuoc->save();
-                
-                // Ghi nhận vào lịch sử tồn kho
-                LichSuTonKho::create([
-                    'lo_id' => $loThuoc->lo_id,
-                    'thuoc_id' => $thuoc->thuoc_id,
-                    'don_ban_le_id' => $donBanLe->don_id,
-                    'chi_tiet_don_id' => $chiTiet->chi_tiet_id,
-                    'so_luong_thay_doi' => $soLuongHoanTra,
-                    'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
-                    'nguoi_dung_id' => auth()->id(),
-                    'loai_thay_doi' => 'hoan_tra',
-                    'mo_ta' => 'Hoàn trả thuốc do hủy đơn: ' . $thuoc->ten_thuoc . ' - Lô: ' . $loThuoc->ma_lo . ' - Đơn: ' . $donBanLe->ma_don
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đơn hàng đã được hủy thành công và hàng đã được hoàn trả vào kho.'
                 ]);
             }
-            
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Đơn hàng đã được hủy thành công và hàng đã được hoàn trả vào kho'
-            ]);
-            
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Lỗi: ' . $e->getMessage()
-            ], 422);
+                'message' => 'Lỗi khi hủy đơn hàng: ' . $e->getMessage()
+            ], 500);
         }
     }
     
     /**
      * In đơn bán lẻ
      */
-    public function print(DonBanLe $donBanLe)
+    public function print($donBanLe)
     {
-        $donBanLe->load([
-            'nguoiDung', 
-            'khachHang', 
-            'chiTietDonBanLe.loThuoc.thuoc'
-        ]);
+
+        $donBanLe = DonBanLe::with(['nguoiDung', 'khachHang', 'chiTietDonBanLe.loThuoc.thuoc'])
+            ->find($donBanLe);
         
         return view('don-ban-le.print', compact('donBanLe'));
     }

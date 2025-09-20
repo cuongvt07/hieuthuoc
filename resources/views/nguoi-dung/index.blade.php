@@ -461,6 +461,24 @@
             `;
         }
         
+        // Lấy vai trò và ID của người dùng hiện tại
+        const userRole = '{{ Auth::user()->vai_tro }}'; // Lấy vai trò từ PHP
+        const currentUserId = '{{ Auth::id() }}'; // Lấy ID người dùng hiện tại
+
+        // Hàm kiểm tra quyền chỉnh sửa
+        function hasEditPermission() {
+            return userRole === 'admin';
+        }
+
+        // Vô hiệu hóa các nút thao tác nếu không phải admin
+        if (!hasEditPermission()) {
+            // Ẩn hoặc vô hiệu hóa nút "Thêm Nhân Sự"
+            $('#addUserModal').parent().find('.btn-primary').prop('disabled', true).addClass('disabled');
+
+            // Vô hiệu hóa các nút chỉnh sửa, xóa, đình chỉ trong bảng Admin
+            $('#admin-table .edit-btn, #admin-table .delete-btn').prop('disabled', true).addClass('disabled');
+        }
+
         // Tìm kiếm người dùng
         $('#searchBtn').click(function() {
             const searchValue = $('#search-input').val();
@@ -503,6 +521,7 @@
                     let adminHtml = '';
                     if (response.admins.length > 0) {
                         $.each(response.admins, function(index, item) {
+                            const isCurrentUser = item.nguoi_dung_id == currentUserId;
                             adminHtml += `
                                 <tr>
                                     <td>
@@ -521,16 +540,17 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}">
+                                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}" ${!hasEditPermission() ? 'disabled' : ''}>
                                                 <i class="bi bi-pencil"></i> Sửa
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
+                                            <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
                                                 <i class="bi bi-key"></i> Đổi Mật Khẩu
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
-                                                <i class="bi bi-trash"></i> Xóa
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                                <i class="bi bi-ban"></i> ${item.trang_thai == 'hoat_dong' ? 'Đình chỉ' : 'Bỏ đình chỉ'}
                                             </button>
-                                        </div>
+         
+                                            </div>
                                     </td>
                                 </tr>
                             `;
@@ -540,41 +560,44 @@
                     }
                     adminTable.html(adminHtml);
                     
-                    // Render dược sĩ
+                    // Render dược sĩ (chỉ hiển thị tài khoản của người dùng hiện tại nếu không phải admin)
                     let duocSiHtml = '';
                     if (response.duocSis.length > 0) {
                         $.each(response.duocSis, function(index, item) {
-                            duocSiHtml += `
-                                <tr>
-                                    <td>
-                                        <div class="user-avatar" style="background-color: #1cc88a;">
-                                            ${item.ho_ten.charAt(0)}
-                                        </div>
-                                    </td>
-                                    <td>${item.ten_dang_nhap}</td>
-                                    <td>${item.ho_ten}</td>
-                                    <td>${item.email}</td>
-                                    <td>${item.sdt || 'Chưa cập nhật'}</td>
-                                    <td>
-                                        ${item.trang_thai 
-                                            ? '<span class="badge bg-success">Hoạt động</span>' 
-                                            : '<span class="badge badge-inactive text-white">Khóa</span>'}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}">
-                                                <i class="bi bi-pencil"></i> Sửa
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
-                                                <i class="bi bi-key"></i> Đổi Mật Khẩu
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
-                                                <i class="bi bi-trash"></i> Xóa
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `;
+                            const isCurrentUser = item.nguoi_dung_id == currentUserId;
+                            if (hasEditPermission() || isCurrentUser) {
+                                duocSiHtml += `
+                                    <tr>
+                                        <td>
+                                            <div class="user-avatar" style="background-color: #1cc88a;">
+                                                ${item.ho_ten.charAt(0)}
+                                            </div>
+                                        </td>
+                                        <td>${item.ten_dang_nhap}</td>
+                                        <td>${item.ho_ten}</td>
+                                        <td>${item.email}</td>
+                                        <td>${item.sdt || 'Chưa cập nhật'}</td>
+                                        <td>
+                                            ${item.trang_thai 
+                                                ? '<span class="badge bg-success">Hoạt động</span>' 
+                                                : '<span class="badge badge-inactive text-white">Khóa</span>'}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}" ${!hasEditPermission() && !isCurrentUser ? 'disabled' : ''}>
+                                                    <i class="bi bi-pencil"></i> Sửa
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() && !isCurrentUser ? 'disabled' : ''}>
+                                                    <i class="bi bi-key"></i> Đổi Mật Khẩu
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                                    <i class="bi bi-ban"></i> ${item.trang_thai == 'hoat_dong' ? 'Đình chỉ' : 'Bỏ đình chỉ'}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }
                         });
                     } else {
                         duocSiHtml = '<tr><td colspan="7" class="text-center">Không có dữ liệu</td></tr>';
@@ -595,21 +618,19 @@
         // Thêm người dùng
         $('#addUserForm').submit(function(e) {
             e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền thêm nhân sự', 'warning');
+                return;
+            }
             
-            // Lấy dữ liệu từ form
             const formData = new FormData(this);
-            
-            // Chuyển FormData thành đối tượng
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-            
             $.ajax({
                 url: "{{ route('nguoi-dung.store') }}",
                 type: "POST",
-                data: data,
+                data: formData,
                 dataType: "json",
+                processData: false,
+                contentType: false,
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -621,11 +642,7 @@
                 },
                 error: function(xhr) {
                     const errors = xhr.responseJSON.errors;
-                    
-                    // Xóa tất cả invalid feedback trước
                     $('#addUserForm .is-invalid').removeClass('is-invalid');
-                    
-                    // Hiển thị lỗi validation
                     if (errors) {
                         Object.keys(errors).forEach(function(key) {
                             $(`#${key}`).addClass('is-invalid');
@@ -638,13 +655,16 @@
 
         // Lấy thông tin người dùng để sửa
         function getUser(id) {
+            if (!hasEditPermission() && id != currentUserId) {
+                showToast('Bạn không có quyền sửa thông tin này', 'warning');
+                return;
+            }
             $.ajax({
                 url: `/nguoi-dung/${id}`,
                 type: "GET",
                 dataType: "json",
                 success: function(response) {
                     const user = response.nguoiDung;
-                    
                     $('#edit_nguoi_dung_id').val(user.nguoi_dung_id);
                     $('#edit_ten_dang_nhap').val(user.ten_dang_nhap);
                     $('#edit_ho_ten').val(user.ho_ten);
@@ -652,7 +672,6 @@
                     $('#edit_sdt').val(user.sdt || '');
                     $('#edit_vai_tro').val(user.vai_tro);
                     
-                    // Set radio button value
                     if (user.trang_thai == 1) {
                         $('#edit_trang_thai_1').prop('checked', true);
                     } else {
@@ -670,23 +689,20 @@
         // Cập nhật người dùng
         $('#editUserForm').submit(function(e) {
             e.preventDefault();
-            
             const id = $('#edit_nguoi_dung_id').val();
+            if (!hasEditPermission() && id != currentUserId) {
+                showToast('Bạn không có quyền sửa thông tin này', 'warning');
+                return;
+            }
             
-            // Lấy dữ liệu từ form
             const formData = new FormData(this);
-            
-            // Chuyển FormData thành đối tượng
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-            
             $.ajax({
                 url: `/nguoi-dung/${id}`,
                 type: "PUT",
-                data: data,
+                data: formData,
                 dataType: "json",
+                processData: false,
+                contentType: false,
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -697,11 +713,7 @@
                 },
                 error: function(xhr) {
                     const errors = xhr.responseJSON.errors;
-                    
-                    // Xóa tất cả invalid feedback trước
                     $('#editUserForm .is-invalid').removeClass('is-invalid');
-                    
-                    // Hiển thị lỗi validation
                     if (errors) {
                         Object.keys(errors).forEach(function(key) {
                             $(`#edit_${key}`).addClass('is-invalid');
@@ -717,9 +729,13 @@
         
         // Mở modal đổi mật khẩu
         $(document).on('click', '.change-password-btn', function() {
-            passwordUserId = $(this).data('id');
+            const id = $(this).data('id');
+            if (!hasEditPermission() && id != currentUserId) {
+                showToast('Bạn không có quyền đổi mật khẩu cho người dùng này', 'warning');
+                return;
+            }
+            passwordUserId = id;
             const userName = $(this).data('name');
-            
             $('#change_password_nguoi_dung_id').val(passwordUserId);
             $('#change_password_user_name').text(userName);
             $('#changePasswordModal').modal('show');
@@ -728,10 +744,13 @@
         // Submit đổi mật khẩu
         $('#changePasswordForm').submit(function(e) {
             e.preventDefault();
-            
             const id = $('#change_password_nguoi_dung_id').val();
-            const newPassword = $('#new_password').val();
+            if (!hasEditPermission() && id != currentUserId) {
+                showToast('Bạn không có quyền đổi mật khẩu cho người dùng này', 'warning');
+                return;
+            }
             
+            const newPassword = $('#new_password').val();
             $.ajax({
                 url: `/nguoi-dung/${id}/doi-mat-khau`,
                 type: "PUT",
@@ -749,11 +768,7 @@
                 },
                 error: function(xhr) {
                     const errors = xhr.responseJSON.errors;
-                    
-                    // Xóa tất cả invalid feedback trước
                     $('#new_password').removeClass('is-invalid');
-                    
-                    // Hiển thị lỗi validation
                     if (errors && errors.mat_khau) {
                         $('#new_password').addClass('is-invalid');
                         $('#new_password_error').text(errors.mat_khau[0]);
@@ -774,9 +789,13 @@
             
             // Nút xóa người dùng
             $('.delete-btn').click(function() {
-                deleteId = $(this).data('id');
+                const id = $(this).data('id');
+                if (!hasEditPermission() || id != currentUserId) {
+                    showToast('Bạn không có quyền xóa người dùng này', 'warning');
+                    return;
+                }
+                deleteId = id;
                 const userName = $(this).data('name');
-                
                 $('#delete_user_name').text(userName);
                 $('#deleteUserModal').modal('show');
             });
@@ -784,7 +803,11 @@
         
         // Xác nhận xóa người dùng
         $('#confirmDelete').click(function() {
-            if (!deleteId) return;
+            if (!deleteId || !hasEditPermission()) {
+                showToast('Bạn không có quyền xóa người dùng này', 'warning');
+                $('#deleteUserModal').modal('hide');
+                return;
+            }
             
             $.ajax({
                 url: `/nguoi-dung/${deleteId}`,
@@ -805,27 +828,9 @@
             });
         });
 
-        // Đình chỉ/bỏ đình chỉ người dùng
-        $('.suspend-btn').click(function() {
-            var id = $(this).data('id');
-            var status = $(this).data('status');
-            var btn = $(this);
-            $.ajax({
-                url: '/nguoi-dung/' + id + '/suspend',
-                type: 'POST',
-                data: {_token: $('meta[name="csrf-token"]').attr('content')},
-                success: function(res) {
-                    if(res.success) {
-                        btn.data('status', res.trang_thai);
-                        btn.html('<i class="bi bi-ban"></i> ' + (res.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'));
-                        showToast(res.message, 'info');
-                    }
-                }
-            });
-        });
-        
         // Khởi tạo
         bindButtons();
+        loadUsers();
         
         // Clear form khi đóng modal
         $('#addUserModal').on('hidden.bs.modal', function() {
@@ -855,7 +860,6 @@
                 </div>
             `;
             
-            // Thêm toast vào container và tự động xóa sau 3 giây
             const toastContainer = $('#toast-container');
             if (toastContainer.length === 0) {
                 $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');

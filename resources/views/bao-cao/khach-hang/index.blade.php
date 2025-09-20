@@ -56,41 +56,34 @@
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
-                        <th>Ngày mua</th>
+                        <th>STT</th>
                         <th>Khách hàng</th>
-                        <th>Sản phẩm</th>
+                        <th>Mã đơn</th>
                         <th>Số lượng</th>
-                        <th>Đơn giá</th>
                         <th>Thành tiền</th>
+                        <th>Ngày tạo đơn</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @php
-                        $tongSoLuong = 0;
-                        $tongTien = 0;
-                    @endphp
-                    @foreach($donHangs as $donHang)
-                        @foreach($donHang->chiTietDonBanLe as $chiTiet)
-                            @php
-                                $tongSoLuong += $chiTiet->so_luong;
-                                $tongTien += $chiTiet->thanh_tien;
-                            @endphp
-                            <tr>
-                                <td>{{ \Carbon\Carbon::parse($donHang->created_at)->format('d/m/Y H:i') }}</td>
-                                <td>{{ $donHang->khachHang->ho_ten }}</td>
-                                <td>{{ $chiTiet->loThuoc->thuoc->ten_thuoc }}</td>
-                                <td class="text-end">{{ number_format($chiTiet->so_luong) }}</td>
-                                <td class="text-end">{{ number_format($chiTiet->don_gia) }}</td>
-                                <td class="text-end">{{ number_format($chiTiet->thanh_tien) }}</td>
-                            </tr>
-                        @endforeach
-                    @endforeach
-                </tbody>
+<tbody>
+            @php
+                $tongSoLuong = $donHangs->sum('tong_so_luong');
+                $tongTien = $donHangs->sum('thanh_tien_don_hang');
+            @endphp
+            @foreach($donHangs as $donHang)
+                <tr>
+                    <td>{{ $donHang->don_id }}</td>
+                    <td>{{ $donHang->khachHang->ho_ten }}</td>
+                    <td>{{ $donHang->ma_don }}</td>
+                    <td class="text-end">{{ number_format($donHang->tong_so_luong) }}</td>
+                    <td class="text-end">{{ number_format($donHang->thanh_tien_don_hang) }}</td>
+                    <td>{{ \Carbon\Carbon::parse($donHang->created_at)->format('d/m/Y H:i') }}</td>
+                </tr>
+            @endforeach
+        </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-end"><strong>TỔNG CỘNG:</strong></td>
                         <td class="text-end"><strong>{{ number_format($tongSoLuong) }}</strong></td>
-                        <td></td>
                         <td class="text-end"><strong>{{ number_format($tongTien) }}</strong></td>
                     </tr>
                 </tfoot>
@@ -105,17 +98,4 @@
 @section('scripts')
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('.datepicker').datepicker({
-            dateFormat: 'dd/mm/yy',
-            dayNamesMin: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-            monthNames: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
-        });
-        
-        $('.select2').select2({
-            theme: 'bootstrap-5'
-        });
-    });
-</script>
 @endsection

@@ -115,7 +115,6 @@
             <div class="info-block">
                 <div><span class="info-label">Mã đơn:</span> {{ $donBanLe->ma_don }}</div>
                 <div><span class="info-label">Ngày bán:</span> {{ \Carbon\Carbon::parse($donBanLe->ngay_ban)->format('d/m/Y H:i') }}</div>
-                <div><span class="info-label">Nhân viên:</span> {{ $donBanLe->nguoiDung->ho_ten }}</div>
             </div>
             <div class="info-block">
                 <div><span class="info-label">Khách hàng:</span> {{ $donBanLe->khachHang ? $donBanLe->khachHang->ho_ten : 'Khách lẻ' }}</div>
@@ -161,17 +160,6 @@
                 </tr>
             </tfoot>
         </table>
-
-        <div class="signatures">
-            <div class="signature-block">
-                <div>Người mua hàng</div>
-                <div class="signature-name">(Ký, họ tên)</div>
-            </div>
-            <div class="signature-block">
-                <div>Người bán hàng</div>
-                <div class="signature-name">(Ký, họ tên)</div>
-            </div>
-        </div>
 
         <div class="footer">
             <p>Cảm ơn Quý khách đã sử dụng dịch vụ của chúng tôi!</p>

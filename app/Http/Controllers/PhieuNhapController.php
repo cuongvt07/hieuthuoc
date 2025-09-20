@@ -82,7 +82,7 @@ class PhieuNhapController extends Controller
     }
 
     /**
-     * Lưu phiếu nhập mới
+     * Lưu phiếu nhập mới (CHƯA cập nhật tồn kho)
      */
     public function store(Request $request)
     {
@@ -153,7 +153,7 @@ class PhieuNhapController extends Controller
             $phieuNhap->trang_thai = 'cho_xu_ly'; // Mặc định là chờ xử lý
             $phieuNhap->save();
 
-            // Lưu chi tiết lô nhập
+            // Lưu chi tiết lô nhập (KHÔNG cập nhật tồn kho)
             for ($i = 0; $i < count($request->thuoc_id); $i++) {
                 $thuocId = $request->thuoc_id[$i];
                 $khoId = $request->kho_id[$i];
@@ -173,8 +173,7 @@ class PhieuNhapController extends Controller
 
                 // Xử lý lô thuốc dựa vào isNewLot
                 if ($isNewLot) {
-                    // Tạo lô mới
-                    // Tạo mã lô tự động nếu không nhập
+                    // Tạo lô mới (CHƯA cập nhật tồn kho)
                     if (empty($soLo)) {
                         $soLo = 'LT' . date('Ymd') . rand(1000, 9999);
                     }
@@ -185,30 +184,16 @@ class PhieuNhapController extends Controller
                     $loThuoc->kho_id = $khoId;
                     $loThuoc->han_su_dung = $hanSuDung;
                     $loThuoc->ngay_san_xuat = $ngaySX;
-                    $loThuoc->tong_so_luong = $soLuong;
-                    $loThuoc->ton_kho_hien_tai = $soLuong;
-                    $loThuoc->gia_nhap_tb = $giaNhap;
+                    $loThuoc->tong_so_luong = 0; // ← CHƯA cập nhật
+                    $loThuoc->ton_kho_hien_tai = 0; // ← CHƯA cập nhật
+                    $loThuoc->gia_nhap_tb = $giaNhap; // Lưu giá nhập để tính sau
                     $loThuoc->so_lo_nha_san_xuat = $soLoNSX;
                     $loThuoc->ghi_chu = $ghiChuLo;
                     $loThuoc->save();
                 } else {
-                    // Cập nhật lô hiện có
+                    // Sử dụng lô hiện có (CHƯA cập nhật tồn kho)
                     $loThuoc = LoThuoc::findOrFail($loId);
-                    
-                    // Tính giá nhập trung bình mới
-                    $tongSoLuongCu = $loThuoc->tong_so_luong;
-                    $giaNhapTBCu = $loThuoc->gia_nhap_tb;
-                    
-                    // Tính giá nhập trung bình mới
-                    $tongGiaTriCu = $tongSoLuongCu * $giaNhapTBCu;
-                    $tongGiaTriMoi = $soLuong * $giaNhap;
-                    $tongSoLuongMoi = $tongSoLuongCu + $soLuong;
-                    $giaNhapTBMoi = ($tongGiaTriCu + $tongGiaTriMoi) / $tongSoLuongMoi;
-                    
-                    $loThuoc->tong_so_luong = $tongSoLuongMoi;
-                    $loThuoc->ton_kho_hien_tai += $soLuong;
-                    $loThuoc->gia_nhap_tb = $giaNhapTBMoi;
-                    $loThuoc->save();
+                    // Không cập nhật tồn kho ở đây
                 }
 
                 // Lưu chi tiết lô nhập
@@ -228,12 +213,92 @@ class PhieuNhapController extends Controller
             DB::commit();
 
             return redirect()->route('phieu-nhap.show', $phieuNhap->phieu_id)
-                ->with('success', 'Phiếu nhập đã được tạo thành công.');
+                ->with('success', 'Phiếu nhập đã được tạo thành công. Trạng thái: Chờ xử lý (chưa cập nhật tồn kho).');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Đã xảy ra lỗi khi lưu phiếu nhập: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Xác nhận hoàn thành phiếu nhập
+     */
+    public function complete($id)
+    {
+        try {
+            // Tải phiếu nhập cùng với chi tiết lô nhập và lô thuốc
+            $phieuNhap = PhieuNhap::with('chiTietLoNhaps.loThuoc')->findOrFail($id);
+
+            // Kiểm tra trạng thái hiện tại
+            if ($phieuNhap->trang_thai === 'hoan_tat') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Phiếu nhập này đã được hoàn thành trước đó.'
+                ], 400);
+            }
+
+            if ($phieuNhap->trang_thai === 'huy') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể hoàn thành phiếu nhập đã bị hủy.'
+                ], 400);
+            }
+
+            DB::beginTransaction();
+
+            // Cập nhật tồn kho khi xác nhận hoàn thành
+            foreach ($phieuNhap->chiTietLoNhaps as $chiTiet) {
+                $loThuoc = $chiTiet->loThuoc;
+                $soLuongNhap = $chiTiet->so_luong;
+                $giaNhap = $chiTiet->gia_nhap;
+
+                // Tính giá nhập trung bình mới
+                $tongSoLuongCu = $loThuoc->tong_so_luong;
+                $giaNhapTBCu = $loThuoc->gia_nhap_tb;
+                $tongGiaTriCu = $tongSoLuongCu * $giaNhapTBCu;
+                $tongGiaTriMoi = $soLuongNhap * $giaNhap;
+                $tongSoLuongMoi = $tongSoLuongCu + $soLuongNhap;
+                $giaNhapTBMoi = $tongSoLuongMoi > 0 ? ($tongGiaTriCu + $tongGiaTriMoi) / $tongSoLuongMoi : $giaNhap;
+
+                // Cập nhật tồn kho
+                $loThuoc->tong_so_luong = $tongSoLuongMoi;
+                $loThuoc->ton_kho_hien_tai += $soLuongNhap;
+                $loThuoc->gia_nhap_tb = $giaNhapTBMoi;
+                $loThuoc->save();
+
+                // Ghi lịch sử thay đổi tồn kho
+                LichSuTonKho::create([
+                    'lo_id' => $loThuoc->lo_id,
+                    'thuoc_id' => $loThuoc->thuoc_id,
+                    'loai_thay_doi' => 'nhap',
+                    'so_luong_thay_doi' => $soLuongNhap,
+                    'ton_kho_truoc' => $loThuoc->ton_kho_hien_tai - $soLuongNhap,
+                    'ton_kho_moi' => $loThuoc->ton_kho_hien_tai,
+                    'nguoi_dung_id' => Auth::id(),
+                    'mo_ta' => "Nhập kho từ phiếu nhập {$phieuNhap->ma_phieu}",
+                    'phieu_nhap_id' => $phieuNhap->phieu_id
+                ]);
+            }
+
+            // Cập nhật trạng thái và ngày hoàn thành phiếu nhập
+            $phieuNhap->trang_thai = 'hoan_tat';
+            $phieuNhap->ngay_tao = now();
+            $phieuNhap->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Phiếu nhập đã được xác nhận hoàn thành và tồn kho đã được cập nhật thành công.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xác nhận hoàn thành phiếu nhập: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -401,46 +466,6 @@ class PhieuNhapController extends Controller
                 'success' => false,
                 'message' => 'Không tìm thấy phiếu nhập hoặc có lỗi xảy ra: ' . $e->getMessage()
             ], 404);
-        }
-    }
-
-    /**
-     * Xác nhận hoàn thành phiếu nhập
-     */
-    public function complete($id)
-    {
-        try {
-            $phieuNhap = PhieuNhap::findOrFail($id);
-
-            // Kiểm tra trạng thái hiện tại
-            if ($phieuNhap->trang_thai === 'hoan_tat') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Phiếu nhập này đã được hoàn thành trước đó.'
-                ], 400);
-            }
-
-            if ($phieuNhap->trang_thai === 'huy') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Không thể hoàn thành phiếu nhập đã bị hủy.'
-                ], 400);
-            }
-
-            // Cập nhật trạng thái phiếu nhập
-            $phieuNhap->trang_thai = 'hoan_tat';
-            $phieuNhap->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Phiếu nhập đã được xác nhận hoàn thành thành công.'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi xác nhận hoàn thành phiếu nhập: ' . $e->getMessage()
-            ], 500);
         }
     }
 

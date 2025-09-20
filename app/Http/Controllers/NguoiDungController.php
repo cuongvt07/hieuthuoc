@@ -62,7 +62,7 @@ class NguoiDungController extends Controller
             'email' => 'required|email|max:100',
             'sdt' => 'nullable|string|max:20',
             'vai_tro' => ['required', Rule::in(['admin', 'duoc_si'])],
-            'trang_thai' => 'required|boolean',
+            'trang_thai' => ['required', Rule::in(['ngung', 'hoat_dong'])],
             'mat_khau' => 'required|string|min:6',
         ], [
             'ten_dang_nhap.required' => 'Tên đăng nhập không được để trống',
@@ -120,7 +120,7 @@ class NguoiDungController extends Controller
             'email' => 'required|email|max:100',
             'sdt' => 'nullable|string|max:20',
             'vai_tro' => ['required', Rule::in(['admin', 'duoc_si'])],
-            'trang_thai' => 'required|boolean',
+            'trang_thai' => ['required', Rule::in(['ngung', 'hoat_dong'])],
         ], [
             'ten_dang_nhap.required' => 'Tên đăng nhập không được để trống',
             'ten_dang_nhap.unique' => 'Tên đăng nhập đã tồn tại',
@@ -177,7 +177,7 @@ class NguoiDungController extends Controller
      */
     public function suspend(Request $request, NguoiDung $nguoiDung)
     {
-        $nguoiDung->trang_thai = $nguoiDung->trang_thai == 1 ? 0 : 1;
+        $nguoiDung->trang_thai = $nguoiDung->trang_thai == 'hoat_dong' ? 'ngung' : 'hoat_dong';
         $nguoiDung->save();
         return response()->json([
             'success' => true,

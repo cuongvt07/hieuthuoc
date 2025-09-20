@@ -111,6 +111,112 @@ $(function () {
         $('#product-search-results').html(html);
     }
 
+    $(document).on('click', '.complete-order-btn', function(e) {
+        e.preventDefault();
+        const orderId = $(this).data('id');
+        const orderCode = $(this).data('ma-don');
+        console.log('Attempting to complete order:', { orderId, orderCode });
+        
+        if (confirm(`Bạn có chắc chắn muốn hoàn tất đơn hàng ${orderCode} không?\n\nLưu ý: Sau khi hoàn tất, tồn kho sẽ được trừ và không thể hoàn tác.`)) {
+            // Hiển thị loading
+            const $btn = $(this);
+            const originalText = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin me-2"></i> Đang xử lý...');
+            $btn.prop('disabled', true);
+            
+            $.ajax({
+                url: `/don-ban-le/${orderId}/complete`,
+                type: 'PATCH',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showSuccessMessage('Đơn hàng đã được hoàn tất thành công!');
+                        window.location.reload();
+                    } else {
+                        showErrorMessage(response.message || 'Có lỗi xảy ra khi hoàn tất đơn hàng.');
+                        $btn.html(originalText);
+                        $btn.prop('disabled', false);
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Có lỗi xảy ra khi hoàn tất đơn hàng.';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
+                    showErrorMessage(errorMessage);
+                    $btn.html(originalText);
+                    $btn.prop('disabled', false);
+                }
+            });
+        }
+    });
+
+    $(document).on('click', '.cancel-order-btn', function(e) {
+        e.preventDefault();
+        const orderId = $(this).data('id');
+        const orderCode = $(this).data('ma-don');
+        console.log('Attempting to cancel order:', { orderId, orderCode });
+
+        if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng ${orderCode} không?`)) {
+            const $btn = $(this);
+            const originalText = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin me-2"></i> Đang xử lý...');
+            $btn.prop('disabled', true);
+
+            $.ajax({
+                url: `/don-ban-le/${orderId}/cancel`,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showSuccessMessage('Đơn hàng đã được hủy thành công!');
+                        window.location.reload();
+                    } else {
+                        showErrorMessage(response.message || 'Có lỗi xảy ra khi hủy đơn hàng.');
+                        $btn.html(originalText);
+                        $btn.prop('disabled', false);
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Có lỗi xảy ra khi hủy đơn hàng.';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
+                    showErrorMessage(errorMessage);
+                    $btn.html(originalText);
+                    $btn.prop('disabled', false);
+                }
+            });
+        }
+    });
+
+    function showSuccessMessage(message) {
+        // Sử dụng toast hoặc alert tùy theo hệ thống notification của bạn
+        if (typeof toastr !== 'undefined') {
+            toastr.success(message);
+        } else {
+            alert(message);
+        }
+    }
+
+    function showErrorMessage(message) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error(message);
+        } else {
+            alert(message);
+        }
+    }
+
     // Handle product selection
     $(document).on('click', '.product-item', function(e) {
         e.preventDefault();
