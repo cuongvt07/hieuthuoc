@@ -42,6 +42,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/nhom-thuoc/{id}/suspend', [App\Http\Controllers\NhomThuocController::class, 'suspend'])->name('nhom-thuoc.suspend');
     // Đình chỉ/Bỏ đình chỉ thuốc
     Route::post('/thuoc/{id}/suspend', [App\Http\Controllers\ThuocController::class, 'suspend'])->name('thuoc.suspend');
+    // Đình chỉ/Bỏ đình chỉ nhà cung cấp
+    Route::post('/nha-cung-cap/{nhaCungCap}/suspend', [App\Http\Controllers\NhaCungCapController::class, 'suspend'])->name('nha-cung-cap.suspend');
+    // Đình chỉ/Bỏ đình chỉ khách hàng
+    Route::post('/khach-hang/{khachHang}/suspend', [App\Http\Controllers\KhachHangController::class, 'suspend'])->name('khach-hang.suspend');
+    // Đình chỉ/Bỏ đình chỉ người dùng
+    Route::post('/nguoi-dung/{nguoiDung}/suspend', [App\Http\Controllers\NguoiDungController::class, 'suspend'])->name('nguoi-dung.suspend');
     // Dashboard
     Route::get('/', function () {
         return view('dashboard');

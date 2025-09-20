@@ -10,14 +10,15 @@ class NhaCungCap extends Model
     protected $primaryKey = 'ncc_id';
     public $timestamps = false;
     
-    protected $fillable = [
-        'ten_ncc',
-        'dia_chi',
-        'ma_so_thue',
-        'sdt',
-        'email',
-        'mo_ta',
-    ];
+        protected $fillable = [
+            'ten_ncc',
+            'dia_chi',
+            'ma_so_thue',
+            'sdt',
+            'email',
+            'mo_ta',
+            'trang_thai',
+        ];
 
     /**
      * Get all phiếu nhập for this nhà cung cấp

@@ -68,7 +68,7 @@ class PhieuNhapController extends Controller
     public function create()
     {
         // Lấy dữ liệu cần thiết
-        $nhaCungCaps = NhaCungCap::orderBy('ten_ncc')->get();
+        $nhaCungCaps = NhaCungCap::orderBy('ten_ncc')->where('trang_thai', 1)->get();
         $thuocs = Thuoc::orderBy('ten_thuoc')->where('trang_thai', 1)->get();
         $khos = Kho::orderBy('ten_kho')->get();
 

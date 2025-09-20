@@ -112,7 +112,7 @@
                                                 <i class="bi bi-key"></i> 
                                             </button>
                                             <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $admin->nguoi_dung_id }}" data-name="{{ $admin->ho_ten }}">
-                                                <i class="bi bi-trash"></i> Xóa
+                                                <i class="bi bi-ban"></i> {{ $admin->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                                             </button>
                                         </div>
                                     </td>
@@ -188,7 +188,7 @@
                                                 <i class="bi bi-key"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
-                                                <i class="bi bi-trash"></i> Xóa
+                                                <i class="bi bi-ban"></i> {{ $duocSi->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                                             </button>
                                         </div>
                                     </td>
@@ -805,6 +805,25 @@
             });
         });
 
+        // Đình chỉ/bỏ đình chỉ người dùng
+        $('.suspend-btn').click(function() {
+            var id = $(this).data('id');
+            var status = $(this).data('status');
+            var btn = $(this);
+            $.ajax({
+                url: '/nguoi-dung/' + id + '/suspend',
+                type: 'POST',
+                data: {_token: $('meta[name="csrf-token"]').attr('content')},
+                success: function(res) {
+                    if(res.success) {
+                        btn.data('status', res.trang_thai);
+                        btn.html('<i class="bi bi-ban"></i> ' + (res.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'));
+                        showToast(res.message, 'info');
+                    }
+                }
+            });
+        });
+        
         // Khởi tạo
         bindButtons();
         
