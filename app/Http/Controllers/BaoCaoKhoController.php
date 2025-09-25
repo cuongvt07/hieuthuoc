@@ -105,7 +105,6 @@ class BaoCaoKhoController extends Controller
             ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as tong_gia_tri')
             ->leftJoin('lo_thuoc', function($join) use ($tuNgay, $denNgay) {
                 $join->on('kho.kho_id', '=', 'lo_thuoc.kho_id');
-                
                 // Thêm filter ngày vào join
                 if ($tuNgay) {
                     $join->where('lo_thuoc.ngay_tao', '>=', $tuNgay);
@@ -118,7 +117,12 @@ class BaoCaoKhoController extends Controller
                 $join->on('lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
                     ->where('thuoc.trang_thai', 1);
             })
-            ->groupBy('kho.kho_id')
+            ->groupBy([
+                'kho.kho_id',
+                'kho.ten_kho',
+                'kho.dia_chi',
+                'kho.ghi_chu'
+            ])
             ->orderBy('kho.ten_kho');
         
         $khoList = $khoListQuery->get();

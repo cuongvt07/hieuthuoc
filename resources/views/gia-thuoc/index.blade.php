@@ -270,6 +270,22 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
+        // Lấy vai trò của người dùng từ PHP
+        const userRole = '{{ Auth::user()->vai_tro ?? '' }}';
+
+        // Nếu là dược sĩ thì ẩn/vô hiệu hóa các nút thao tác
+        function disableDuocSiActions() {
+            if (userRole === 'duoc_si') {
+                // Vô hiệu hóa nút thêm giá thuốc
+                $("[data-bs-target='#addGiaThuocModal']").prop('disabled', true).addClass('disabled');
+                // Vô hiệu hóa nút sửa/xóa trong bảng
+                $('#gia-thuoc-table .edit-btn, #gia-thuoc-table .delete-btn').prop('disabled', true).addClass('disabled');
+            }
+        }
+
+        // Gọi khi load trang
+        disableDuocSiActions();
+
         // Hiển thị loading spinner
         function showLoading(element) {
             const loadingHtml = `
@@ -402,6 +418,7 @@
 
                     // Rebind edit và delete buttons
                     bindButtons();
+                    disableDuocSiActions();
                 },
                 error: function() {
                     tableBody.html('<tr><td colspan="4" class="text-center text-danger">Đã xảy ra lỗi khi tải dữ liệu</td></tr>');
@@ -605,7 +622,8 @@
         
         // Khởi tạo
         bindButtons();
-        
+        disableDuocSiActions();
+
         // Clear form khi đóng modal
         $('#addGiaThuocModal').on('hidden.bs.modal', function() {
             $('#addGiaThuocForm')[0].reset();

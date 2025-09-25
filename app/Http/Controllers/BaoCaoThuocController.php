@@ -30,8 +30,20 @@ class BaoCaoThuocController extends Controller
             $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
             $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
 
-            // Truy vấn dữ liệu doanh số
-            $query = Thuoc::select('thuoc.*')
+            // Truy vấn dữ liệu doanh số - Sửa lỗi GROUP BY
+            $query = Thuoc::select(
+                'thuoc.thuoc_id',
+                'thuoc.ma_thuoc',
+                'thuoc.ten_thuoc',
+                'thuoc.mo_ta',
+                'thuoc.don_vi_goc',
+                'thuoc.don_vi_ban',
+                'thuoc.ti_le_quy_doi',
+                'thuoc.trang_thai',
+                'thuoc.ngay_tao',
+                'thuoc.nhom_id',
+                'thuoc.kho_id'
+            )
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as doanh_so')
@@ -41,7 +53,19 @@ class BaoCaoThuocController extends Controller
                 ->whereDate('don_ban_le.ngay_ban', '>=', $startDate)
                 ->whereDate('don_ban_le.ngay_ban', '<=', $endDate)
                 ->where('don_ban_le.trang_thai', 'hoan_tat')
-                ->groupBy('thuoc.thuoc_id')
+                ->groupBy(
+                    'thuoc.thuoc_id',
+                    'thuoc.ma_thuoc',
+                    'thuoc.ten_thuoc',
+                    'thuoc.mo_ta',
+                    'thuoc.don_vi_goc',
+                    'thuoc.don_vi_ban',
+                    'thuoc.ti_le_quy_doi',
+                    'thuoc.trang_thai',
+                    'thuoc.ngay_tao',
+                    'thuoc.nhom_id',
+                    'thuoc.kho_id'
+                )
                 ->orderBy('doanh_so', 'desc')
                 ->limit($limit);
 
@@ -96,6 +120,14 @@ class BaoCaoThuocController extends Controller
             $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
             $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+            // Thêm thông tin thời gian
+            $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
+            $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
+            
+            $sheet->setCellValue('A6', 'Từ ngày: ' . $startDate->format('d/m/Y') . ' - Đến ngày: ' . $endDate->format('d/m/Y'));
+            $sheet->mergeCells('A6:E6');
+            $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
             // Headers
             $sheet->setCellValue('A7', 'STT');
             $sheet->setCellValue('B7', 'Tên sản phẩm');
@@ -103,11 +135,26 @@ class BaoCaoThuocController extends Controller
             $sheet->setCellValue('D7', 'Tổng số lượng');
             $sheet->setCellValue('E7', 'Doanh số');
 
-            // Lọc theo khoảng thời gian
-            $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
-            $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
+            // Định dạng header
+            $headerRange = 'A7:E7';
+            $sheet->getStyle($headerRange)->getFont()->setBold(true);
+            $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+            $sheet->getStyle($headerRange)->getFill()->getStartColor()->setARGB('FFD9D9D9');
 
-            $thuocs = Thuoc::select('thuoc.*')
+            // Truy vấn dữ liệu - Sửa lỗi GROUP BY
+            $thuocs = Thuoc::select(
+                'thuoc.thuoc_id',
+                'thuoc.ma_thuoc',
+                'thuoc.ten_thuoc',
+                'thuoc.mo_ta',
+                'thuoc.don_vi_goc',
+                'thuoc.don_vi_ban',
+                'thuoc.ti_le_quy_doi',
+                'thuoc.trang_thai',
+                'thuoc.ngay_tao',
+                'thuoc.nhom_id',
+                'thuoc.kho_id'
+            )
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as doanh_so')
@@ -116,30 +163,66 @@ class BaoCaoThuocController extends Controller
                 ->leftJoin('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
                 ->whereDate('don_ban_le.ngay_ban', '>=', $startDate)
                 ->whereDate('don_ban_le.ngay_ban', '<=', $endDate)
-                ->groupBy('thuoc.thuoc_id')
+                ->where('don_ban_le.trang_thai', 'hoan_tat')
+                ->groupBy(
+                    'thuoc.thuoc_id',
+                    'thuoc.ma_thuoc',
+                    'thuoc.ten_thuoc',
+                    'thuoc.mo_ta',
+                    'thuoc.don_vi_goc',
+                    'thuoc.don_vi_ban',
+                    'thuoc.ti_le_quy_doi',
+                    'thuoc.trang_thai',
+                    'thuoc.ngay_tao',
+                    'thuoc.nhom_id',
+                    'thuoc.kho_id'
+                )
                 ->orderBy('doanh_so', 'desc')
                 ->get();
 
             $row = 8;
+            $tongDoanhSo = 0;
+            
             foreach ($thuocs as $index => $thuoc) {
                 $sheet->setCellValue('A' . $row, $index + 1);
                 $sheet->setCellValue('B' . $row, $thuoc->ten_thuoc);
-                $sheet->setCellValue('C' . $row, $thuoc->so_don);
-                $sheet->setCellValue('D' . $row, $thuoc->tong_so_luong);
-                $sheet->setCellValue('E' . $row, $thuoc->doanh_so);
+                $sheet->setCellValue('C' . $row, $thuoc->so_don ?: 0);
+                $sheet->setCellValue('D' . $row, $thuoc->tong_so_luong ?: 0);
+                $sheet->setCellValue('E' . $row, number_format($thuoc->doanh_so ?: 0, 0, ',', '.') . ' VNĐ');
+                
+                $tongDoanhSo += $thuoc->doanh_so ?: 0;
                 $row++;
             }
 
+            // Thêm dòng tổng cộng
+            $sheet->setCellValue('A' . $row, '');
+            $sheet->setCellValue('B' . $row, 'TỔNG CỘNG');
+            $sheet->setCellValue('C' . $row, '');
+            $sheet->setCellValue('D' . $row, '');
+            $sheet->setCellValue('E' . $row, number_format($tongDoanhSo, 0, ',', '.') . ' VNĐ');
+            
+            // Định dạng dòng tổng cộng
+            $totalRange = 'A' . $row . ':E' . $row;
+            $sheet->getStyle($totalRange)->getFont()->setBold(true);
+            
             // Thêm dòng Người xuất cách 3 dòng
             $row += 3;
             $sheet->setCellValue('D' . $row, 'Người xuất');
             $sheet->getStyle('D' . $row)->getFont()->setBold(true);
+            
+            // Thêm ngày xuất báo cáo
+            $row += 1;
+            $sheet->setCellValue('D' . $row, 'Ngày: ' . Carbon::now()->format('d/m/Y H:i'));
         }
 
         // Auto size columns
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
+
+        // Thêm border cho toàn bộ bảng dữ liệu
+        $dataRange = 'A7:E' . ($row - 4);
+        $sheet->getStyle($dataRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         // Create the excel file
         $writer = new Xlsx($spreadsheet);

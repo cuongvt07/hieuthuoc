@@ -304,12 +304,6 @@
                             </div>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a>
-                            </li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-key me-2"></i>Đổi mật khẩu</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
                             <li>
                                 <form action="{{ route('logout') }}" method="post">
                                     @csrf
