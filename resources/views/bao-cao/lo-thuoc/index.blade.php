@@ -72,7 +72,7 @@
                         <tr>
                             <td>{{ $lo->ma_lo }}</td>
                             <td>{{ $lo->thuoc->ten_thuoc }}</td>
-                            <td>{{ $lo->kho->ten_kho }}</td>
+                            <td>{{ $lo->kho->ten_kho ?? 'Không xác định' }}</td>
                             <td class="text-end">{{ number_format($lo->ton_kho_hien_tai) }} / {{ $lo->thuoc->don_vi_goc}}</td>
                             <td>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</td>
                             <td>

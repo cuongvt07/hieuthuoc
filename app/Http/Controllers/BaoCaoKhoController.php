@@ -132,19 +132,35 @@ class BaoCaoKhoController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        // Thông tin nhà thuốc ở đầu file
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
+        $sheet->mergeCells('A1:E1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', 'Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.');
+        $sheet->mergeCells('A2:E2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'Điện thoại:024 2243 0103 - Email: info@antammed.com');
+        $sheet->mergeCells('A3:E3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Cách 1 dòng
+        $sheet->setCellValue('A4', '');
+
         if ($request->filled('kho_id')) {
             // Export chi tiết một kho
             $kho = Kho::find($request->kho_id);
-            
-            $sheet->setCellValue('A1', 'BÁO CÁO CHI TIẾT KHO: ' . $kho->ten_kho);
-            $sheet->mergeCells('A1:E1');
-            
+            $sheet->setCellValue('A5', 'BÁO CÁO CHI TIẾT KHO: ' . $kho->ten_kho);
+            $sheet->mergeCells('A5:E5');
+
             // Headers
-            $sheet->setCellValue('A3', 'STT');
-            $sheet->setCellValue('B3', 'Tên sản phẩm');
-            $sheet->setCellValue('C3', 'Đơn vị');
-            $sheet->setCellValue('D3', 'Số lượng tồn');
-            $sheet->setCellValue('E3', 'Giá trị tồn');
+            $sheet->setCellValue('A7', 'STT');
+            $sheet->setCellValue('B7', 'Tên sản phẩm');
+            $sheet->setCellValue('C7', 'Đơn vị');
+            $sheet->setCellValue('D7', 'Số lượng tồn');
+            $sheet->setCellValue('E7', 'Giá trị tồn');
 
             $thuocs = Thuoc::select('thuoc.*')
                 ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
@@ -159,7 +175,7 @@ class BaoCaoKhoController extends Controller
                 ->orderBy('thuoc.ten_thuoc')
                 ->get();
 
-            $row = 4;
+            $row = 8;
             $tongSoLuong = 0;
             $tongGiaTri = 0;
             
@@ -185,15 +201,15 @@ class BaoCaoKhoController extends Controller
 
         } else {
             // Export tổng hợp tất cả kho
-            $sheet->setCellValue('A1', 'BÁO CÁO TỔNG HỢP KHO');
-            $sheet->mergeCells('A1:E1');
-            
+            $sheet->setCellValue('A5', 'BÁO CÁO TỔNG HỢP KHO');
+            $sheet->mergeCells('A5:E5');
+
             // Headers
-            $sheet->setCellValue('A3', 'STT');
-            $sheet->setCellValue('B3', 'Tên kho');
-            $sheet->setCellValue('C3', 'Số lượng mặt hàng');
-            $sheet->setCellValue('D3', 'Tổng số lượng tồn');
-            $sheet->setCellValue('E3', 'Tổng giá trị tồn');
+            $sheet->setCellValue('A7', 'STT');
+            $sheet->setCellValue('B7', 'Tên kho');
+            $sheet->setCellValue('C7', 'Số lượng mặt hàng');
+            $sheet->setCellValue('D7', 'Tổng số lượng tồn');
+            $sheet->setCellValue('E7', 'Tổng giá trị tồn');
 
             $khos = Kho::select('kho.*')
                 ->selectRaw('COUNT(DISTINCT thuoc.thuoc_id) as so_mat_hang')
@@ -206,7 +222,7 @@ class BaoCaoKhoController extends Controller
                 ->orderBy('kho.ten_kho')
                 ->get();
 
-            $row = 4;
+            $row = 8;
             $tongMatHang = 0;
             $tongSoLuong = 0;
             $tongGiaTri = 0;
@@ -237,14 +253,18 @@ class BaoCaoKhoController extends Controller
         // Style chung
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        
-        $sheet->getStyle('A3:E3')->getFont()->setBold(true);
-        $sheet->getStyle('A3:E3')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('CCCCCC');
-        
+        $sheet->getStyle('A7:E7')->getFont()->setBold(true);
+        $sheet->getStyle('A7:E7')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('CCCCCC');
+
         // Auto size columns
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
+
+        // Thêm dòng Người xuất cách 3 dòng
+        $row += 3;
+        $sheet->setCellValue('D' . $row, 'Người xuất');
+        $sheet->getStyle('D' . $row)->getFont()->setBold(true);
 
         // Create the excel file
         $writer = new Xlsx($spreadsheet);

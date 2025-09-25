@@ -128,7 +128,7 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">Kho lưu trữ:</div>
-                        <div class="info-value">{{ $loThuoc->kho->ten_kho }}</div>
+                        <div class="info-value">{{ $loThuoc->kho->ten_kho ?? 'Không xác định' }}</div>
                     </div>
                 </div>
                 

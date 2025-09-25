@@ -137,7 +137,7 @@
                                         @endif
                                     </td>
                                     <td>{{ $item->nhomThuoc->ten_nhom }}</td>
-                                    <td>{{ $item->kho->ten_kho }}</td>
+                                    <td>{{ $item->kho->ten_kho ?? 'Không xác định' }}</td>
                                     <td>{{ $item->don_vi_goc }}</td>
                                     <td>{{ $item->don_vi_ban }}</td>
                                     <td>{{ $item->ti_le_quy_doi }}</td>

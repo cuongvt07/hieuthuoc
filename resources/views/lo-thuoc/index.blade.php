@@ -163,7 +163,7 @@
                                 @endif
                             </td>
                             <td>{{ $lo->thuoc->ten_thuoc }}</td>
-                            <td>{{ $lo->kho->ten_kho }}</td>
+                            <td>{{ $lo->kho->ten_kho ?? 'Không xác định' }}</td>
                             <td>
                                 {{ number_format($lo->ton_kho_hien_tai, 2) }} {{ $lo->thuoc->don_vi_goc }}
                                 <div class="small text-muted">Tổng nhập: {{ number_format($lo->tong_so_luong, 2) }}</div>
@@ -277,7 +277,7 @@
                         @endif
                         <div class="lot-info">
                             <span class="fw-bold">Kho:</span>
-                            <span>{{ $lo->kho->ten_kho }}</span>
+                            <span>{{ $lo->kho->ten_kho ?? 'Không xác định' }}</span>
                         </div>
                         <div class="lot-info">
                             <span class="fw-bold">Tồn kho:</span>

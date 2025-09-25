@@ -76,29 +76,48 @@ class BaoCaoKhachHangController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Tiêu đề báo cáo
-        $sheet->setCellValue('A1', 'BÁO CÁO LỊCH SỬ MUA HÀNG KHÁCH HÀNG');
+        // Thông tin nhà thuốc ở đầu file
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
         $sheet->mergeCells('A1:F1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', 'Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.');
+        $sheet->mergeCells('A2:F2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'Điện thoại:024 2243 0103 - Email: info@antammed.com');
+        $sheet->mergeCells('A3:F3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Cách 1 dòng
+        $sheet->setCellValue('A4', '');
+
+        // Tiêu đề báo cáo
+        $sheet->setCellValue('A5', 'BÁO CÁO LỊCH SỬ MUA HÀNG KHÁCH HÀNG');
+        $sheet->mergeCells('A5:F5');
+        $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Hiển thị tên khách hàng nếu lọc theo khach_hang_id
+        $rowHeader = 6;
         if ($request->filled('khach_hang_id')) {
             $khachHang = KhachHang::find($request->khach_hang_id);
-            $sheet->setCellValue('A2', 'Khách hàng: ' . ($khachHang->ho_ten ?? 'N/A'));
-            $sheet->mergeCells('A2:F2');
-            $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->setCellValue('A' . $rowHeader, 'Khách hàng: ' . ($khachHang->ho_ten ?? 'N/A'));
+            $sheet->mergeCells('A' . $rowHeader . ':F' . $rowHeader);
+            $sheet->getStyle('A' . $rowHeader)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rowHeader++;
         }
 
         // Header
-        $sheet->setCellValue('A4', 'STT');
-        $sheet->setCellValue('B4', 'Khách hàng');
-        $sheet->setCellValue('C4', 'Số điện thoại');
-        $sheet->setCellValue('D4', 'Số lượng đơn');
-        $sheet->setCellValue('E4', 'Tổng số lượng');
-        $sheet->setCellValue('F4', 'Tổng chi tiêu');
-        $sheet->getStyle('A4:F4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:F4')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('A' . $rowHeader, 'STT');
+        $sheet->setCellValue('B' . $rowHeader, 'Khách hàng');
+        $sheet->setCellValue('C' . $rowHeader, 'Số điện thoại');
+        $sheet->setCellValue('D' . $rowHeader, 'Số lượng đơn');
+        $sheet->setCellValue('E' . $rowHeader, 'Tổng số lượng');
+        $sheet->setCellValue('F' . $rowHeader, 'Tổng chi tiêu');
+        $sheet->getStyle('A' . $rowHeader . ':F' . $rowHeader)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $rowHeader . ':F' . $rowHeader)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Query tổng hợp theo khách hàng, chỉ lấy đơn hoàn tất
         $query = DonBanLe::selectRaw('
@@ -160,7 +179,7 @@ class BaoCaoKhachHangController extends Controller
         $baoCaoKhachHangs = $query->orderBy('tong_chi_tieu', 'desc')->get();
 
         // Điền dữ liệu
-        $row = 5;
+    $row = $rowHeader + 1;
         $stt = 1;
         $tongSoLuongDon = 0;
         $tongSoLuong = 0;
@@ -184,7 +203,7 @@ class BaoCaoKhachHangController extends Controller
         // Thêm dòng tổng cộng
         $sheet->setCellValue('A' . $row, 'TỔNG CỘNG');
         $sheet->mergeCells('A' . $row . ':C' . $row);
-        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('D' . $row, $tongSoLuongDon);
         $sheet->setCellValue('E' . $row, $tongSoLuong);
         $sheet->setCellValue('F' . $row, number_format($tongChiTieu, 0, ',', '.') . ' VNĐ');
@@ -195,7 +214,12 @@ class BaoCaoKhachHangController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        // Thêm dòng Người xuất cách 3 dòng
+        $row += 3;
+        $sheet->setCellValue('E' . $row, 'Người xuất');
+        $sheet->getStyle('E' . $row)->getFont()->setBold(true);
+
+        $writer = new Xlsx($spreadsheet);
         $filename = 'bao-cao-khach-hang-' . date('Y-m-d-H-i-s') . '.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

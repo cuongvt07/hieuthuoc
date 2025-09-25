@@ -118,6 +118,23 @@ class BaoCaoLoThuocController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        // Thông tin nhà thuốc ở đầu file
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
+        $sheet->mergeCells('A1:I1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', 'Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.');
+        $sheet->mergeCells('A2:I2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'Điện thoại:024 2243 0103 - Email: info@antammed.com');
+        $sheet->mergeCells('A3:I3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Cách 1 dòng
+        $sheet->setCellValue('A4', '');
+
         // Set title
         $title = 'BÁO CÁO LÔ THUỐC';
         if ($request->filled('trang_thai')) {
@@ -133,13 +150,13 @@ class BaoCaoLoThuocController extends Controller
                     break;
             }
         }
-        $sheet->setCellValue('A1', $title);
-        $sheet->mergeCells('A1:F1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('A5', $title);
+        $sheet->mergeCells('A5:I5');
+        $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Set filters if any
-        $row = 2;
+        $row = 6;
         if ($request->filled('kho_id')) {
             $kho = Kho::find($request->kho_id);
             $sheet->setCellValue('A' . $row, 'Kho: ' . $kho->ten_kho);
@@ -255,6 +272,11 @@ class BaoCaoLoThuocController extends Controller
         foreach (range('A', 'I') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
+
+        // Thêm dòng Người xuất cách 3 dòng
+        $row += 3;
+        $sheet->setCellValue('H' . $row, 'Người xuất');
+        $sheet->getStyle('H' . $row)->getFont()->setBold(true);
 
         // Create the excel file
         $writer = new Xlsx($spreadsheet);
