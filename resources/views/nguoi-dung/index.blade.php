@@ -220,19 +220,19 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="ten_dang_nhap" class="form-label">Tên Đăng Nhập <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ten_dang_nhap" name="ten_dang_nhap" required>
+                            <input type="text" class="form-control" id="ten_dang_nhap" name="ten_dang_nhap" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ten_dang_nhap_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="ho_ten" class="form-label">Họ Tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ho_ten" name="ho_ten" required>
+                            <input type="text" class="form-control" id="ho_ten" name="ho_ten" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ho_ten_error"></div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <input type="email" class="form-control" id="email" name="email" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="email_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -244,7 +244,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="vai_tro" class="form-label">Vai Trò <span class="text-danger">*</span></label>
-                            <select class="form-select" id="vai_tro" name="vai_tro" required>
+                            <select class="form-select" id="vai_tro" name="vai_tro" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <option value="">-- Chọn vai trò --</option>
                                 <option value="admin">Quản Trị Viên</option>
                                 <option value="duoc_si">Dược Sĩ</option>
@@ -270,7 +270,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="mat_khau" class="form-label">Mật Khẩu <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="mat_khau" name="mat_khau" required>
+                                <input type="password" class="form-control" id="mat_khau" name="mat_khau" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <button class="btn btn-outline-secondary toggle-password" type="button" data-target="mat_khau">
                                     <i class="bi bi-eye"></i>
                                 </button>
@@ -303,19 +303,19 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_ten_dang_nhap" class="form-label">Tên Đăng Nhập <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ten_dang_nhap" name="ten_dang_nhap" required>
+                            <input type="text" class="form-control" id="edit_ten_dang_nhap" name="ten_dang_nhap" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="edit_ten_dang_nhap_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="edit_ho_ten" class="form-label">Họ Tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ho_ten" name="ho_ten" required>
+                            <input type="text" class="form-control" id="edit_ho_ten" name="ho_ten" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="edit_ho_ten_error"></div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                            <input type="email" class="form-control" id="edit_email" name="email" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="edit_email_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -327,7 +327,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_vai_tro" class="form-label">Vai Trò <span class="text-danger">*</span></label>
-                            <select class="form-select" id="edit_vai_tro" name="vai_tro" required>
+                            <select class="form-select" id="edit_vai_tro" name="vai_tro" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <option value="admin">Quản Trị Viên</option>
                                 <option value="duoc_si">Dược Sĩ</option>
                             </select>
@@ -373,7 +373,7 @@
                     <div class="mb-3">
                         <label for="new_password" class="form-label">Mật Khẩu Mới <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="new_password" name="mat_khau" required>
+                            <input type="password" class="form-control" id="new_password" name="mat_khau" requiredmsg="Trường này yêu cầu bắt buộc">
                             <button class="btn btn-outline-secondary toggle-password" type="button" data-target="new_password">
                                 <i class="bi bi-eye"></i>
                             </button>

@@ -63,7 +63,7 @@
                         <tr>
                             <th>STT</th>
                             <th>Mã Thuốc</th>
-                            <th>Tên Thuốc</th>
+                            <th>Tên sản phẩm</th>
                             <th>Số đơn</th>
                             <th>Tổng số lượng</th>
                             <th>Doanh số</th>

@@ -34,7 +34,7 @@
                             
                             <div class="mb-3">
                                 <label for="thuoc_id" class="form-label">Thuốc <span class="text-danger">*</span></label>
-                                <select class="form-select @error('thuoc_id') is-invalid @enderror" id="thuoc_id" name="thuoc_id" required>
+                                <select class="form-select @error('thuoc_id') is-invalid @enderror" id="thuoc_id" name="thuoc_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn thuốc --</option>
                                     @foreach($thuocs as $thuoc)
                                         <option value="{{ $thuoc->thuoc_id }}" {{ old('thuoc_id') == $thuoc->thuoc_id ? 'selected' : '' }} 
@@ -75,7 +75,7 @@
                             
                             <div class="mb-3">
                                 <label for="han_su_dung" class="form-label">Hạn sử dụng <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control @error('han_su_dung') is-invalid @enderror" id="han_su_dung" name="han_su_dung" value="{{ old('han_su_dung') }}" required>
+                                <input type="date" class="form-control @error('han_su_dung') is-invalid @enderror" id="han_su_dung" name="han_su_dung" value="{{ old('han_su_dung') }}" requiredmsg="Trường này yêu cầu bắt buộc">
                                 @error('han_su_dung')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -88,7 +88,7 @@
                             
                             <div class="mb-3">
                                 <label for="kho_id" class="form-label">Kho lưu trữ <span class="text-danger">*</span></label>
-                                <select class="form-select @error('kho_id') is-invalid @enderror" id="kho_id" name="kho_id" required>
+                                <select class="form-select @error('kho_id') is-invalid @enderror" id="kho_id" name="kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn kho --</option>
                                     @foreach($khos as $kho)
                                         <option value="{{ $kho->kho_id }}" {{ old('kho_id') == $kho->kho_id ? 'selected' : '' }}>
@@ -104,7 +104,7 @@
                             <div class="mb-3">
                                 <label for="so_luong" class="form-label">Số lượng ban đầu <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="number" step="0.01" min="0.01" class="form-control @error('so_luong') is-invalid @enderror" id="so_luong" name="so_luong" value="{{ old('so_luong') }}" required>
+                                    <input type="number" step="0.01" min="0.01" class="form-control @error('so_luong') is-invalid @enderror" id="so_luong" name="so_luong" value="{{ old('so_luong') }}" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <span class="input-group-text" id="don-vi-text">Đơn vị</span>
                                 </div>
                                 @error('so_luong')
@@ -115,7 +115,7 @@
                             <div class="mb-3">
                                 <label for="gia_nhap" class="form-label">Giá nhập <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="number" step="1" min="0" class="form-control @error('gia_nhap') is-invalid @enderror" id="gia_nhap" name="gia_nhap" value="{{ old('gia_nhap') }}" required>
+                                    <input type="number" step="1" min="0" class="form-control @error('gia_nhap') is-invalid @enderror" id="gia_nhap" name="gia_nhap" value="{{ old('gia_nhap') }}" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <span class="input-group-text">VNĐ</span>
                                 </div>
                                 @error('gia_nhap')

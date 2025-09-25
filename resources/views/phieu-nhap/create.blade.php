@@ -111,7 +111,7 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="ma_phieu" class="form-label required-field">Mã phiếu</label>
-                        <input type="text" class="form-control @error('ma_phieu') is-invalid @enderror" id="ma_phieu" name="ma_phieu" value="{{ old('ma_phieu', $maPhieu) }}" required>
+                        <input type="text" class="form-control @error('ma_phieu') is-invalid @enderror" id="ma_phieu" name="ma_phieu" value="{{ old('ma_phieu', $maPhieu) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                         @error('ma_phieu')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -119,7 +119,7 @@
 
                     <div class="mb-3">
                         <label for="ncc_id" class="form-label required-field">Nhà cung cấp</label>
-                        <select class="form-select @error('ncc_id') is-invalid @enderror" id="ncc_id" name="ncc_id" required>
+                        <select class="form-select @error('ncc_id') is-invalid @enderror" id="ncc_id" name="ncc_id" requiredmsg="Trường này yêu cầu bắt buộc">
                             <option value="">-- Chọn nhà cung cấp --</option>
                             @foreach($nhaCungCaps as $ncc)
                             <option value="{{ $ncc->ncc_id }}" {{ old('ncc_id') == $ncc->ncc_id ? 'selected' : '' }}>{{ $ncc->ten_ncc }}</option>
@@ -133,14 +133,14 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="ngay_nhap" class="form-label required-field">Ngày nhập</label>
-                            <input type="date" class="form-control @error('ngay_nhap') is-invalid @enderror" id="ngay_nhap" name="ngay_nhap" value="{{ old('ngay_nhap', date('Y-m-d')) }}" required>
+                            <input type="date" class="form-control @error('ngay_nhap') is-invalid @enderror" id="ngay_nhap" name="ngay_nhap" value="{{ old('ngay_nhap', date('Y-m-d')) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                             @error('ngay_nhap')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-6">
                             <label for="ngay_chung_tu" class="form-label required-field">Ngày chứng từ</label>
-                            <input type="date" class="form-control @error('ngay_chung_tu') is-invalid @enderror" id="ngay_chung_tu" name="ngay_chung_tu" value="{{ old('ngay_chung_tu', date('Y-m-d')) }}" required>
+                            <input type="date" class="form-control @error('ngay_chung_tu') is-invalid @enderror" id="ngay_chung_tu" name="ngay_chung_tu" value="{{ old('ngay_chung_tu', date('Y-m-d')) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                             @error('ngay_chung_tu')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -205,7 +205,7 @@
                             <div class="col-md-12">
                                 <div class="d-flex justify-content-between mb-2">
                                     <div>
-                                        <strong id="quick-product-name">Tên thuốc</strong>
+                                        <strong id="quick-product-name">Tên sản phẩm</strong>
                                         <span class="badge bg-info ms-2" id="quick-product-total-stock">Tồn: 0</span>
                                     </div>
                                     <div>
@@ -378,7 +378,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="modal_so_lo" class="form-label required-field">Số lô</label>
-                            <input type="text" class="form-control" id="modal_so_lo" placeholder="Yêu cầu nhập mã lô" required>
+                            <input type="text" class="form-control" id="modal_so_lo" placeholder="Yêu cầu nhập mã lô" requiredmsg="Trường này yêu cầu bắt buộc">
                             <small class="text-muted">Nếu để trống, hệ thống sẽ tạo số lô tự động</small>
                         </div>
                         <div class="col-md-6">

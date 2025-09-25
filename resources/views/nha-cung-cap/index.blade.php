@@ -151,7 +151,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="ten_ncc" class="form-label">Tên Nhà Cung Cấp <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="ten_ncc" name="ten_ncc" required>
+                        <input type="text" class="form-control" id="ten_ncc" name="ten_ncc" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="ten_ncc_error"></div>
                     </div>
                     <div class="mb-3">
@@ -202,7 +202,7 @@
                     <input type="hidden" id="edit_ncc_id" name="ncc_id">
                     <div class="mb-3">
                         <label for="edit_ten_ncc" class="form-label">Tên Nhà Cung Cấp <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_ten_ncc" name="ten_ncc" required>
+                        <input type="text" class="form-control" id="edit_ten_ncc" name="ten_ncc" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_ten_ncc_error"></div>
                     </div>
                     <div class="mb-3">

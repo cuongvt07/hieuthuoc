@@ -36,6 +36,17 @@ class BaoCaoLoThuocController extends Controller
             $query->where('kho_id', $request->kho_id);
         }
 
+        // Filter theo ngày tạo
+        if ($request->filled('tu_ngay')) {
+            $tuNgay = Carbon::parse($request->tu_ngay)->startOfDay();
+            $query->where('ngay_tao', '>=', $tuNgay);
+        }
+
+        if ($request->filled('den_ngay')) {
+            $denNgay = Carbon::parse($request->den_ngay)->endOfDay();
+            $query->where('ngay_tao', '<=', $denNgay);
+        }
+
         if ($request->filled('trang_thai')) {
             $now = Carbon::now();
             
@@ -72,6 +83,17 @@ class BaoCaoLoThuocController extends Controller
 
         if ($request->filled('kho_id')) {
             $query->where('kho_id', $request->kho_id);
+        }
+
+        // Filter theo ngày tạo cho export
+        if ($request->filled('tu_ngay')) {
+            $tuNgay = Carbon::parse($request->tu_ngay)->startOfDay();
+            $query->where('ngay_tao', '>=', $tuNgay);
+        }
+
+        if ($request->filled('den_ngay')) {
+            $denNgay = Carbon::parse($request->den_ngay)->endOfDay();
+            $query->where('ngay_tao', '<=', $denNgay);
         }
 
         if ($request->filled('trang_thai')) {
@@ -132,21 +154,36 @@ class BaoCaoLoThuocController extends Controller
             $row++;
         }
 
+        // Hiển thị filter ngày trong Excel
+        if ($request->filled('tu_ngay') || $request->filled('den_ngay')) {
+            $dateRange = 'Thời gian: ';
+            if ($request->filled('tu_ngay')) {
+                $dateRange .= 'từ ' . Carbon::parse($request->tu_ngay)->format('d/m/Y');
+            }
+            if ($request->filled('den_ngay')) {
+                $dateRange .= ($request->filled('tu_ngay') ? ' đến ' : 'đến ') . Carbon::parse($request->den_ngay)->format('d/m/Y');
+            }
+            $sheet->setCellValue('A' . $row, $dateRange);
+            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $row++;
+        }
+
         // Add some spacing
         $row++;
 
         // Set headers
         $sheet->setCellValue('A' . $row, 'Mã lô');
-        $sheet->setCellValue('B' . $row, 'Tên thuốc');
+        $sheet->setCellValue('B' . $row, 'Tên sản phẩm');
         $sheet->setCellValue('C' . $row, 'Kho');
         $sheet->setCellValue('D' . $row, 'Số lượng tồn');
         $sheet->setCellValue('E' . $row, 'Giá vốn');
         $sheet->setCellValue('F' . $row, 'Thành tiền');
         $sheet->setCellValue('G' . $row, 'Hạn sử dụng');
-        $sheet->setCellValue('H' . $row, 'Trạng thái');
+        $sheet->setCellValue('H' . $row, 'Ngày tạo');
+        $sheet->setCellValue('I' . $row, 'Trạng thái');
 
         // Style the header row
-        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -182,9 +219,10 @@ class BaoCaoLoThuocController extends Controller
             $sheet->setCellValue('E' . $row, number_format($lo->gia_nhap_tb));
             $sheet->setCellValue('F' . $row, number_format($thanhTien));
             $sheet->setCellValue('G' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
-            $sheet->setCellValue('H' . $row, $trangThai);
+            $sheet->setCellValue('H' . $row, Carbon::parse($lo->ngay_tao)->format('d/m/Y H:i'));
+            $sheet->setCellValue('I' . $row, $trangThai);
 
-            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+            $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                 'borders' => [
                     'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                 ]
@@ -199,10 +237,10 @@ class BaoCaoLoThuocController extends Controller
         $sheet->setCellValue('D' . $row, $tongSoLuong);
         $sheet->mergeCells('E' . $row . ':E' . $row);
         $sheet->setCellValue('F' . $row, number_format($tongGiaTri));
-        $sheet->mergeCells('G' . $row . ':H' . $row);
+        $sheet->mergeCells('G' . $row . ':I' . $row);
 
         // Style the totals row
-        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -214,7 +252,7 @@ class BaoCaoLoThuocController extends Controller
         ]);
 
         // Auto size columns
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'I') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

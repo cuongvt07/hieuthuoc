@@ -234,7 +234,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Mã thuốc</th>
-                        <th>Tên thuốc</th>
+                        <th>Tên sản phẩm</th>
                         <th>Đvt</th>
                         <th class="text-end">Tồn kho</th>
                         <th class="text-end">Giá trị TB</th>

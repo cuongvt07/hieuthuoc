@@ -76,12 +76,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="ma_nhom" class="form-label">Mã Nhóm <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="ma_nhom" name="ma_nhom" required>
+                        <input type="text" class="form-control" id="ma_nhom" name="ma_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="ma_nhom_error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="ten_nhom" class="form-label">Tên Nhóm <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="ten_nhom" name="ten_nhom" required>
+                        <input type="text" class="form-control" id="ten_nhom" name="ten_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="ten_nhom_error"></div>
                     </div>
                     <div class="mb-3">
@@ -111,12 +111,12 @@
                     <input type="hidden" id="edit_nhom_id" name="nhom_id">
                     <div class="mb-3">
                         <label for="edit_ma_nhom" class="form-label">Mã Nhóm <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_ma_nhom" name="ma_nhom" required>
+                        <input type="text" class="form-control" id="edit_ma_nhom" name="ma_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_ma_nhom_error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_ten_nhom" class="form-label">Tên Nhóm <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_ten_nhom" name="ten_nhom" required>
+                        <input type="text" class="form-control" id="edit_ten_nhom" name="ten_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_ten_nhom_error"></div>
                     </div>
                     <div class="mb-3">

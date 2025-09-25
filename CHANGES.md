@@ -113,3 +113,6 @@ Quản lý danh mục : k có xoá chỉ có đình chỉ // done
 // nếu đơn bán + phiếu nhập đều chờ xác nhận thì sẽ phải làm luồng lưu tạm thông tin --> báo xác nhận hoàn thành thì mới update số lượng tồn kho  // done
 
 cái biểu đồ tròn ở dashboard thì sẽ realtime tồn kho  // 
+
+
+Báo Cáo Tổng Hợp Kho  /Báo Cáo Lô Thuốc  : chưa có lọc theo khoảngh thời gian

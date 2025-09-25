@@ -6,251 +6,217 @@
 
 @section('styles')
 <style>
-    .status-badge {
-        font-size: 0.85rem;
-        font-weight: 500;
+    body {
+        font-family: "Times New Roman", serif;
     }
-    .status-draft {
-        background-color: #6c757d;
+
+    .invoice-container {
+        max-width: 900px;
+        margin: auto;
+        background: #fff;
+        padding: 30px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
     }
-    .status-completed {
-        background-color: #28a745;
+
+    .invoice-header {
+        border-bottom: 2px solid #000;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
     }
-    .status-cancelled {
-        background-color: #dc3545;
-    }
-    
-    .detail-section {
-        background-color: #f8f9fa;
-        border-radius: 0.25rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-    
-    .detail-item {
-        display: flex;
-        margin-bottom: 0.5rem;
-    }
-    
-    .detail-label {
-        width: 140px;
-        font-weight: 500;
-    }
-    
-    .detail-value {
-        flex: 1;
-    }
-    
-    .summary-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-    }
-    
-    .summary-total {
+
+    .invoice-header h4 {
         font-weight: bold;
-        font-size: 1.1rem;
+        text-transform: uppercase;
     }
-    
-    .line-item {
-        border-bottom: 1px solid #dee2e6;
-        padding: 0.75rem 0;
+
+    .invoice-meta {
+        font-size: 14px;
     }
-    
-    .line-item:last-child {
-        border-bottom: none;
+
+    .info-block {
+        margin-bottom: 20px;
     }
-    
-    .print-section {
-        max-width: 800px;
-        margin: 0 auto;
+
+    .info-block h6 {
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-transform: uppercase;
     }
-    
+
+    .table th, .table td {
+        vertical-align: middle;
+    }
+
+    .summary-box {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 15px;
+    }
+
+    .summary-box .row div {
+        margin-bottom: 6px;
+    }
+
+    .signature-block {
+        margin-top: 50px;
+    }
+
+    .signature-block .col {
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .signature-block .col p {
+        margin-bottom: 80px;
+    }
+
     @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-section, .print-section * {
-            visibility: visible;
-        }
-        .print-section {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-        }
         .no-print {
             display: none !important;
+        }
+        .invoice-container {
+            border: none;
         }
     }
 </style>
 @endsection
 
 @section('content')
-<div class="row mb-3">
+<div class="row mb-3 no-print">
     <div class="col-md-6">
-        <a href="{{ route('phieu-nhap.index') }}" class="btn btn-secondary no-print">
+        <a href="{{ route('phieu-nhap.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i> Quay Lại
         </a>
     </div>
     <div class="col-md-6 text-end">
-        <button type="button" class="btn btn-primary no-print" onclick="window.print()">
+        <button type="button" class="btn btn-primary" onclick="window.print()">
             <i class="bi bi-printer me-1"></i> In Phiếu Nhập
         </button>
     </div>
 </div>
 
-<div class="print-section">
-    <div class="card">
-        <div class="card-body">
-            <div class="text-center mb-4">
-                <h4 class="mb-0">PHIẾU NHẬP KHO</h4>
-                <p class="small text-muted mb-0">Mã phiếu: {{ $phieuNhap->ma_phieu }}</p>
-                <p class="small text-muted">Ngày tạo: {{ \Carbon\Carbon::parse($phieuNhap->ngay_nhap)->format('d/m/Y') }}</p>
+<div class="invoice-container">
+    {{-- Header --}}
+    <div class="invoice-header text-center">
+        <h4>PHIẾU NHẬP KHO</h4>
+        <div class="invoice-meta row text-center fw-bold fs-5">
+            <div class="col-md-4">
+                Mã phiếu: {{ $phieuNhap->ma_phieu }}
             </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="detail-section">
-                        <h6 class="mb-3">Thông Tin Nhà Cung Cấp</h6>
-                        <div class="detail-item">
-                            <div class="detail-label">Nhà cung cấp:</div>
-                            <div class="detail-value">{{ $phieuNhap->nhaCungCap->ten_ncc }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Địa chỉ:</div>
-                            <div class="detail-value">{{ $phieuNhap->nhaCungCap->dia_chi }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Mã số thuế:</div>
-                            <div class="detail-value">{{ $phieuNhap->nhaCungCap->ma_so_thue ?? 'Không có' }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Số điện thoại:</div>
-                            <div class="detail-value">{{ $phieuNhap->nhaCungCap->sdt ?? 'Không có' }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="detail-section">
-                        <h6 class="mb-3">Thông Tin Phiếu Nhập</h6>
-                        <div class="detail-item">
-                            <div class="detail-label">Mã phiếu:</div>
-                            <div class="detail-value">{{ $phieuNhap->ma_phieu }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Ngày nhập:</div>
-                            <div class="detail-value">{{ \Carbon\Carbon::parse($phieuNhap->ngay_nhap)->format('d/m/Y') }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Ngày chứng từ:</div>
-                            <div class="detail-value">{{ \Carbon\Carbon::parse($phieuNhap->ngay_chung_tu)->format('d/m/Y') }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Người tạo:</div>
-                            <div class="detail-value">{{ $phieuNhap->nguoiDung->ho_ten ?? 'N/A' }}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Trạng thái:</div>
-                            <div class="detail-value">
-                                @if($phieuNhap->trang_thai === 'hoan_tat')
-                                    <span class="badge status-badge status-completed">Hoàn thành</span>
-                                @elseif($phieuNhap->trang_thai === 'cho_xu_ly')
-                                    <span class="badge status-badge status-draft">Chờ xử lý</span>
-                                @else
-                                    <span class="badge status-badge status-cancelled">Đã hủy</span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-4">
+                Ngày nhập: {{ \Carbon\Carbon::parse($phieuNhap->ngay_nhap)->format('d/m/Y') }}
             </div>
-            
-            <h6 class="mb-3">Chi Tiết Phiếu Nhập</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 5%">#</th>
-                            <th style="width: 35%">Thuốc</th>
-                            <th style="width: 10%">Số lô</th>
-                            <th style="width: 15%">HSD</th>
-                            <th style="width: 10%">SL</th>
-                            <th style="width: 12%">Đơn giá</th>
-                            <th style="width: 13%">Thành tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($phieuNhap->chiTietLoNhaps as $index => $chiTiet)
-                        <tr>
-                            <td class="text-center">{{ $index + 1 }}</td>
-                            <td>
-                                <strong>{{ $chiTiet->loThuoc->thuoc->ten_thuoc }}</strong>
-                                @if($chiTiet->loThuoc->ghi_chu)
-                                <div class="small text-muted">Ghi chú: {{ $chiTiet->loThuoc->ghi_chu }}</div>
-                                @endif
-                            </td>
-                            <td>{{ $chiTiet->loThuoc->ma_lo ?? $chiTiet->loThuoc->so_lo_nha_san_xuat ?? 'N/A' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($chiTiet->han_su_dung)->format('d/m/Y') }}</td>
-                            <td>{{ $chiTiet->so_luong }} {{ $chiTiet->don_vi }}</td>
-                            <td class="text-end">{{ number_format($chiTiet->gia_nhap) }}</td>
-                            <td class="text-end">{{ number_format($chiTiet->thanh_tien) }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="col-md-4">
+                Ngày chứng từ: {{ \Carbon\Carbon::parse($phieuNhap->ngay_chung_tu)->format('d/m/Y') }}
             </div>
-            
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="detail-section">
-                        <h6 class="mb-3">Ghi Chú</h6>
-                        <p class="mb-0">{{ $phieuNhap->ghi_chu ?: 'Không có ghi chú' }}</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="detail-section">
-                        <h6 class="mb-3">Tổng Kết Chi Phí</h6>
-                        <div class="summary-item">
-                            <div>Tổng tiền hàng:</div>
-                            <div>{{ number_format($phieuNhap->tong_tien) }} VNĐ</div>
-                        </div>
-                        <div class="summary-item">
-                            <div>Thuế VAT:</div>
-                            <div>{{ number_format($phieuNhap->vat) }} VNĐ</div>
-                        </div>
-                        <div class="summary-item summary-total">
-                            <div>Tổng cộng:</div>
-                            <div>{{ number_format($phieuNhap->tong_cong) }} VNĐ</div>
-                        </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+
+    {{-- Thông tin NCC + Phiếu --}}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="info-block">
+                <h6>Nhà Cung Cấp</h6>
+                <p><strong>{{ $phieuNhap->nhaCungCap->ten_ncc }}</strong></p>
+                <p>Địa chỉ: {{ $phieuNhap->nhaCungCap->dia_chi }}</p>
+                <p>MST: {{ $phieuNhap->nhaCungCap->ma_so_thue ?? 'Không có' }}</p>
+                <p>SĐT: {{ $phieuNhap->nhaCungCap->sdt ?? 'Không có' }}</p>
             </div>
-            
-            <div class="row mt-5 print-only">
-                <div class="col-md-4 text-center">
-                    <p><strong>Người lập phiếu</strong></p>
-                    <p class="mt-5">(Ký và ghi rõ họ tên)</p>
+        </div>
+        <div class="col-md-6">
+            <div class="info-block">
+                <h6>Thông Tin Phiếu</h6>
+                <p>Người tạo: {{ $phieuNhap->nguoiDung->ho_ten ?? 'N/A' }}</p>
+                <p>Trạng thái: 
+                    @if($phieuNhap->trang_thai === 'hoan_tat')
+                        <span class="badge bg-success">Hoàn thành</span>
+                    @elseif($phieuNhap->trang_thai === 'cho_xu_ly')
+                        <span class="badge bg-secondary">Chờ xử lý</span>
+                    @else
+                        <span class="badge bg-danger">Đã hủy</span>
+                    @endif
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {{-- Bảng chi tiết --}}
+    <h6 class="mb-2">Chi Tiết Lô Hàng : </h6>
+    <div class="table-responsive">
+        <table class="table table-bordered text-center">
+            <thead class="table-light">
+                <tr>
+                    <th>STT</th>
+                    <th>Tên thuốc</th>
+                    <th>Số lô</th>
+                    <th>HSD</th>
+                    <th>SL</th>
+                    <th>Đơn giá (VNĐ)</th>
+                    <th>Thành tiền (VNĐ)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($phieuNhap->chiTietLoNhaps as $index => $chiTiet)
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td class="text-start">
+                        <strong>{{ $chiTiet->loThuoc->thuoc->ten_thuoc }}</strong><br>
+                        @if($chiTiet->loThuoc->ghi_chu)
+                            <small class="text-muted">({{ $chiTiet->loThuoc->ghi_chu }})</small>
+                        @endif
+                    </td>
+                    <td>{{ $chiTiet->loThuoc->ma_lo ?? $chiTiet->loThuoc->so_lo_nha_san_xuat ?? 'N/A' }}</td>
+                    <td>{{ \Carbon\Carbon::parse($chiTiet->han_su_dung)->format('d/m/Y') }}</td>
+                    <td>{{ $chiTiet->so_luong }} {{ $chiTiet->don_vi }}</td>
+                    <td class="text-end">{{ number_format($chiTiet->gia_nhap) }}</td>
+                    <td class="text-end">{{ number_format($chiTiet->thanh_tien) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Tổng kết --}}
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="info-block">
+                <h6>Ghi Chú</h6>
+                <p>{{ $phieuNhap->ghi_chu ?: 'Không có ghi chú' }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="summary-box">
+                <div class="row">
+                    <div class="col-6 text-start">Tổng tiền hàng:</div>
+                    <div class="col-6 text-end">{{ number_format($phieuNhap->tong_tien) }} VNĐ</div>
                 </div>
-                <div class="col-md-4 text-center">
-                    <p><strong>Người giao hàng</strong></p>
-                    <p class="mt-5">(Ký và ghi rõ họ tên)</p>
+                <div class="row">
+                    <div class="col-6 text-start">Thuế VAT:</div>
+                    <div class="col-6 text-end">{{ number_format($phieuNhap->vat) }} VNĐ</div>
                 </div>
-                <div class="col-md-4 text-center">
-                    <p><strong>Thủ kho</strong></p>
-                    <p class="mt-5">(Ký và ghi rõ họ tên)</p>
+                <div class="row fw-bold border-top pt-2">
+                    <div class="col-6 text-start">Tổng cộng:</div>
+                    <div class="col-6 text-end">{{ number_format($phieuNhap->tong_cong) }} VNĐ</div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-@endsection
 
-@section('scripts')
-<script>
-    $(document).ready(function() {
-        // Không có xử lý JavaScript đặc biệt cho trang chi tiết
-    });
-</script>
+    {{-- Chữ ký --}}
+    <div class="row signature-block">
+        <div class="col">
+            <p><strong>Người lập phiếu</strong></p>
+            <span>{{ $phieuNhap->nguoiDung->ho_ten ?? 'N/A' }}</span>
+        </div>
+        <div class="col">
+            <p><strong>Thủ kho</strong></p>
+            <span>(Ký, ghi rõ họ tên)</span>
+        </div>
+        <div class="col">
+            <p><strong>Kế toán</strong></p>
+            <span>(Ký, ghi rõ họ tên)</span>
+        </div>
+    </div>
+</div>
 @endsection

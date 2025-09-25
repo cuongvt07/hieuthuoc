@@ -40,6 +40,7 @@ class BaoCaoThuocController extends Controller
                 ->leftJoin('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
                 ->whereDate('don_ban_le.ngay_ban', '>=', $startDate)
                 ->whereDate('don_ban_le.ngay_ban', '<=', $endDate)
+                ->where('don_ban_le.trang_thai', 'hoan_tat')
                 ->groupBy('thuoc.thuoc_id')
                 ->orderBy('doanh_so', 'desc')
                 ->limit($limit);
@@ -78,7 +79,7 @@ class BaoCaoThuocController extends Controller
             
             // Headers
             $sheet->setCellValue('A3', 'STT');
-            $sheet->setCellValue('B3', 'Tên thuốc');
+            $sheet->setCellValue('B3', 'Tên sản phẩm');
             $sheet->setCellValue('C3', 'Số đơn hàng');
             $sheet->setCellValue('D3', 'Tổng số lượng');
             $sheet->setCellValue('E3', 'Doanh số');

@@ -67,7 +67,7 @@
                     <div class="mb-4">
                         <label for="mat_khau" class="form-label">Mật khẩu</label>
                         <input type="password" class="form-control @error('mat_khau') is-invalid @enderror" 
-                               id="mat_khau" name="mat_khau" required>
+                               id="mat_khau" name="mat_khau" requiredmsg="Trường này yêu cầu bắt buộc">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
                 </form>

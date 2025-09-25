@@ -102,13 +102,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="shop-name">HIỆU THUỐC TÂY</div>
-            <div class="shop-address">Địa chỉ: 123 Đường ABC, Quận XYZ, TP. HCM</div>
-            <div class="shop-contact">Điện thoại: 0123 456 789 - Email: hieuthuoc@example.com</div>
+            <div class="shop-name">NHÀ THUỐC AN TÂY</div>
+            <div class="shop-address">Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.</div>
+            <div class="shop-contact">Điện thoại:024 2243 0103 - Email: info@antammed.com</div>
         </div>
 
         <div class="order-title">
-            PHIẾU BÁN THUỐC
+            HOÁ ĐƠN BÁN THUỐC
         </div>
 
         <div class="info-section">
@@ -126,7 +126,7 @@
             <thead>
                 <tr>
                     <th>STT</th>
-                    <th>Tên thuốc</th>
+                    <th>Tên sản phẩm</th>
                     <th>Đơn vị</th>
                     <th>Số lượng</th>
                     <th>Đơn giá</th>

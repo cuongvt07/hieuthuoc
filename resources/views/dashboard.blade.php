@@ -790,7 +790,7 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Tên thuốc</th>
+                                        <th>Tên sản phẩm</th>
                                         <th>Số lượng bán</th>
                                     </tr>
                                 </thead>
@@ -813,7 +813,7 @@
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Tên thuốc</th>
+                                        <th>Tên sản phẩm</th>
                                         <th>Số lượng bán</th>
                                     </tr>
                                 </thead>
@@ -905,7 +905,7 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Tên thuốc</th>
+                                    <th>Tên sản phẩm</th>
                                     <th>Tổng tồn kho</th>
                                     <th>Hạn dùng gần nhất</th>
                                     <th>Trạng thái</th>

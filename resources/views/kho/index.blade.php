@@ -154,7 +154,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="ten_kho" class="form-label">Tên Kho <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="ten_kho" name="ten_kho" required>
+                        <input type="text" class="form-control" id="ten_kho" name="ten_kho" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="ten_kho_error"></div>
                     </div>
                     <div class="mb-3">
@@ -190,7 +190,7 @@
                     <input type="hidden" id="edit_kho_id" name="kho_id">
                     <div class="mb-3">
                         <label for="edit_ten_kho" class="form-label">Tên Kho <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_ten_kho" name="ten_kho" required>
+                        <input type="text" class="form-control" id="edit_ten_kho" name="ten_kho" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_ten_kho_error"></div>
                     </div>
                     <div class="mb-3">

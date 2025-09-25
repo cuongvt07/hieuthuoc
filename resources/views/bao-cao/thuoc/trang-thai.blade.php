@@ -42,7 +42,7 @@
                         <tr>
                             <th>STT</th>
                             <th>Mã Thuốc</th>
-                            <th>Tên Thuốc</th>
+                            <th>Tên sản phẩm</th>
                             <th>Số lượng hết hạn</th>
                             <th>Số lượng sắp hết hạn</th>
                             <th>Số lượng còn hạn</th>

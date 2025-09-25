@@ -104,7 +104,7 @@
                         <thead>
                             <tr>
                                 <th>Mã Thuốc</th>
-                                <th>Tên Thuốc</th>
+                                <th>Tên sản phẩm</th>
                                 <th>Giá Bán</th>
                                 <th>Ngày Bắt Đầu</th>
                                 <th>Ngày Kết Thúc</th>
@@ -160,7 +160,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="thuoc_id" class="form-label">Thuốc <span class="text-danger">*</span></label>
-                        <select class="form-select" id="thuoc_id" name="thuoc_id" required>
+                        <select class="form-select" id="thuoc_id" name="thuoc_id" requiredmsg="Trường này yêu cầu bắt buộc">
                             <option value="">-- Chọn thuốc --</option>
                             @foreach ($thuoc as $item)
                             <option value="{{ $item->thuoc_id }}">
@@ -173,14 +173,14 @@
                     <div class="mb-3">
                         <label for="gia_ban" class="form-label">Giá Bán (VNĐ) <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" class="form-control money-format" id="gia_ban" name="gia_ban" placeholder="Nhập giá bán" required>
+                            <input type="text" class="form-control money-format" id="gia_ban" name="gia_ban" placeholder="Nhập giá bán" requiredmsg="Trường này yêu cầu bắt buộc">
                             <span class="input-group-text">VNĐ</span>
                         </div>
                         <div class="invalid-feedback" id="gia_ban_error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="ngay_bat_dau" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="ngay_bat_dau" name="ngay_bat_dau" required>
+                        <input type="date" class="form-control" id="ngay_bat_dau" name="ngay_bat_dau" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="ngay_bat_dau_error"></div>
                     </div>
                     <div class="mb-3">
@@ -221,14 +221,14 @@
                     <div class="mb-3">
                         <label for="edit_gia_ban" class="form-label">Giá Mới (VNĐ) <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" class="form-control money-format" id="edit_gia_ban" name="gia_ban" required>
+                            <input type="text" class="form-control money-format" id="edit_gia_ban" name="gia_ban" requiredmsg="Trường này yêu cầu bắt buộc">
                             <span class="input-group-text">VNĐ</span>
                         </div>
                         <div class="invalid-feedback" id="edit_gia_ban_error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_ngay_bat_dau" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="edit_ngay_bat_dau" name="ngay_bat_dau" required>
+                        <input type="date" class="form-control" id="edit_ngay_bat_dau" name="ngay_bat_dau" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_ngay_bat_dau_error"></div>
                     </div>
                     <div class="mb-3">
