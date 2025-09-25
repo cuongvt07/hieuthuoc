@@ -2,6 +2,25 @@
 
 @section('title', 'Dashboard - Hệ Thống Quản Lý Hiệu Thuốc')
 
+@section('styles')
+<style>
+    #sales_year {
+        border: 1px solid #d1d3e2;
+        border-radius: 0.2rem;
+        padding: 0.25rem 1rem;
+        font-size: 0.875rem;
+        height: 32px;
+        width: 120px;
+        cursor: pointer;
+        background-color: #fff;
+    }
+    #sales_year:focus {
+        border-color: #bac8f3;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+</style>
+@endsection
+
 @section('page-title', 'Dashboard')
 
 @section('content')
@@ -185,7 +204,42 @@
         <div class="col-md-12 mb-4">
             <div class="card border-left-warning h-100 py-2">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold">Doanh số bán theo tháng ({{ now()->year }})</h6>
+                                        <h6 class="m-0 font-weight-bold">Doanh số bán theo tháng</h6>
+                    <form id="yearFilterForm" class="d-flex align-items-center">
+                        <select class="form-select form-select-sm" id="sales_year" name="sales_year" onchange="this.form.submit()">
+                            @for($y = now()->year; $y >= now()->year - 5; $y--)
+                                <option value="{{ $y }}" {{ request('sales_year', now()->year) == $y ? 'selected' : '' }}>
+                                    Năm {{ $y }}
+                                </option>
+                            @endfor
+                        </select>
+                    </form>
+                </div>
+                <div class="card-body">
+                    @php
+                        // Lấy năm được chọn từ request hoặc mặc định là năm hiện tại
+                        $selectedYear = request('sales_year', now()->year);
+                        $monthlyData = [];
+                        $maxValue = 0;
+
+                        // Kiểm tra xem năm được chọn có dữ liệu không
+                        $hasData = \App\Models\DonBanLe::whereYear('ngay_ban', $selectedYear)->exists();
+
+                        // Lặp qua từng tháng trong năm được chọn
+                        for ($month = 1; $month <= 12; $month++) {
+                            if ($hasData) {
+                                $total = \App\Models\DonBanLe::whereYear('ngay_ban', $selectedYear)
+                                    ->whereMonth('ngay_ban', $month)
+                                    ->sum('tong_tien');
+                            } else {
+                                $total = 0;
+                            }
+
+                            $monthlyData[$month] = $total;
+                            $maxValue = max($maxValue, $total); 
+                        }
+                            
+                    @endphp
                 </div>
                 <div class="card-body">
                     <style>
@@ -321,25 +375,31 @@
                     @endphp
 
                     <div style="position: relative;">
-                        <!-- Trục Y với các mốc giá trị -->
-                        <div class="chart-y-axis">
-                            @php
-                                $steps = 5; // Số mốc giá trị trên trục Y
-                                for ($i = 0; $i <= $steps; $i++) {
-                                    $value = ($maxValue / $steps) * $i;
-                                    echo "<span>" . number_format($value / 1000000, 1, ',', '.') . "tr</span>";
-                                }
-                            @endphp
-                        </div>
+                        @if($hasData)
+                            <!-- Trục Y với các mốc giá trị -->
+                            <div class="chart-y-axis">
+                                @php
+                                    $steps = 5; // Số mốc giá trị trên trục Y
+                                    for ($i = 0; $i <= $steps; $i++) {
+                                        $value = ($maxValue / $steps) * $i;
+                                        echo "<span>" . number_format($value / 1000000, 1, ',', '.') . "tr</span>";
+                                    }
+                                @endphp
+                            </div>
 
-                        <div class="simple-bar-chart">
-                            @foreach($monthlyPercentages as $month => $percentage)
-                                <div class="item" style="--clr: {{ $colors[$month - 1] }}; --val: {{ $percentage }}">
-                                    <div class="label">T.{{ $month }}</div>
-                                    <div class="value">{{ number_format($monthlyData[$month], 0, ',', '.') }}</div>
-                                </div>
-                            @endforeach
-                        </div>
+                            <div class="simple-bar-chart">
+                                @foreach($monthlyPercentages as $month => $percentage)
+                                    <div class="item" style="--clr: {{ $colors[$month - 1] }}; --val: {{ $percentage }}">
+                                        <div class="label">T.{{ $month }}</div>
+                                        <div class="value">{{ number_format($monthlyData[$month], 0, ',', '.') }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="alert alert-info text-center my-4">
+                                Không có dữ liệu doanh số cho năm {{ $selectedYear }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -349,163 +409,309 @@
     <div class="row">
 
         <!-- Biểu đồ tròn phân bố thuốc theo kho -->
-        <div class="col-md-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold">Phân bố thuốc theo kho</h6>
-                </div>
-                <div class="card-body">
-                    <style>
-                        .storage-pie-container {
-                            display: flex;
-                            justify-content: space-around;
-                            flex-wrap: wrap;
-                            gap: 2rem;
-                            padding: 1rem;
-                        }
+<div class="col-md-12 mb-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold">Phân bố thuốc theo kho</h6>
+        </div>
+        <div class="card-body">
+            <style>
+                .storage-layout {
+                    display: flex;
+                    gap: 2rem;
+                }
 
-                        .storage-pie-wrapper {
-                            text-align: center;
-                            transition: transform 0.3s ease;
-                        }
+                .storage-left {
+                    flex: 1;
+                    text-align: center;
+                }
 
-                        .storage-pie-wrapper:hover {
-                            transform: scale(1.1);
-                            z-index: 1;
-                        }
+                .storage-right {
+                    flex: 2;
+                }
 
-                        .storage-pie-chart {
-                            position: relative;
-                            width: 200px;
-                            height: 200px;
-                            border-radius: 50%;
-                            margin: 1rem auto;
-                            overflow: hidden;
-                        }
+                .storage-pie-chart {
+                    position: relative;
+                    width: 260px;
+                    height: 260px;
+                    border-radius: 50%;
+                    margin: 1rem auto;
+                    overflow: hidden;
+                }
 
-                        .storage-pie-segment {
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
-                            transform-origin: center;
-                        }
+                .storage-pie-center {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    z-index: 2;
+                    background: white;
+                    border-radius: 50%;
+                    width: 100px;
+                    height: 100px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                }
 
-                        .storage-pie-center {
-                            position: absolute;
-                            top: 50%;
-                            left: 50%;
-                            transform: translate(-50%, -50%);
-                            text-align: center;
-                            font-weight: bold;
-                            font-size: 1.2rem;
-                            z-index: 2;
-                        }
+                .storage-pie-legend {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 0.5rem;
+                    margin-top: 0.5rem;
+                }
 
-                        .storage-pie-legend {
-                            display: flex;
-                            flex-direction: column;
-                            /* xếp chồng dọc */
-                            align-items: flex-start;
-                            /* căn trái */
-                            gap: 0.5rem;
-                            margin-top: 0.5rem;
-                        }
+                .storage-pie-legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
 
+                .storage-pie-legend-color {
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 2px;
+                }
 
-                        .storage-pie-legend-item {
-                            display: flex;
-                            align-items: center;
-                            gap: 0.5rem;
-                        }
+                .medicine-list {
+                    max-height: 400px;
+                    overflow-y: auto;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 1rem;
+                }
+            </style>
 
-                        .storage-pie-legend-color {
-                            width: 12px;
-                            height: 12px;
-                            border-radius: 2px;
-                        }
-                    </style>
+            @php
+                // Sử dụng relationship đã định nghĩa trong model
+                $khoData = \App\Models\Kho::with('thuoc')->get();
+                
+                // Hoặc nếu muốn thêm điều kiện filter chỉ lấy tồn kho > 0:
+                // $khoData = \App\Models\Kho::with(['thuoc' => function($query) {
+                //     $query->wherePivot('ton_kho_hien_tai', '>', 0);
+                // }])->get();
+                
+                $colors = [
+                    '#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b',
+                    '#858796','#5a5c69','#f8f9fc','#d1d3e2','#ff7f50',
+                    '#8a2be2','#00ced1','#ff1493','#7fff00','#ff6347',
+                    '#2e8b57','#daa520','#ff4500','#20b2aa','#778899',
+                    '#6a5acd','#cd5c5c','#ff69b4','#b8860b','#4682b4',
+                    '#9acd32','#9932cc','#00fa9a','#ff8c00','#4169e1'
+                ];
 
-                    @php
-                        $khoData = \App\Models\Kho::with('thuoc.loThuoc')->get();
-                        $colors = [
-                            '#4e73df',
-                            '#1cc88a',
-                            '#36b9cc',
-                            '#f6c23e',
-                            '#e74a3b',
-                            '#858796',
-                            '#5a5c69',
-                            '#f8f9fc',
-                            '#d1d3e2',
-                            '#ff7f50'
-                        ];
-                    @endphp
+                $defaultKho = $khoData->first();
+            @endphp
 
-                    <div class="storage-pie-container">
-                        @foreach($khoData as $kho)
-                            @php
-                                $totalQuantity = 0;
-                                $medicines = [];
-                                $uniqueMedicines = $kho->thuoc->unique('thuoc_id');
-                                foreach ($uniqueMedicines as $thuoc) {
-                                    $quantity = $thuoc->loThuoc->sum('ton_kho_hien_tai');
-                                    if ($quantity > 0) {
-                                        $totalQuantity += $quantity;
-                                        $medicines[] = [
-                                            'name' => $thuoc->ten_thuoc,
-                                            'quantity' => $quantity
-                                        ];
-                                    }
-                                }
-                                $cumulativePercent = 0;
-                            @endphp
+            <div class="mb-3">
+                <label for="khoSelect" class="form-label"><strong>Chọn kho:</strong></label>
+                <select id="khoSelect" class="form-select" style="width:auto; display:inline-block;">
+                    <option value="">-- Chọn kho --</option>
+                    @foreach($khoData as $index => $kho)
+                        <option value="{{ $kho->id ?? $kho->kho_id ?? $index }}" data-kho-id="{{ $kho->id ?? $kho->kho_id ?? $index }}">{{ $kho->ten_kho }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-                            <div class="storage-pie-wrapper">
-                                <h6>{{ $kho->ten_kho }}</h6>
-
-                                @php
-                                    $cumulative = 0;
-                                    $gradientParts = [];
-                                    foreach ($medicines as $index => $med) {
-                                        $percent = ($med['quantity'] / $totalQuantity) * 100;
-                                        $color = $colors[$index % count($colors)];
-                                        $gradientParts[] = "$color {$cumulative}% " . ($cumulative + $percent) . "%";
-                                        $cumulative += $percent;
-                                    }
-                                    $gradientCss = implode(', ', $gradientParts);
-                                @endphp
-
-                                <div class="storage-pie-chart" style="background: conic-gradient({{ $gradientCss }});">
-                                    <div class="storage-pie-center">
-                                        {{ $totalQuantity }}<br>
-                                        <small>đơn vị</small>
-                                    </div>
-                                </div>
-
-                                <div class="storage-pie-legend">
-                                    @foreach($medicines as $index => $med)
-                                        @php
-                                            $color = $colors[$index % count($colors)];
-                                            $percent = round(($med['quantity'] / $totalQuantity) * 100, 1);
-                                        @endphp
-                                        <div class="storage-pie-legend-item">
-                                            <div class="storage-pie-legend-color" style="background: {{ $color }}"></div>
-                                            <span>{{ $med['name'] }} ({{ $med['quantity'] }} – {{ $percent }}%)</span>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-
-                            </div>
-
-                        @endforeach
-                    </div>
+            <div class="storage-layout">
+                <div class="storage-left" id="chartArea"></div>
+                <div class="storage-right">
+                    <h6>Danh sách thuốc</h6>
+                    <div class="medicine-list" id="medicineList"></div>
                 </div>
             </div>
+
+            <script>
+                const khoData = @json($khoData);
+                const colors = @json($colors);
+
+                // Debug dữ liệu ban đầu
+                console.log('khoData:', khoData);
+                console.log('colors:', colors);
+
+                function renderKho(khoId) {
+                    console.log('Rendering kho ID:', khoId, 'Type:', typeof khoId);
+
+                    if (!khoId || khoId === '' || isNaN(khoId)) {
+                        console.log('Invalid khoId provided');
+                        document.getElementById("chartArea").innerHTML = 
+                            `<p class="text-warning"><em>Vui lòng chọn kho.</em></p>`;
+                        document.getElementById("medicineList").innerHTML = 
+                            `<p class="text-warning"><em>Vui lòng chọn kho.</em></p>`;
+                        return;
+                    }
+
+                    // Tìm kho theo kho_id
+                    const kho = khoData.find(k => k.kho_id == khoId);
+                    
+                    if (!kho) {
+                        console.log('Kho not found:', khoId);
+                        console.log('Available khos:', khoData.map(k => ({ kho_id: k.kho_id, name: k.ten_kho })));
+                        document.getElementById("chartArea").innerHTML = 
+                            `<p class="text-danger"><em>Không tìm thấy kho với ID: ${khoId}</em></p>`;
+                        document.getElementById("medicineList").innerHTML = 
+                            `<p class="text-danger"><em>Không tìm thấy kho.</em></p>`;
+                        return;
+                    }
+
+                    console.log('Found kho:', kho.ten_kho);
+
+                    // Gộp thuốc theo thuoc_id và tính tổng ton_kho_hien_tai
+                    let totalQuantity = 0;
+                    const medicineMap = {};
+                    
+                    if (kho.thuoc && kho.thuoc.length > 0) {
+                        kho.thuoc.forEach(thuoc => {
+                            const thuocId = thuoc.thuoc_id;
+                            const tonKho = parseFloat(thuoc.pivot.ton_kho_hien_tai) || 0;
+
+                            if (!medicineMap[thuocId]) {
+                                medicineMap[thuocId] = {
+                                    name: thuoc.ten_thuoc,
+                                    quantity: 0
+                                };
+                            }
+                            medicineMap[thuocId].quantity += tonKho;
+                            totalQuantity += tonKho;
+                        });
+                    }
+
+                    // Chuyển medicineMap thành mảng medicines
+                    const medicines = Object.values(medicineMap).filter(med => med.quantity > 0);
+
+                    console.log('Total medicines:', medicines.length);
+                    console.log('Total quantity:', totalQuantity);
+                    console.log('Medicines data:', medicines);
+
+                    // Kiểm tra nếu không có thuốc tồn kho
+                    if (medicines.length === 0 || totalQuantity === 0) {
+                        document.getElementById("chartArea").innerHTML = 
+                            `<p class="text-warning"><em>Kho "${kho.ten_kho}" chưa có thuốc tồn.</em></p>`;
+                        document.getElementById("medicineList").innerHTML = 
+                            `<p class="text-warning"><em>Không có thuốc trong kho này.</em></p>`;
+                        return;
+                    }
+
+                    // Sắp xếp thuốc theo số lượng giảm dần
+                    medicines.sort((a, b) => b.quantity - a.quantity);
+
+                    // Tính gradient cho biểu đồ tròn
+                    let cumulative = 0;
+                    const gradientParts = medicines.map((med, i) => {
+                        const percent = (med.quantity / totalQuantity) * 100;
+                        const color = colors[i % colors.length];
+                        const part = `${color} ${cumulative}% ${cumulative + percent}%`;
+                        cumulative += percent;
+                        return part;
+                    }).join(", ");
+
+                    console.log('Gradient parts:', gradientParts);
+
+                    // Render biểu đồ
+                    document.getElementById("chartArea").innerHTML = `
+                        <div class="storage-pie-chart" style="background: conic-gradient(${gradientParts});">
+                            <div class="storage-pie-center">
+                                <div>${totalQuantity.toFixed(2)}</div>
+                                <small>đơn vị</small>
+                            </div>
+                        </div>
+                    `;
+
+                    // Render storage-pie-legend trong storage-right
+                    document.getElementById("medicineList").innerHTML = `
+                        <div class="storage-pie-legend">
+                            ${medicines.map((med, i) => {
+                                const percent = ((med.quantity / totalQuantity) * 100).toFixed(1);
+                                return `
+                                    <div class="storage-pie-legend-item">
+                                        <div class="storage-pie-legend-color" style="background:${colors[i % colors.length]}"></div>
+                                        <span><strong>${med.name}:</strong> ${med.quantity.toFixed(2)} – ${percent}%</span>
+                                    </div>`;
+                            }).join("")}
+                        </div>
+                    `;
+                    
+                    console.log('Chart and list rendered successfully');
+                }
+
+                // Load kho mặc định khi trang được tải
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM loaded, available khos:', khoData.length);
+                    console.log('Full khoData structure:', khoData);
+                    
+                    const selectElement = document.getElementById("khoSelect");
+                    
+                    if (khoData.length > 0) {
+                        const firstKho = khoData[0];
+                        const khoId = firstKho.kho_id;
+                        console.log('Detected kho ID:', khoId);
+                        
+                        if (khoId) {
+                            selectElement.value = khoId;
+                            renderKho(khoId);
+                            console.log('Set default kho:', khoId, firstKho.ten_kho);
+                        } else {
+                            console.log('Could not find kho_id in kho object');
+                            console.log('Available fields:', Object.keys(firstKho));
+                            document.getElementById("chartArea").innerHTML = 
+                                `<p class="text-danger"><em>Không có dữ liệu kho.</em></p>`;
+                            document.getElementById("medicineList").innerHTML = 
+                                `<p class="text-danger"><em>Không có dữ liệu kho.</em></p>`;
+                        }
+                    } else {
+                        console.log('No kho data available');
+                        document.getElementById("chartArea").innerHTML = 
+                            `<p class="text-danger"><em>Không có dữ liệu kho.</em></p>`;
+                        document.getElementById("medicineList").innerHTML = 
+                            `<p class="text-danger"><em>Không có dữ liệu kho.</em></p>`;
+                    }
+                });
+
+                // Xử lý sự kiện thay đổi kho
+                document.getElementById("khoSelect").addEventListener("change", function() {
+                    const selectedKhoId = this.value;
+                    console.log('Selected kho ID:', selectedKhoId);
+                    
+                    if (selectedKhoId && selectedKhoId !== '') {
+                        renderKho(parseInt(selectedKhoId));
+                    } else {
+                        console.log('Invalid kho ID selected:', selectedKhoId);
+                        document.getElementById("chartArea").innerHTML = 
+                            `<p class="text-warning"><em>Vui lòng chọn kho.</em></p>`;
+                        document.getElementById("medicineList").innerHTML = 
+                            `<p class="text-warning"><em>Vui lòng chọn kho.</em></p>`;
+                    }
+                });
+
+                // Debug button để kiểm tra select
+                document.getElementById("debugBtn").addEventListener("click", function() {
+                    const select = document.getElementById("khoSelect");
+                    console.log('=== SELECT DEBUG ===');
+                    console.log('Select element:', select);
+                    console.log('Current value:', select.value);
+                    console.log('Selected index:', select.selectedIndex);
+                    console.log('All options:');
+                    
+                    for (let i = 0; i < select.options.length; i++) {
+                        const option = select.options[i];
+                        console.log(`Option ${i}:`, {
+                            text: option.text,
+                            value: option.value,
+                            dataKhoId: option.getAttribute('data-kho-id'),
+                            selected: option.selected
+                        });
+                    }
+                    console.log('=== END DEBUG ===');
+                });
+            </script>
         </div>
+    </div>
+</div>
 
         <!-- Top sản phẩm bán chạy / bán ế -->
         <div class="col-md-6 mb-4">

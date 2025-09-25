@@ -92,3 +92,24 @@ Quản Lý Phiếu Nhập : auto trạng thái chờ xác nhận --> duyệt -> 
 Đình chỉnh  nhóm thuốc --> done
 
 Phiếu nhập : // done
+
+
+Báo Cáo Khách Hàng : cột sp  =  mã đơn , số lượng sp, ngày tạo đơn , bỏ đơn giá // done
+
+Báo Cáo Thuốc :  báo cáo doanh thu theo thuốc  : filter (thuốc ) + thời gian   // done
+
+Quản lý đơn bán lẻ : Trạng thái --> tạo đơn --> chờ hoàn thành --> hoàn thành   // done
+
+Doanh số bán theo tháng (2025) : lọc theo năm  // done
+
+phân quyền : dược sĩ + Quản Lý Thuốc & Nhóm Thuốc/Quản Lý Giá Thuốc / quản lú danh mục   --> Quản Lý Nhân Sự sửa thông tin chính nó + xem chi tiết / quản lý khách hàng   // done
+
+
+Phân bố thuốc theo kho (bổ lọc theo kho - mặc định kho đầu tiên)  // done
+
+Quản lý danh mục : k có xoá chỉ có đình chỉ // done
+
+
+// nếu đơn bán + phiếu nhập đều chờ xác nhận thì sẽ phải làm luồng lưu tạm thông tin --> báo xác nhận hoàn thành thì mới update số lượng tồn kho  // done
+
+cái biểu đồ tròn ở dashboard thì sẽ realtime tồn kho  // 

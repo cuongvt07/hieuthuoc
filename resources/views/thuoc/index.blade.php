@@ -46,10 +46,6 @@
                             <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="{{ $nhom->nhom_id }}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-danger delete-nhom-btn"
-                                data-id="{{ $nhom->nhom_id }}" data-name="{{ $nhom->ten_nhom }}">
-                                <i class="bi bi-trash"></i>
-                            </button>
                             <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="{{ $nhom->nhom_id }}" data-status="{{ $nhom->trang_thai }}">
                                 <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                             </button>
@@ -155,10 +151,6 @@
                                     <td>
                                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="{{ $item->thuoc_id }}">
                                             <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn"
-                                            data-id="{{ $item->thuoc_id }}" data-name="{{ $item->ten_thuoc }}">
-                                            <i class="bi bi-trash"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="{{ $item->thuoc_id }}" data-status="{{ $item->trang_thai }}">
                                             <i class="bi bi-ban"></i> {{ $item->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
@@ -429,327 +421,205 @@
     </div>
     @endsection
 
-    @section('scripts')
-    <script>
-        $(document).ready(function() {
-            // Biến lưu ID nhóm thuốc đang được chọn
-            let selectedNhomId = '';
-            let currentThuocPage = 1;
-            let currentNhomPage = 1;
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        // Biến lưu ID nhóm thuốc đang được chọn
+        let selectedNhomId = '';
+        let currentThuocPage = 1;
+        let currentNhomPage = 1;
 
-            // ===== PHẦN XỬ LÝ NHÓM THUỐC =====
+        // Lấy vai trò của người dùng từ session hoặc meta tag (giả định vai trò đã được truyền qua view)
+        const userRole = '{{ Auth::user()->vai_tro }}'; // Lấy vai trò từ PHP
 
-            // Search nhóm thuốc
-            $('#searchNhomBtn').click(function() {
+        // Hàm kiểm tra quyền chỉnh sửa
+        function hasEditPermission() {
+            return userRole === 'admin';
+        }
+
+        // Vô hiệu hóa các nút thao tác nếu không phải admin
+        if (!hasEditPermission()) {
+            // Ẩn hoặc vô hiệu hóa nút "Thêm Nhóm" và "Thêm Thuốc"
+            $('#addNhomThuocModal').parent().find('.btn-primary').prop('disabled', true).addClass('disabled');
+            $('#addThuocModal').parent().find('.btn-primary').prop('disabled', true).addClass('disabled');
+
+            // Vô hiệu hóa các nút chỉnh sửa và đình chỉ trong danh sách
+            $('.edit-nhom-btn, .suspend-nhom-btn, .edit-thuoc-btn, .suspend-thuoc-btn').prop('disabled', true).addClass('disabled');
+        }
+
+        // ===== PHẦN XỬ LÝ NHÓM THUỐC =====
+
+        // Search nhóm thuốc
+        $('#searchNhomBtn').click(function() {
+            currentNhomPage = 1;
+            loadNhomThuoc();
+        });
+        $('#search-nhom').keypress(function(e) {
+            if (e.which == 13) {
                 currentNhomPage = 1;
                 loadNhomThuoc();
-            });
-            $('#search-nhom').keypress(function(e) {
-                if (e.which == 13) {
-                    currentNhomPage = 1;
-                    loadNhomThuoc();
-                    return false;
-                }
-            });
-            // Reset tìm kiếm nhóm thuốc
-            $('#resetNhomBtn').click(function() {
-                $('#search-nhom').val('');
-                showToast('Đã hiển thị lại tất cả nhóm thuốc', 'info');
+                return false;
+            }
+        });
+        $('#resetNhomBtn').click(function() {
+            $('#search-nhom').val('');
+            showToast('Đã hiển thị lại tất cả nhóm thuốc', 'info');
+            currentNhomPage = 1;
+            loadNhomThuoc();
+        });
+        let nhomThuocSearchTimeout;
+        $('#search-nhom').keyup(function() {
+            clearTimeout(nhomThuocSearchTimeout);
+            if ($(this).val().trim() === '') {
                 currentNhomPage = 1;
                 loadNhomThuoc();
-            });
-            // Tìm kiếm tự động
-            let nhomThuocSearchTimeout;
-            $('#search-nhom').keyup(function() {
-                clearTimeout(nhomThuocSearchTimeout);
-                if ($(this).val().trim() === '') {
+            } else {
+                nhomThuocSearchTimeout = setTimeout(function() {
                     currentNhomPage = 1;
                     loadNhomThuoc();
-                } else {
-                    nhomThuocSearchTimeout = setTimeout(function() {
-                        currentNhomPage = 1;
-                        loadNhomThuoc();
-                    }, 500);
-                }
-            });
+                }, 500);
+            }
+        });
 
-            // Hàm load danh sách nhóm thuốc
-            function loadNhomThuoc(page = currentNhomPage) {
-                const search = $('#search-nhom').val();
-                const data = {
-                    page: page,
-                    search_nhom: search ? search.trim() : ''
-                };
+        function loadNhomThuoc(page = currentNhomPage) {
+            const search = $('#search-nhom').val();
+            const data = {
+                page: page,
+                search_nhom: search ? search.trim() : ''
+            };
 
-                $.ajax({
-                    url: "/thuoc",
-                    type: "GET",
-                    data: data,
-                    dataType: "json",
-                    success: function(response) {
-                        let html = '';
-                        if (response.nhomThuoc.data.length > 0) {
-                            $.each(response.nhomThuoc.data, function(index, nhom) {
-                                html += `
+            $.ajax({
+                url: "/thuoc",
+                type: "GET",
+                data: data,
+                dataType: "json",
+                success: function(response) {
+                    let html = '';
+                    if (response.nhomThuoc.data.length > 0) {
+                        $.each(response.nhomThuoc.data, function(index, nhom) {
+                            html += `
                         <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item ${selectedNhomId == nhom.nhom_id ? 'active' : ''}" data-id="${nhom.nhom_id}">
                             <div>
                                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
                                 ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
                             </div>
                             <div>
-                                <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
-                                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                                <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </div>
                         </a>`;
-                            });
-                        } else {
-                            html = '<div class="list-group-item">Không có dữ liệu</div>';
-                        }
-                        $('.nhom-thuoc-list').html(html);
-                        $('#pagination-nhom').html(response.links);
-                        currentNhomPage = page;
-
-                        $('#pagination-nhom').on('click', '.pagination a', function(e) {
-                            e.preventDefault();
-                            const page = $(this).attr('href').split('page=')[1];
-                            loadNhomThuoc(page);
                         });
-
-                        bindNhomThuocEvents();
-                        updateNhomThuocDropdowns(); // Cập nhật dropdown
-                    },
-                    error: function() {
-                        showToast('Có lỗi xảy ra khi tải danh sách nhóm thuốc', 'danger');
+                    } else {
+                        html = '<div class="list-group-item">Không có dữ liệu</div>';
                     }
-                });
-            }
+                    $('.nhom-thuoc-list').html(html);
+                    $('#pagination-nhom').html(response.links);
+                    currentNhomPage = page;
 
-            // Hàm cập nhật dropdown nhóm thuốc
-            function updateNhomThuocDropdowns() {
+                    $('#pagination-nhom').on('click', '.pagination a', function(e) {
+                        e.preventDefault();
+                        const page = $(this).attr('href').split('page=')[1];
+                        loadNhomThuoc(page);
+                    });
+
+                    bindNhomThuocEvents();
+                    updateNhomThuocDropdowns();
+                },
+                error: function() {
+                    showToast('Có lỗi xảy ra khi tải danh sách nhóm thuốc', 'danger');
+                }
+            });
+        }
+
+        function updateNhomThuocDropdowns() {
+            $.ajax({
+                url: "/nhom-thuoc/all",
+                type: "GET",
+                dataType: "json",
+                success: function(response) {
+                    const nhomOptions = response.nhomThuoc.map(function(nhom) {
+                        return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
+                    }).join('');
+
+                    const currentFilterValue = $('#filter-nhom').val();
+                    $('#filter-nhom').html(`<option value="">-- Tất cả nhóm --</option>${nhomOptions}`);
+                    $('#filter-nhom').val(currentFilterValue);
+
+                    const activeNhomOptions = response.nhomThuoc.filter(nhom => nhom.trang_thai == 0)
+                        .map(function(nhom) {
+                            return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
+                        }).join('');
+                    $('#nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${activeNhomOptions}`);
+
+                    $('#edit_nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${nhomOptions}`);
+                },
+                error: function() {
+                    console.log('Không thể cập nhật dropdown nhóm thuốc');
+                }
+            });
+        }
+
+        function bindNhomThuocEvents() {
+            $('.nhom-thuoc-item').click(function(e) {
+                e.preventDefault();
+                const clickedId = $(this).data('id');
+                const isAlreadyActive = $(this).hasClass('active');
+                $('.nhom-thuoc-item').removeClass('active');
+
+                if (isAlreadyActive) {
+                    selectedNhomId = '';
+                    $('#filter-nhom').val('');
+                    $('#selected-nhom-name').text('');
+                    $('#filter-status').text('Đang hiển thị tất cả thuốc');
+                } else {
+                    $(this).addClass('active');
+                    selectedNhomId = clickedId;
+                    $('#filter-nhom').val(selectedNhomId);
+                    const nhomName = $(this).find('div:first').text();
+                    $('#selected-nhom-name').text(' - ' + nhomName);
+                    $('#filter-status').text('Đang lọc theo nhóm thuốc');
+                }
+                currentThuocPage = 1;
+                loadThuoc();
+            });
+
+            $('.edit-nhom-btn').click(function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!hasEditPermission()) {
+                    showToast('Bạn không có quyền chỉnh sửa nhóm thuốc', 'warning');
+                    return;
+                }
+                const id = $(this).data('id');
                 $.ajax({
-                    url: "/nhom-thuoc/all", // Cần tạo route này để lấy tất cả nhóm thuốc
+                    url: "/nhom-thuoc/" + id,
                     type: "GET",
                     dataType: "json",
                     success: function(response) {
-                        const nhomOptions = response.nhomThuoc.map(function(nhom) {
-                            return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
-                        }).join('');
-
-                        // Cập nhật dropdown filter
-                        const currentFilterValue = $('#filter-nhom').val();
-                        $('#filter-nhom').html(`<option value="">-- Tất cả nhóm --</option>${nhomOptions}`);
-                        $('#filter-nhom').val(currentFilterValue);
-
-                        // Cập nhật dropdown trong modal thêm thuốc
-                        const activeNhomOptions = response.nhomThuoc.filter(nhom => nhom.trang_thai == 0)
-                            .map(function(nhom) {
-                                return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
-                            }).join('');
-                        $('#nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${activeNhomOptions}`);
-
-                        // Cập nhật dropdown trong modal sửa thuốc
-                        $('#edit_nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${nhomOptions}`);
+                        $('#edit_nhom_id').val(response.nhomThuoc.nhom_id);
+                        $('#edit_ma_nhom').val(response.nhomThuoc.ma_nhom);
+                        $('#edit_ten_nhom').val(response.nhomThuoc.ten_nhom);
+                        $('#edit_mo_ta').val(response.nhomThuoc.mo_ta);
+                        $('#editNhomThuocModal').modal('show');
                     },
                     error: function() {
-                        console.log('Không thể cập nhật dropdown nhóm thuốc');
+                        showToast('Có lỗi xảy ra khi lấy thông tin nhóm thuốc', 'danger');
                     }
                 });
-            }
-
-            // Bind sự kiện cho nhóm thuốc
-            function bindNhomThuocEvents() {
-                // Click item để lọc thuốc
-                $('.nhom-thuoc-item').click(function(e) {
-                    e.preventDefault();
-                    const clickedId = $(this).data('id');
-                    const isAlreadyActive = $(this).hasClass('active');
-                    $('.nhom-thuoc-item').removeClass('active');
-
-                    if (isAlreadyActive) {
-                        selectedNhomId = '';
-                        $('#filter-nhom').val('');
-                        $('#selected-nhom-name').text('');
-                        $('#filter-status').text('Đang hiển thị tất cả thuốc');
-                    } else {
-                        $(this).addClass('active');
-                        selectedNhomId = clickedId;
-                        $('#filter-nhom').val(selectedNhomId);
-                        const nhomName = $(this).find('div:first').text();
-                        $('#selected-nhom-name').text(' - ' + nhomName);
-                        $('#filter-status').text('Đang lọc theo nhóm thuốc');
-                    }
-                    currentThuocPage = 1;
-                    loadThuoc();
-                });
-
-                // Sửa nhóm thuốc
-                $('.edit-nhom-btn').click(function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const id = $(this).data('id');
-                    $.ajax({
-                        url: "/nhom-thuoc/" + id,
-                        type: "GET",
-                        dataType: "json",
-                        success: function(response) {
-                            $('#edit_nhom_id').val(response.nhomThuoc.nhom_id);
-                            $('#edit_ma_nhom').val(response.nhomThuoc.ma_nhom);
-                            $('#edit_ten_nhom').val(response.nhomThuoc.ten_nhom);
-                            $('#edit_mo_ta').val(response.nhomThuoc.mo_ta);
-                            $('#editNhomThuocModal').modal('show');
-                        },
-                        error: function() {
-                            showToast('Có lỗi xảy ra khi lấy thông tin nhóm thuốc', 'danger');
-                        }
-                    });
-                });
-
-                // Đình chỉ nhóm thuốc
-                $('.suspend-nhom-btn').click(function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const id = $(this).data('id');
-                    const currentStatus = $(this).data('status');
-                    const newStatus = currentStatus == 1 ? 0 : 1;
-                    $.ajax({
-                        url: "{{ url('nhom-thuoc') }}/" + id + "/suspend",
-                        type: "POST",
-                        data: {
-                            trang_thai: newStatus,
-                            _token: $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function(response) {
-                            showToast(response.message);
-                            loadNhomThuoc(currentNhomPage);
-                            loadThuoc(currentThuocPage);
-                        },
-                        error: function() {
-                            showToast('Có lỗi xảy ra khi thực hiện thao tác', 'danger');
-                        }
-                    });
-                });
-
-                // Xóa nhóm thuốc
-                $('.delete-nhom-btn').click(function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const id = $(this).data('id');
-                    const name = $(this).data('name');
-                    $('#delete_nhom_name').text(name);
-                    $('#deleteNhomThuocModal').modal('show');
-
-                    $('#confirmDeleteNhom').off('click').on('click', function() {
-                        $.ajax({
-                            url: "/nhom-thuoc/" + id,
-                            type: "DELETE",
-                            data: {
-                                _token: $('meta[name="csrf-token"]').attr('content')
-                            },
-                            dataType: "json",
-                            success: function(response) {
-                                $('#deleteNhomThuocModal').modal('hide');
-                                showToast(response.message);
-                                if (selectedNhomId == id) {
-                                    selectedNhomId = '';
-                                    $('#filter-nhom').val('');
-                                    $('#selected-nhom-name').text('');
-                                    currentThuocPage = 1;
-                                    loadThuoc();
-                                }
-                                loadNhomThuoc(currentNhomPage);
-                            },
-                            error: function(xhr) {
-                                $('#deleteNhomThuocModal').modal('hide');
-                                showToast(xhr.responseJSON.message, 'danger');
-                            }
-                        });
-                    });
-                });
-            }
-
-            // ===== PHẦN XỬ LÝ THUỐC =====
-
-            // Search và filter thuốc
-            $('#searchThuocBtn').click(function() {
-                currentThuocPage = 1;
-                loadThuoc();
-            });
-            $('#search-thuoc').keypress(function(e) {
-                if (e.which == 13) {
-                    currentThuocPage = 1;
-                    loadThuoc();
-                    return false;
-                }
-            });
-            let thuocSearchTimeout;
-            $('#search-thuoc').keyup(function() {
-                clearTimeout(thuocSearchTimeout);
-                if ($(this).val().trim() === '') {
-                    currentThuocPage = 1;
-                    loadThuoc();
-                } else {
-                    thuocSearchTimeout = setTimeout(function() {
-                        currentThuocPage = 1;
-                        loadThuoc();
-                    }, 500);
-                }
-            });
-            $('#resetThuocBtn').click(function() {
-                $('#search-thuoc').val('');
-                showToast('Đã hiển thị lại tất cả thuốc', 'info');
-                currentThuocPage = 1;
-                loadThuoc();
-            });
-            $('#resetFilterBtn').click(function() {
-                $('#filter-nhom').val('');
-                $('#filter-kho').val('');
-                selectedNhomId = '';
-                $('#selected-nhom-name').text('');
-                $('.nhom-thuoc-item').removeClass('active');
-                $('#filter-status').text('Đang hiển thị tất cả thuốc');
-                currentThuocPage = 1;
-                loadThuoc();
             });
 
-            // Xử lý lọc theo kho
-            $('#filter-kho').change(function() {
-                currentThuocPage = 1;
-                loadThuoc();
-            });
-            
-            $('#resetKhoBtn').click(function() {
-                $('#filter-kho').val('');
-                currentThuocPage = 1;
-                loadThuoc();
-            });
-            $('#filter-nhom').change(function() {
-                const nhomId = $(this).val();
-                $('.nhom-thuoc-item').removeClass('active');
-                if (nhomId) {
-                    selectedNhomId = nhomId;
-                    $(`.nhom-thuoc-item[data-id="${nhomId}"]`).addClass('active');
-                    const nhomName = $(this).find('option:selected').text();
-                    $('#selected-nhom-name').text(' - ' + nhomName);
-                    $('#filter-status').text('Đang lọc theo nhóm thuốc');
-                } else {
-                    selectedNhomId = '';
-                    $('#selected-nhom-name').text('');
-                    $('#filter-status').text('Đang hiển thị tất cả thuốc');
-                }
-                currentThuocPage = 1;
-                loadThuoc();
-            });
-
-            // Đình chỉ thuốc
-            $(document).on('click', '.suspend-thuoc-btn', function(e) {
+            $('.suspend-nhom-btn').click(function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (!hasEditPermission()) {
+                    showToast('Bạn không có quyền đình chỉ nhóm thuốc', 'warning');
+                    return;
+                }
                 const id = $(this).data('id');
                 const currentStatus = $(this).data('status');
                 const newStatus = currentStatus == 1 ? 0 : 1;
                 $.ajax({
-                    url: "{{ url('thuoc') }}/" + id + "/suspend",
+                    url: "{{ url('nhom-thuoc') }}/" + id + "/suspend",
                     type: "POST",
                     data: {
                         trang_thai: newStatus,
@@ -757,6 +627,7 @@
                     },
                     success: function(response) {
                         showToast(response.message);
+                        loadNhomThuoc(currentNhomPage);
                         loadThuoc(currentThuocPage);
                     },
                     error: function() {
@@ -765,121 +636,228 @@
                 });
             });
 
-            // Sửa thuốc
-            $(document).on('click', '.edit-thuoc-btn', function(e) {
-                e.preventDefault();
-                const id = $(this).data('id');
+            // Xóa nhóm thuốc (cần nút xóa trong HTML, hiện tại chưa có)
+            // Thêm logic xóa nếu cần nút delete-nhom-btn
+        }
+
+        // ===== PHẦN XỬ LÝ THUỐC =====
+
+        $('#searchThuocBtn').click(function() {
+            currentThuocPage = 1;
+            loadThuoc();
+        });
+        $('#search-thuoc').keypress(function(e) {
+            if (e.which == 13) {
+                currentThuocPage = 1;
+                loadThuoc();
+                return false;
+            }
+        });
+        let thuocSearchTimeout;
+        $('#search-thuoc').keyup(function() {
+            clearTimeout(thuocSearchTimeout);
+            if ($(this).val().trim() === '') {
+                currentThuocPage = 1;
+                loadThuoc();
+            } else {
+                thuocSearchTimeout = setTimeout(function() {
+                    currentThuocPage = 1;
+                    loadThuoc();
+                }, 500);
+            }
+        });
+        $('#resetThuocBtn').click(function() {
+            $('#search-thuoc').val('');
+            showToast('Đã hiển thị lại tất cả thuốc', 'info');
+            currentThuocPage = 1;
+            loadThuoc();
+        });
+        $('#resetFilterBtn').click(function() {
+            $('#filter-nhom').val('');
+            $('#filter-kho').val('');
+            selectedNhomId = '';
+            $('#selected-nhom-name').text('');
+            $('.nhom-thuoc-item').removeClass('active');
+            $('#filter-status').text('Đang hiển thị tất cả thuốc');
+            currentThuocPage = 1;
+            loadThuoc();
+        });
+
+        $('#filter-kho').change(function() {
+            currentThuocPage = 1;
+            loadThuoc();
+        });
+        
+        $('#resetKhoBtn').click(function() {
+            $('#filter-kho').val('');
+            currentThuocPage = 1;
+            loadThuoc();
+        });
+        $('#filter-nhom').change(function() {
+            const nhomId = $(this).val();
+            $('.nhom-thuoc-item').removeClass('active');
+            if (nhomId) {
+                selectedNhomId = nhomId;
+                $(`.nhom-thuoc-item[data-id="${nhomId}"]`).addClass('active');
+                const nhomName = $(this).find('option:selected').text();
+                $('#selected-nhom-name').text(' - ' + nhomName);
+                $('#filter-status').text('Đang lọc theo nhóm thuốc');
+            } else {
+                selectedNhomId = '';
+                $('#selected-nhom-name').text('');
+                $('#filter-status').text('Đang hiển thị tất cả thuốc');
+            }
+            currentThuocPage = 1;
+            loadThuoc();
+        });
+
+        $(document).on('click', '.suspend-thuoc-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền đình chỉ thuốc', 'warning');
+                return;
+            }
+            const id = $(this).data('id');
+            const currentStatus = $(this).data('status');
+            const newStatus = currentStatus == 1 ? 0 : 1;
+            $.ajax({
+                url: "{{ url('thuoc') }}/" + id + "/suspend",
+                type: "POST",
+                data: {
+                    trang_thai: newStatus,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    showToast(response.message);
+                    loadThuoc(currentThuocPage);
+                },
+                error: function() {
+                    showToast('Có lỗi xảy ra khi thực hiện thao tác', 'danger');
+                }
+            });
+        });
+
+        $(document).on('click', '.edit-thuoc-btn', function(e) {
+            e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền chỉnh sửa thuốc', 'warning');
+                return;
+            }
+            const id = $(this).data('id');
+            $.ajax({
+                url: "/thuoc/" + id,
+                type: "GET",
+                dataType: "json",
+                success: function(response) {
+                    const thuoc = response.thuoc;
+                    $('#edit_thuoc_id').val(thuoc.thuoc_id);
+                    $('#edit_ma_thuoc').val(thuoc.ma_thuoc);
+                    $('#edit_nhom_id').val(thuoc.nhom_id);
+                    $('#edit_kho_id').val(thuoc.kho_id);
+                    $('#edit_ten_thuoc').val(thuoc.ten_thuoc);
+                    $('#edit_don_vi_goc').val(thuoc.don_vi_goc);
+                    $('#edit_don_vi_ban').val(thuoc.don_vi_ban);
+                    $('#edit_ti_le_quy_doi').val(thuoc.ti_le_quy_doi);
+                    $('#edit_mo_ta_thuoc').val(thuoc.mo_ta);
+                    $('#editThuocModal').modal('show');
+                },
+                error: function() {
+                    showToast('Có lỗi xảy ra khi lấy thông tin thuốc', 'danger');
+                }
+            });
+        });
+
+        $(document).on('click', '.delete-thuoc-btn', function(e) {
+            e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền xóa thuốc', 'warning');
+                return;
+            }
+            const id = $(this).data('id');
+            const name = $(this).data('name');
+            $('#delete_thuoc_name').text(name);
+            $('#deleteThuocModal').modal('show');
+
+            $('#confirmDeleteThuoc').off('click').on('click', function() {
                 $.ajax({
                     url: "/thuoc/" + id,
-                    type: "GET",
+                    type: "DELETE",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
                     dataType: "json",
                     success: function(response) {
-                        const thuoc = response.thuoc;
-                        $('#edit_thuoc_id').val(thuoc.thuoc_id);
-                        $('#edit_ma_thuoc').val(thuoc.ma_thuoc);
-                        $('#edit_nhom_id').val(thuoc.nhom_id);
-                        $('#edit_kho_id').val(thuoc.kho_id);
-                        $('#edit_ten_thuoc').val(thuoc.ten_thuoc);
-                        $('#edit_don_vi_goc').val(thuoc.don_vi_goc);
-                        $('#edit_don_vi_ban').val(thuoc.don_vi_ban);
-                        $('#edit_ti_le_quy_doi').val(thuoc.ti_le_quy_doi);
-                        $('#edit_mo_ta_thuoc').val(thuoc.mo_ta);
-                        $('#editThuocModal').modal('show');
+                        $('#deleteThuocModal').modal('hide');
+                        showToast(response.message);
+                        loadThuoc(currentThuocPage);
                     },
-                    error: function() {
-                        showToast('Có lỗi xảy ra khi lấy thông tin thuốc', 'danger');
+                    error: function(xhr) {
+                        $('#deleteThuocModal').modal('hide');
+                        showToast(xhr.responseJSON.message, 'danger');
                     }
                 });
             });
+        });
 
-            // Xóa thuốc
-            $(document).on('click', '.delete-thuoc-btn', function(e) {
-                e.preventDefault();
-                const id = $(this).data('id');
-                const name = $(this).data('name');
-                $('#delete_thuoc_name').text(name);
-                $('#deleteThuocModal').modal('show');
+        function loadThuoc(page = currentThuocPage) {
+            const search = $('#search-thuoc').val();
+            const nhomId = $('#filter-nhom').val() || selectedNhomId;
+            const khoId = $('#filter-kho').val();
+            const data = {
+                page: page
+            };
+            if (search && search.trim() !== '') data.search = search.trim();
+            if (nhomId && nhomId !== '') data.nhom_id = nhomId;
+            if (khoId && khoId !== '') data.kho_id = khoId;
 
-                $('#confirmDeleteThuoc').off('click').on('click', function() {
-                    $.ajax({
-                        url: "/thuoc/" + id,
-                        type: "DELETE",
-                        data: {
-                            _token: $('meta[name="csrf-token"]').attr('content')
-                        },
-                        dataType: "json",
-                        success: function(response) {
-                            $('#deleteThuocModal').modal('hide');
-                            showToast(response.message);
-                            loadThuoc(currentThuocPage);
-                        },
-                        error: function(xhr) {
-                            $('#deleteThuocModal').modal('hide');
-                            showToast(xhr.responseJSON.message, 'danger');
-                        }
-                    });
-                });
-            });
-
-            // Hàm load danh sách thuốc
-            function loadThuoc(page = currentThuocPage) {
-                const search = $('#search-thuoc').val();
-                const nhomId = $('#filter-nhom').val() || selectedNhomId;
-                const data = {
-                    page: page
-                };
-                if (search && search.trim() !== '') data.search = search.trim();
-                if (nhomId && nhomId !== '') data.nhom_id = nhomId;
-
-                $.ajax({
-                    url: "/thuoc",
-                    type: "GET",
-                    data: data,
-                    dataType: "json",
-                    success: function(response) {
-                        let html = '';
-                        if (response.thuoc.data.length > 0) {
-                            response.thuoc.data.forEach(function(item) {
-                                html += `
+            $.ajax({
+                url: "/thuoc",
+                type: "GET",
+                data: data,
+                dataType: "json",
+                success: function(response) {
+                    let html = '';
+                    if (response.thuoc.data.length > 0) {
+                        response.thuoc.data.forEach(function(item) {
+                            html += `
                         <tr>
                             <td>${item.ma_thuoc}</td>
-                            <td>${item.ten_thuoc} ${item.trang_thai == 1 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
-                            <td>${item.nhom_thuc.ten_nhom}</td>
+                            <td>${item.ten_thuoc} ${item.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
+                            <td>${item.nhom_thuoc.ten_nhom}</td>
                             <td>${item.kho.ten_kho}</td>
                             <td>${item.don_vi_goc}</td>
                             <td>${item.don_vi_ban}</td>
                             <td>${item.ti_le_quy_doi}</td>
-                            <td>${item.trang_thai == 1 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
+                            <td>${item.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${item.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${item.thuoc_id}" data-name="${item.ten_thuoc}"><i class="bi bi-trash"></i></button>
-                                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}"><i class="bi bi-ban"></i> ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                                <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${item.thuoc_id}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-ban"></i> ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </td>
                         </tr>`;
-                            });
-                        } else {
-                            html = '<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>';
-                        }
-                        $('#thuoc-table tbody').html(html);
-                        $('#pagination-thuoc').html(response.links);
-                        currentThuocPage = page;
-
-                        $('#pagination-thuoc').off('click').on('click', '.pagination a', function(e) {
-                            e.preventDefault();
-                            const page = $(this).attr('href').split('page=')[1];
-                            loadThuoc(page);
                         });
-
-                    },
-                    error: function() {
-                        showToast('Có lỗi xảy ra khi tải danh sách thuốc', 'danger');
+                    } else {
+                        html = '<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>';
                     }
-                });
-            }
+                    $('#thuoc-table tbody').html(html);
+                    $('#pagination-thuoc').html(response.links);
+                    currentThuocPage = page;
 
-            // Hàm thêm item mới vào đầu danh sách nhóm thuốc
-            function prependNhomThuocItem(nhom) {
-                const html = `
+                    $('#pagination-thuoc').off('click').on('click', '.pagination a', function(e) {
+                        e.preventDefault();
+                        const page = $(this).attr('href').split('page=')[1];
+                        loadThuoc(page);
+                    });
+                },
+                error: function() {
+                    showToast('Có lỗi xảy ra khi tải danh sách thuốc', 'danger');
+                }
+            });
+        }
+
+        function prependNhomThuocItem(nhom) {
+            if (!hasEditPermission()) return; // Không thêm nếu không phải admin
+            const html = `
         <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item" data-id="${nhom.nhom_id}">
             <div>
                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
@@ -887,23 +865,22 @@
             </div>
             <div>
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>
         </a>`;
 
-                if ($('.nhom-thuoc-list').children().first().hasClass('list-group-item') &&
-                    $('.nhom-thuoc-list').children().first().text().includes('Không có dữ liệu')) {
-                    $('.nhom-thuoc-list').html(html);
-                } else {
-                    $('.nhom-thuoc-list').prepend(html);
-                }
-                bindNhomThuocEvents();
+            if ($('.nhom-thuoc-list').children().first().hasClass('list-group-item') &&
+                $('.nhom-thuoc-list').children().first().text().includes('Không có dữ liệu')) {
+                $('.nhom-thuoc-list').html(html);
+            } else {
+                $('.nhom-thuoc-list').prepend(html);
             }
+            bindNhomThuocEvents();
+        }
 
-            // Hàm thêm item mới vào đầu danh sách thuốc
-            function prependThuocItem(thuoc) {
-                const html = `
+        function prependThuocItem(thuoc) {
+            if (!hasEditPermission()) return; // Không thêm nếu không phải admin
+            const html = `
                 <tr>
                     <td>${thuoc.ma_thuoc}</td>
                     <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
@@ -915,252 +892,229 @@
                     <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                        <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
                         <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}">
                             <i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
                         </button>
                     </td>
                 </tr>`;
 
-                if ($('#thuoc-table tbody tr').length === 1 &&
-                    $('#thuoc-table tbody tr td').text().includes('Không có dữ liệu')) {
-                    $('#thuoc-table tbody').html(html);
-                } else {
-                    $('#thuoc-table tbody').prepend(html);
-                }
+            if ($('#thuoc-table tbody tr').length === 1 &&
+                $('#thuoc-table tbody tr td').text().includes('Không có dữ liệu')) {
+                $('#thuoc-table tbody').html(html);
+            } else {
+                $('#thuoc-table tbody').prepend(html);
             }
+        }
 
-            // Hàm cập nhật item trong danh sách nhóm thuốc
-            function updateNhomThuocItem(nhom) {
-                const item = $(`.nhom-thuoc-item[data-id="${nhom.nhom_id}"]`);
-                if (item.length) {
-                    const html = `
+        function updateNhomThuocItem(nhom) {
+            if (!hasEditPermission()) return; // Không cập nhật nếu không phải admin
+            const item = $(`.nhom-thuoc-item[data-id="${nhom.nhom_id}"]`);
+            if (item.length) {
+                const html = `
             <div>
                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
                 ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
             </div>
             <div>
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-danger delete-nhom-btn" data-id="${nhom.nhom_id}" data-name="${nhom.ten_nhom}"><i class="bi bi-trash"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>`;
-                    item.html(html);
-                    bindNhomThuocEvents();
-                }
+                item.html(html);
+                bindNhomThuocEvents();
+            }
+        }
+
+        $('#addNhomForm').submit(function(e) {
+            e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền thêm nhóm thuốc', 'warning');
+                return;
             }
 
-            // ===== KHỞI TẠO =====
-            loadNhomThuoc();
-            loadThuoc();
+            const formData = {
+                ma_nhom: $('#ma_nhom').val(),
+                ten_nhom: $('#ten_nhom').val(),
+                mo_ta: $('#mo_ta').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
 
-            // Thêm nhóm thuốc mới
-            $('#addNhomForm').submit(function(e) {
-                e.preventDefault();
-
-                const formData = {
-                    ma_nhom: $('#ma_nhom').val(),
-                    ten_nhom: $('#ten_nhom').val(),
-                    mo_ta: $('#mo_ta').val(),
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                };
-
-                $.ajax({
-                    url: "/nhom-thuoc",
-                    type: "POST",
-                    data: formData,
-                    dataType: "json",
-                    success: function(response) {
-                        $('#addNhomThuocModal').modal('hide');
-                        $('#addNhomForm')[0].reset();
-                        $('.is-invalid').removeClass('is-invalid');
-                        showToast(response.message);
-
-                        // Thêm item mới vào đầu danh sách
-                        prependNhomThuocItem(response.nhomThuoc);
-                        updateNhomThuocDropdowns();
-                    },
-                    error: function(xhr) {
-                        const errors = xhr.responseJSON.errors;
-
-                        // Xóa tất cả invalid feedback trước
-                        $('#addNhomForm .is-invalid').removeClass('is-invalid');
-
-                        if (errors.ma_nhom) {
-                            $('#ma_nhom').addClass('is-invalid');
-                            $('#ma_nhom_error').text(errors.ma_nhom[0]);
-                        }
-
-                        if (errors.ten_nhom) {
-                            $('#ten_nhom').addClass('is-invalid');
-                            $('#ten_nhom_error').text(errors.ten_nhom[0]);
-                        }
+            $.ajax({
+                url: "/nhom-thuoc",
+                type: "POST",
+                data: formData,
+                dataType: "json",
+                success: function(response) {
+                    $('#addNhomThuocModal').modal('hide');
+                    $('#addNhomForm')[0].reset();
+                    $('.is-invalid').removeClass('is-invalid');
+                    showToast(response.message);
+                    prependNhomThuocItem(response.nhomThuoc);
+                    updateNhomThuocDropdowns();
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON.errors;
+                    $('#addNhomForm .is-invalid').removeClass('is-invalid');
+                    if (errors.ma_nhom) {
+                        $('#ma_nhom').addClass('is-invalid');
+                        $('#ma_nhom_error').text(errors.ma_nhom[0]);
                     }
-                });
-            });
-
-            // Cập nhật nhóm thuốc
-            $('#editNhomForm').submit(function(e) {
-                e.preventDefault();
-
-                const id = $('#edit_nhom_id').val();
-                const formData = {
-                    ma_nhom: $('#edit_ma_nhom').val(),
-                    ten_nhom: $('#edit_ten_nhom').val(),
-                    mo_ta: $('#edit_mo_ta').val(),
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                };
-
-                $.ajax({
-                    url: "/nhom-thuoc/" + id,
-                    type: "PUT",
-                    data: formData,
-                    dataType: "json",
-                    success: function(response) {
-                        $('#editNhomThuocModal').modal('hide');
-                        $('.is-invalid').removeClass('is-invalid');
-                        showToast(response.message);
-
-                        // Cập nhật item trong danh sách
-                        updateNhomThuocItem(response.nhomThuoc);
-                        updateNhomThuocDropdowns();
-
-                        // Reload danh sách thuốc nếu đang lọc theo nhóm này
-                        if (selectedNhomId == id) {
-                            loadThuoc(currentThuocPage);
-                        }
-                    },
-                    error: function(xhr) {
-                        const errors = xhr.responseJSON.errors;
-
-                        // Xóa tất cả invalid feedback trước
-                        $('#editNhomForm .is-invalid').removeClass('is-invalid');
-
-                        if (errors.ma_nhom) {
-                            $('#edit_ma_nhom').addClass('is-invalid');
-                            $('#edit_ma_nhom_error').text(errors.ma_nhom[0]);
-                        }
-
-                        if (errors.ten_nhom) {
-                            $('#edit_ten_nhom').addClass('is-invalid');
-                            $('#edit_ten_nhom_error').text(errors.ten_nhom[0]);
-                        }
+                    if (errors.ten_nhom) {
+                        $('#ten_nhom').addClass('is-invalid');
+                        $('#ten_nhom_error').text(errors.ten_nhom[0]);
                     }
-                });
+                }
             });
+        });
 
-            // Thêm thuốc mới
-            $('#addThuocForm').submit(function(e) {
-                e.preventDefault();
+        $('#editNhomForm').submit(function(e) {
+            e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền chỉnh sửa nhóm thuốc', 'warning');
+                return;
+            }
 
-                const formData = {
-                    ma_thuoc: $('#ma_thuoc').val(),
-                    nhom_id: $('#nhom_id').val(),
-                    kho_id: $('#kho_id').val(),
-                    ten_thuoc: $('#ten_thuoc').val(),
-                    don_vi_goc: $('#don_vi_goc').val(),
-                    don_vi_ban: $('#don_vi_ban').val(),
-                    ti_le_quy_doi: $('#ti_le_quy_doi').val(),
-                    mo_ta: $('#mo_ta_thuoc').val(),
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                };
+            const id = $('#edit_nhom_id').val();
+            const formData = {
+                ma_nhom: $('#edit_ma_nhom').val(),
+                ten_nhom: $('#edit_ten_nhom').val(),
+                mo_ta: $('#edit_mo_ta').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
 
-                $.ajax({
-                    url: "/thuoc",
-                    type: "POST",
-                    data: formData,
-                    dataType: "json",
-                    success: function(response) {
-                        $('#addThuocModal').modal('hide');
-                        $('#addThuocForm')[0].reset();
-                        $('.is-invalid').removeClass('is-invalid');
-                        showToast(response.message);
-
-                        // Thêm item mới vào đầu danh sách (chỉ khi không có filter hoặc filter phù hợp)
-                        const shouldShowInList = !selectedNhomId || selectedNhomId == response.thuoc.nhom_id;
-                        const hasSearch = $('#search-thuoc').val().trim() !== '';
-
-                        if (shouldShowInList && !hasSearch) {
-                            prependThuocItem(response.thuoc); // dùng thuốc vừa thêm
-                        } else {
-                            loadThuoc(currentThuocPage); // reload nếu đang filter/search
-                        }
-
-                    },
-                    error: function(xhr) {
-                        const errors = xhr.responseJSON.errors;
-
-                        // Xóa tất cả invalid feedback trước
-                        $('#addThuocForm .is-invalid').removeClass('is-invalid');
-
-                        // Hiển thị lỗi validation
-                        if (errors) {
-                            Object.keys(errors).forEach(function(key) {
-                                $(`#${key}`).addClass('is-invalid');
-                                $(`#${key}_error`).text(errors[key][0]);
-                            });
-                        }
+            $.ajax({
+                url: "/nhom-thuoc/" + id,
+                type: "PUT",
+                data: formData,
+                dataType: "json",
+                success: function(response) {
+                    $('#editNhomThuocModal').modal('hide');
+                    $('.is-invalid').removeClass('is-invalid');
+                    showToast(response.message);
+                    updateNhomThuocItem(response.nhomThuoc);
+                    updateNhomThuocDropdowns();
+                    if (selectedNhomId == id) {
+                        loadThuoc(currentThuocPage);
                     }
-                });
-            });
-
-            // Cập nhật thuốc
-            $('#editThuocForm').submit(function(e) {
-                e.preventDefault();
-
-                const id = $('#edit_thuoc_id').val();
-                const formData = {
-                    ma_thuoc: $('#edit_ma_thuoc').val(),
-                    nhom_id: $('#edit_nhom_id').val(),
-                    kho_id: $('#edit_kho_id').val(),
-                    ten_thuoc: $('#edit_ten_thuoc').val(),
-                    don_vi_goc: $('#edit_don_vi_goc').val(),
-                    don_vi_ban: $('#edit_don_vi_ban').val(),
-                    ti_le_quy_doi: $('#edit_ti_le_quy_doi').val(),
-                    mo_ta: $('#edit_mo_ta_thuoc').val(),
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                };
-
-                $.ajax({
-                    url: "/thuoc/" + id,
-                    type: "PUT",
-                    data: formData,
-                    dataType: "json",
-                    success: function(response) {
-                        $('#editThuocModal').modal('hide');
-                        $('.is-invalid').removeClass('is-invalid');
-                        showToast(response.message);
-
-                        // Cập nhật item trong danh sách hiện tại
-                        updateThuocItemInTable(response.thuoc);
-                    },
-                    error: function(xhr) {
-                        const errors = xhr.responseJSON.errors;
-
-                        // Xóa tất cả invalid feedback trước
-                        $('#editThuocForm .is-invalid').removeClass('is-invalid');
-
-                        // Hiển thị lỗi validation
-                        if (errors) {
-                            Object.keys(errors).forEach(function(key) {
-                                $(`#edit_${key}`).addClass('is-invalid');
-                                $(`#edit_${key}_error`).text(errors[key][0]);
-                            });
-                        }
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON.errors;
+                    $('#editNhomForm .is-invalid').removeClass('is-invalid');
+                    if (errors.ma_nhom) {
+                        $('#edit_ma_nhom').addClass('is-invalid');
+                        $('#edit_ma_nhom_error').text(errors.ma_nhom[0]);
                     }
-                });
+                    if (errors.ten_nhom) {
+                        $('#edit_ten_nhom').addClass('is-invalid');
+                        $('#edit_ten_nhom_error').text(errors.ten_nhom[0]);
+                    }
+                }
             });
+        });
 
-            // Hàm cập nhật item thuốc trong bảng
-            function updateThuocItemInTable(thuoc) {
-                const row = $(`#thuoc-table tbody tr`).filter(function() {
-                    return $(this).find('.edit-thuoc-btn').data('id') == thuoc.thuoc_id;
-                });
+        $('#addThuocForm').submit(function(e) {
+            e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền thêm thuốc', 'warning');
+                return;
+            }
 
-                if (row.length) {
-                    const html = `
+            const formData = {
+                ma_thuoc: $('#ma_thuoc').val(),
+                nhom_id: $('#nhom_id').val(),
+                kho_id: $('#kho_id').val(),
+                ten_thuoc: $('#ten_thuoc').val(),
+                don_vi_goc: $('#don_vi_goc').val(),
+                don_vi_ban: $('#don_vi_ban').val(),
+                ti_le_quy_doi: $('#ti_le_quy_doi').val(),
+                mo_ta: $('#mo_ta_thuoc').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
+
+            $.ajax({
+                url: "/thuoc",
+                type: "POST",
+                data: formData,
+                dataType: "json",
+                success: function(response) {
+                    $('#addThuocModal').modal('hide');
+                    $('#addThuocForm')[0].reset();
+                    $('.is-invalid').removeClass('is-invalid');
+                    showToast(response.message);
+                    const shouldShowInList = !selectedNhomId || selectedNhomId == response.thuoc.nhom_id;
+                    const hasSearch = $('#search-thuoc').val().trim() !== '';
+                    if (shouldShowInList && !hasSearch) {
+                        prependThuocItem(response.thuoc);
+                    } else {
+                        loadThuoc(currentThuocPage);
+                    }
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON.errors;
+                    $('#addThuocForm .is-invalid').removeClass('is-invalid');
+                    if (errors) {
+                        Object.keys(errors).forEach(function(key) {
+                            $(`#${key}`).addClass('is-invalid');
+                            $(`#${key}_error`).text(errors[key][0]);
+                        });
+                    }
+                }
+            });
+        });
+
+        $('#editThuocForm').submit(function(e) {
+            e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền chỉnh sửa thuốc', 'warning');
+                return;
+            }
+
+            const id = $('#edit_thuoc_id').val();
+            const formData = {
+                ma_thuoc: $('#edit_ma_thuoc').val(),
+                nhom_id: $('#edit_nhom_id').val(),
+                kho_id: $('#edit_kho_id').val(),
+                ten_thuoc: $('#edit_ten_thuoc').val(),
+                don_vi_goc: $('#edit_don_vi_goc').val(),
+                don_vi_ban: $('#edit_don_vi_ban').val(),
+                ti_le_quy_doi: $('#edit_ti_le_quy_doi').val(),
+                mo_ta: $('#edit_mo_ta_thuoc').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
+
+            $.ajax({
+                url: "/thuoc/" + id,
+                type: "PUT",
+                data: formData,
+                dataType: "json",
+                success: function(response) {
+                    $('#editThuocModal').modal('hide');
+                    $('.is-invalid').removeClass('is-invalid');
+                    showToast(response.message);
+                    updateThuocItemInTable(response.thuoc);
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON.errors;
+                    $('#editThuocForm .is-invalid').removeClass('is-invalid');
+                    if (errors) {
+                        Object.keys(errors).forEach(function(key) {
+                            $(`#edit_${key}`).addClass('is-invalid');
+                            $(`#edit_${key}_error`).text(errors[key][0]);
+                        });
+                    }
+                }
+            });
+        });
+
+        function updateThuocItemInTable(thuoc) {
+            if (!hasEditPermission()) return; // Không cập nhật nếu không phải admin
+            const row = $(`#thuoc-table tbody tr`).filter(function() {
+                return $(this).find('.edit-thuoc-btn').data('id') == thuoc.thuoc_id;
+            });
+            if (row.length) {
+                const html = `
             <td>${thuoc.ma_thuoc}</td>
             <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
-            <td>${thuoc.nhom_thuc.ten_nhom}</td>
+            <td>${thuoc.nhom_thuoc.ten_nhom}</td>
             <td>${thuoc.kho.ten_kho}</td>
             <td>${thuoc.don_vi_goc}</td>
             <td>${thuoc.don_vi_ban}</td>
@@ -1168,42 +1122,37 @@
             <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
             <td>
                 <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-danger delete-thuoc-btn" data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"><i class="bi bi-trash"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </td>`;
-                    row.html(html);
-                }
+                row.html(html);
             }
+        }
 
-            // Reset form khi đóng modal
-            $('#addNhomThuocModal').on('hidden.bs.modal', function() {
-                $('#addNhomForm')[0].reset();
-                $('.is-invalid').removeClass('is-invalid');
-            });
-
-            $('#editNhomThuocModal').on('hidden.bs.modal', function() {
-                $('.is-invalid').removeClass('is-invalid');
-            });
-
-            $('#addThuocModal').on('hidden.bs.modal', function() {
-                $('#addThuocForm')[0].reset();
-                $('.is-invalid').removeClass('is-invalid');
-            });
-
-            $('#editThuocModal').on('hidden.bs.modal', function() {
-                $('.is-invalid').removeClass('is-invalid');
-            });
-
-            // Hàm hiển thị toast (cần có sẵn trong layout)
-            function showToast(message, type = 'success') {
-                // Giả sử bạn đã có hàm này trong layout
-                if (typeof window.showToast === 'function') {
-                    window.showToast(message, type);
-                } else {
-                    // Fallback alert
-                    alert(message);
-                }
-            }
+        $('#addNhomThuocModal').on('hidden.bs.modal', function() {
+            $('#addNhomForm')[0].reset();
+            $('.is-invalid').removeClass('is-invalid');
         });
-    </script>
-    @endsection
+
+        $('#editNhomThuocModal').on('hidden.bs.modal', function() {
+            $('.is-invalid').removeClass('is-invalid');
+        });
+
+        $('#addThuocModal').on('hidden.bs.modal', function() {
+            $('#addThuocForm')[0].reset();
+            $('.is-invalid').removeClass('is-invalid');
+        });
+
+        $('#editThuocModal').on('hidden.bs.modal', function() {
+            $('.is-invalid').removeClass('is-invalid');
+        });
+
+        function showToast(message, type = 'success') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, type);
+            } else {
+                alert(message);
+            }
+        }
+    });
+</script>
+@endsection

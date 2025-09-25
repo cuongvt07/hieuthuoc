@@ -25,7 +25,7 @@ class BaoCaoLoThuocController extends Controller
 
         $query = LoThuoc::with(['thuoc', 'kho'])
             ->select('lo_thuoc.*')
-            ->selectRaw('(ton_kho_hien_tai * gia_von) as gia_tri_ton')
+            ->selectRaw('(ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton')
             ->where('ton_kho_hien_tai', '>', 0);
 
         if ($request->filled('thuoc_id')) {
@@ -62,7 +62,7 @@ class BaoCaoLoThuocController extends Controller
     {
         $query = LoThuoc::with(['thuoc', 'kho'])
             ->select('lo_thuoc.*')
-            ->selectRaw('(ton_kho_hien_tai * gia_von) as gia_tri_ton')
+            ->selectRaw('(ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton')
             ->where('ton_kho_hien_tai', '>', 0);
 
         // Apply filters
@@ -171,7 +171,7 @@ class BaoCaoLoThuocController extends Controller
                 $trangThai = 'Còn hạn';
             }
 
-            $thanhTien = $lo->ton_kho_hien_tai * $lo->gia_von;
+            $thanhTien = $lo->ton_kho_hien_tai * $lo->gia_nhap_tb;
             $tongSoLuong += $lo->ton_kho_hien_tai;
             $tongGiaTri += $thanhTien;
 
@@ -179,7 +179,7 @@ class BaoCaoLoThuocController extends Controller
             $sheet->setCellValue('B' . $row, $lo->thuoc->ten_thuoc);
             $sheet->setCellValue('C' . $row, $lo->kho->ten_kho);
             $sheet->setCellValue('D' . $row, $lo->ton_kho_hien_tai);
-            $sheet->setCellValue('E' . $row, number_format($lo->gia_von));
+            $sheet->setCellValue('E' . $row, number_format($lo->gia_nhap_tb));
             $sheet->setCellValue('F' . $row, number_format($thanhTien));
             $sheet->setCellValue('G' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
             $sheet->setCellValue('H' . $row, $trangThai);

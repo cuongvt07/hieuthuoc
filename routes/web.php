@@ -117,7 +117,8 @@ Route::middleware('auth')->group(function () {
     Route::post('don-ban-le/{donBanLe}/cancel', [DonBanLeController::class, 'cancel'])->name('don-ban-le.cancel');
     Route::get('don-ban-le/{donBanLe}/print', [DonBanLeController::class, 'print'])->name('don-ban-le.print');
     Route::get('don-ban-le-report', [DonBanLeController::class, 'report'])->name('don-ban-le.report');
-    
+    Route::patch('don-ban-le/{id}/complete', [DonBanLeController::class, 'completeOrder'])->name('don-ban-le.complete');
+
     // Báo cáo tồn kho
     Route::get('bao-cao/ton-kho', [BaoCaoTonKhoController::class, 'index'])->name('bao-cao.ton-kho.index');
     

@@ -456,14 +456,6 @@
                                         </a>
                                     </li>
                                     ` : ''}
-                                    ${receipt.trang_thai !== 'hoan_tat' && receipt.trang_thai !== 'huy' ? `
-                                    <li>
-                                        <a class="dropdown-item edit-receipt-btn" href="javascript:void(0)" 
-                                        data-id="${receipt.phieu_id}">
-                                            <i class="bi bi-pencil"></i> Sửa thông tin
-                                        </a>
-                                    </li>
-                                    ` : ''}
                                 </ul>
                             </div>
                         </td>

@@ -10,12 +10,6 @@
         <div class="card">
             <div class="card-body">
                 <form id="filterForm" method="GET" class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Loại báo cáo</label>
-                        <select name="loai_bao_cao" class="form-select">
-                            <option value="doanh_so" {{ request('loai_bao_cao', 'doanh_so') == 'doanh_so' ? 'selected' : '' }}>Báo cáo doanh số thuốc</option>
-                        </select>
-                    </div>
 
                     <div class="col-md-4">
                         <label class="form-label">Từ ngày</label>

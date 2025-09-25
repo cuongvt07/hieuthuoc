@@ -390,6 +390,23 @@
             return parseInt(amount).toLocaleString('vi-VN') + ' đ';
         }
         
+        // Lấy vai trò của người dùng từ session hoặc meta tag
+        const userRole = '{{ Auth::user()->vai_tro }}'; // Lấy vai trò từ PHP
+
+        // Hàm kiểm tra quyền chỉnh sửa
+        function hasEditPermission() {
+            return userRole === 'admin';
+        }
+
+        // Vô hiệu hóa các nút thao tác nếu không phải admin
+        if (!hasEditPermission()) {
+            // Ẩn hoặc vô hiệu hóa nút "Thêm Nhà Cung Cấp"
+            $('#addNhaCungCapModal').parent().find('.btn-primary').prop('disabled', true).addClass('disabled');
+
+            // Vô hiệu hóa các nút chỉnh sửa, xóa, đình chỉ trong bảng
+            $('.edit-btn, .delete-btn, .suspend-btn').prop('disabled', true).addClass('disabled');
+        }
+
         // Tìm kiếm nhà cung cấp
         $('#searchBtn').click(function() {
             const searchValue = $('#search-input').val();
@@ -438,13 +455,13 @@
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.ncc_id}">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.ncc_id}">
+                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.ncc_id}" ${!hasEditPermission() ? 'disabled' : ''}>
                                             <i class="bi bi-pencil"></i> Sửa
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-btn" 
+                                        <button type="button" class="btn btn-sm btn-warning suspend-btn" 
                                             data-id="${item.ncc_id}" 
-                                            data-ten="${item.ten_ncc}">
-                                            <i class="bi bi-trash"></i> Xóa
+                                            data-ten="${item.ten_ncc}" data-status="${item.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                            <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
                                         </button>
                                     </td>
                                 </tr>
@@ -477,21 +494,19 @@
         // Thêm nhà cung cấp
         $('#addNhaCungCapForm').submit(function(e) {
             e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền thêm nhà cung cấp', 'warning');
+                return;
+            }
             
-            // Lấy dữ liệu từ form
             const formData = new FormData(this);
-            
-            // Chuyển FormData thành đối tượng
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-            
             $.ajax({
                 url: "{{ route('nha-cung-cap.store') }}",
                 type: "POST",
-                data: data,
+                data: formData,
                 dataType: "json",
+                processData: false,
+                contentType: false,
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -503,11 +518,7 @@
                 },
                 error: function(xhr) {
                     const errors = xhr.responseJSON.errors;
-                    
-                    // Xóa tất cả invalid feedback trước
                     $('#addNhaCungCapForm .is-invalid').removeClass('is-invalid');
-                    
-                    // Hiển thị lỗi validation
                     if (errors) {
                         Object.keys(errors).forEach(function(key) {
                             $(`#${key}`).addClass('is-invalid');
@@ -520,6 +531,10 @@
 
         // Lấy thông tin nhà cung cấp để sửa
         function getNhaCungCap(id) {
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền sửa nhà cung cấp', 'warning');
+                return;
+            }
             $.ajax({
                 url: `/nha-cung-cap/${id}`,
                 type: "GET",
@@ -533,7 +548,6 @@
                     $('#edit_email').val(nhaCungCap.email || '');
                     $('#edit_dia_chi').val(nhaCungCap.dia_chi || '');
                     $('#edit_mo_ta').val(nhaCungCap.mo_ta || '');
-                    
                     $('#editNhaCungCapModal').modal('show');
                 },
                 error: function(xhr) {
@@ -552,7 +566,6 @@
                     const nhaCungCap = response.nhaCungCap;
                     const phieuNhap = response.phieuNhap;
                     
-                    // Hiển thị thông tin nhà cung cấp
                     $('#view_ten_ncc').text(nhaCungCap.ten_ncc);
                     $('#view_ncc_title').text(nhaCungCap.ten_ncc);
                     $('#view_sdt').text(nhaCungCap.sdt || 'Không có');
@@ -561,23 +574,18 @@
                     $('#view_dia_chi').text(nhaCungCap.dia_chi || 'Không có');
                     $('#view_mo_ta').text(nhaCungCap.mo_ta || 'Không có');
                     
-                    // Hiển thị thông tin thời gian
                     const createdAt = nhaCungCap.created_at ? formatDateTime(nhaCungCap.created_at) : 'Không có';
                     const updatedAt = nhaCungCap.updated_at ? formatDateTime(nhaCungCap.updated_at) : 'Không có';
                     $('#view_created_at').text(createdAt);
                     $('#view_updated_at').text(updatedAt);
                     
-                    // Hiển thị số lượng phiếu nhập
                     $('#phieu_nhap_count').text(phieuNhap.length + ' phiếu');
                     
-                    // Set up the create phiếu nhập button with the supplier ID
                     $('#create-phieu-nhap-btn').click(function(e) {
-                        // Store supplier ID in session storage to use in phieu-nhap.create
                         sessionStorage.setItem('selected_supplier_id', nhaCungCap.ncc_id);
                         sessionStorage.setItem('selected_supplier_name', nhaCungCap.ten_ncc);
                     });
                     
-                    // Render danh sách phiếu nhập
                     let phieuNhapHtml = '';
                     if (phieuNhap.length > 0) {
                         $.each(phieuNhap, function(index, item) {
@@ -631,23 +639,20 @@
         // Cập nhật nhà cung cấp
         $('#editNhaCungCapForm').submit(function(e) {
             e.preventDefault();
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền sửa nhà cung cấp', 'warning');
+                return;
+            }
             
             const id = $('#edit_ncc_id').val();
-            
-            // Lấy dữ liệu từ form
             const formData = new FormData(this);
-            
-            // Chuyển FormData thành đối tượng
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-            
             $.ajax({
                 url: `/nha-cung-cap/${id}`,
                 type: "PUT",
-                data: data,
+                data: formData,
                 dataType: "json",
+                processData: false,
+                contentType: false,
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -658,11 +663,7 @@
                 },
                 error: function(xhr) {
                     const errors = xhr.responseJSON.errors;
-                    
-                    // Xóa tất cả invalid feedback trước
                     $('#editNhaCungCapForm .is-invalid').removeClass('is-invalid');
-                    
-                    // Hiển thị lỗi validation
                     if (errors) {
                         Object.keys(errors).forEach(function(key) {
                             $(`#edit_${key}`).addClass('is-invalid');
@@ -685,15 +686,22 @@
             
             // Nút sửa nhà cung cấp
             $('.edit-btn').click(function() {
+                if (!hasEditPermission()) {
+                    showToast('Bạn không có quyền sửa nhà cung cấp', 'warning');
+                    return;
+                }
                 const id = $(this).data('id');
                 getNhaCungCap(id);
             });
             
             // Nút xóa nhà cung cấp
             $('.delete-btn').click(function() {
+                if (!hasEditPermission()) {
+                    showToast('Bạn không có quyền xóa nhà cung cấp', 'warning');
+                    return;
+                }
                 deleteId = $(this).data('id');
                 const tenNcc = $(this).data('ten');
-                
                 $('#delete_ten_ncc').text(tenNcc);
                 $('#deleteNhaCungCapModal').modal('show');
             });
@@ -701,7 +709,11 @@
         
         // Xác nhận xóa nhà cung cấp
         $('#confirmDelete').click(function() {
-            if (!deleteId) return;
+            if (!deleteId || !hasEditPermission()) {
+                showToast('Bạn không có quyền xóa nhà cung cấp', 'warning');
+                $('#deleteNhaCungCapModal').modal('hide');
+                return;
+            }
             
             $.ajax({
                 url: `/nha-cung-cap/${deleteId}`,
@@ -722,37 +734,37 @@
             });
         });
 
-        // Tìm nhà cung cấp theo số điện thoại hoặc mã số thuế
-        function findSupplierByPhoneOrTax(params) {
-            return $.ajax({
-                url: "{{ route('nha-cung-cap.findByPhoneOrTax') }}",
-                type: "GET",
-                data: params,
-                dataType: "json"
-            });
-        }
-
         // Đình chỉ/bỏ đình chỉ nhà cung cấp
         $('.suspend-btn').click(function() {
+            if (!hasEditPermission()) {
+                showToast('Bạn không có quyền đình chỉ nhà cung cấp', 'warning');
+                return;
+            }
             var id = $(this).data('id');
             var status = $(this).data('status');
             var btn = $(this);
             $.ajax({
                 url: '/nha-cung-cap/' + id + '/suspend',
                 type: 'POST',
-                data: {_token: $('meta[name="csrf-token"]').attr('content')},
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
                 success: function(res) {
                     if(res.success) {
                         btn.data('status', res.trang_thai);
                         btn.html('<i class="bi bi-ban"></i> ' + (res.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'));
                         showToast(res.message, 'info');
                     }
+                },
+                error: function() {
+                    showToast('Có lỗi xảy ra khi thực hiện thao tác', 'danger');
                 }
             });
         });
         
         // Khởi tạo
         bindButtons();
+        loadNhaCungCap();
         
         // Clear form khi đóng modal
         $('#addNhaCungCapModal').on('hidden.bs.modal', function() {
@@ -777,7 +789,6 @@
                 </div>
             `;
             
-            // Thêm toast vào container và tự động xóa sau 3 giây
             const toastContainer = $('#toast-container');
             if (toastContainer.length === 0) {
                 $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');
@@ -793,7 +804,14 @@
         
         // Expose function để có thể gọi từ bên ngoài
         window.nhaCungCapModule = {
-            findByPhoneOrTax: findSupplierByPhoneOrTax
+            findByPhoneOrTax: function(params) {
+                return $.ajax({
+                    url: "{{ route('nha-cung-cap.findByPhoneOrTax') }}",
+                    type: "GET",
+                    data: params,
+                    dataType: "json"
+                });
+            }
         };
     });
 </script>
