@@ -123,6 +123,11 @@ class BaoCaoKhachHangController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
+        // Thêm dòng Người xuất ở cuối cùng
+        $lastRow = $sheet->getHighestRow() + 2;
+        $sheet->setCellValue('F' . $lastRow, 'Người xuất:');
+        $sheet->getStyle('F' . $lastRow)->getFont()->setItalic(true);
+
         $writer = new Xlsx($spreadsheet);
         $filename = 'bao-cao-khach-hang-' . date('Y-m-d-H-i-s') . '.xlsx';
 

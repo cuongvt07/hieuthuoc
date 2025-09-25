@@ -218,6 +218,11 @@ class BaoCaoLoThuocController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
+        // Thêm dòng Người xuất ở cuối cùng
+        $lastRow = $sheet->getHighestRow() + 2;
+        $sheet->setCellValue('H' . $lastRow, 'Người xuất:');
+        $sheet->getStyle('H' . $lastRow)->getFont()->setItalic(true);
+
         // Create the excel file
         $writer = new Xlsx($spreadsheet);
         $filename = 'bao-cao-lo-thuoc-' . date('Y-m-d-H-i-s') . '.xlsx';
