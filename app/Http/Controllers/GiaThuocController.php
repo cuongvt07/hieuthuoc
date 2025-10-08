@@ -18,7 +18,7 @@ class GiaThuocController extends Controller
         $query = GiaThuoc::with(['thuoc' => function($q) {
             $q->select('thuoc_id', 'ten_thuoc', 'ma_thuoc');
         }])
-        ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'ngay_tao']);
+        ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'created_at']);
         
         if ($request->has('thuoc_id') && $request->thuoc_id) {
             $query->where('thuoc_id', $request->thuoc_id);
@@ -60,18 +60,18 @@ class GiaThuocController extends Controller
             ->latest('ngay_bat_dau')
             ->first();
 
-        $now = now();
+        $ngayBatDau = $request->ngay_bat_dau ?? now();
 
         // Nếu đã có giá thì cập nhật ngày kết thúc của bản ghi cũ
         if ($existingPrice) {
-            $existingPrice->ngay_ket_thuc = $now;
+            $existingPrice->ngay_ket_thuc = $ngayBatDau;
             $existingPrice->save();
         }
 
-        // Tạo giá mới với ngày bắt đầu là thời điểm hiện tại
+        // Tạo giá mới với ngày bắt đầu do người dùng nhập
         $giaThuoc = new GiaThuoc();
         $giaThuoc->fill($request->validated());
-        $giaThuoc->ngay_bat_dau = $now;
+        $giaThuoc->ngay_bat_dau = $ngayBatDau;
         $giaThuoc->save();
 
         if ($request->ajax()) {
@@ -102,19 +102,19 @@ class GiaThuocController extends Controller
      */
     public function update(GiaThuocRequest $request, GiaThuoc $giaThuoc)
     {
-        // Đảm bảo ngày bắt đầu là thời điểm tạo bản ghi mới
-        $now = now();
+    // Lấy ngày bắt đầu từ request hoặc mặc định là hiện tại
+    $ngayBatDau = $request->ngay_bat_dau ?? now();
 
-        // Cập nhật ngày kết thúc của bản ghi hiện tại
-        $giaThuoc->ngay_ket_thuc = $now;
-        $giaThuoc->save();
+    // Cập nhật ngày kết thúc của bản ghi hiện tại
+    $giaThuoc->ngay_ket_thuc = $ngayBatDau;
+    $giaThuoc->save();
 
-        // Tạo bản ghi giá mới
-        $newGiaThuoc = new GiaThuoc();
-        $newGiaThuoc->thuoc_id = $giaThuoc->thuoc_id;
-        $newGiaThuoc->fill($request->validated());
-        $newGiaThuoc->ngay_bat_dau = $now;
-        $newGiaThuoc->save();
+    // Tạo bản ghi giá mới
+    $newGiaThuoc = new GiaThuoc();
+    $newGiaThuoc->thuoc_id = $giaThuoc->thuoc_id;
+    $newGiaThuoc->fill($request->validated());
+    $newGiaThuoc->ngay_bat_dau = $ngayBatDau;
+    $newGiaThuoc->save();
 
         if ($request->ajax()) {
             return response()->json([

@@ -151,30 +151,26 @@ class DonBanLeController extends Controller
                 0 AS vat
             FROM thuoc t
             LEFT JOIN (
-                SELECT 
-                    thuoc_id,
-                    gia_ban
+                SELECT g1.thuoc_id, g1.gia_ban
                 FROM gia_thuoc g1
-                WHERE g1.ngay_bat_dau = (
-                    SELECT MAX(g2.ngay_bat_dau)
-                    FROM gia_thuoc g2 
-                    WHERE g2.thuoc_id = g1.thuoc_id
-                    AND g2.ngay_bat_dau <= CURDATE()
-                    AND (g2.ngay_ket_thuc IS NULL OR g2.ngay_ket_thuc >= CURDATE())
-                )
-                AND g1.ngay_bat_dau <= CURDATE()
-                AND (g1.ngay_ket_thuc IS NULL OR g1.ngay_ket_thuc >= CURDATE())
+                INNER JOIN (
+                    SELECT 
+                        thuoc_id, 
+                        MAX(id) AS latest_id
+                    FROM gia_thuoc
+                    WHERE ngay_bat_dau <= CURDATE()
+                    AND (ngay_ket_thuc IS NULL OR ngay_ket_thuc >= CURDATE())
+                    GROUP BY thuoc_id
+                ) g2 ON g1.id = g2.latest_id
             ) latest_price ON latest_price.thuoc_id = t.thuoc_id
             INNER JOIN (
-                SELECT 
-                    thuoc_id,
-                    SUM(ton_kho_hien_tai) as tong_ton_kho
-                FROM lo_thuoc 
+                SELECT thuoc_id, SUM(ton_kho_hien_tai) AS tong_ton_kho
+                FROM lo_thuoc
                 WHERE han_su_dung >= CURDATE()
                 AND ton_kho_hien_tai > 0
                 GROUP BY thuoc_id
             ) inventory ON inventory.thuoc_id = t.thuoc_id
-            WHERE (t.ten_thuoc LIKE ? OR t.ma_thuoc LIKE ?) 
+            WHERE (t.ten_thuoc LIKE ? OR t.ma_thuoc LIKE ?)
             AND t.trang_thai = 1
             ORDER BY t.ten_thuoc ASC
             LIMIT 20

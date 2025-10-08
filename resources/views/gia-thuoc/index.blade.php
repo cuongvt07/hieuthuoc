@@ -381,9 +381,9 @@
                             const giaBan = parseInt(item.gia_ban).toLocaleString('vi-VN');
                             const ngayBatDau = formatDate(item.ngay_bat_dau);
                             const ngayKetThuc = item.ngay_ket_thuc ? formatDate(item.ngay_ket_thuc) : 'Hiện tại';
-                            
                             html += `
                                 <tr>
+                                    <td>${item.thuoc.ma_thuoc}</td>
                                     <td>${item.thuoc.ten_thuoc}</td>
                                     <td class="text-end">${giaBan} đ</td>
                                     <td>${ngayBatDau}</td>
@@ -403,7 +403,7 @@
                             `;
                         });
                     } else {
-                        html = '<tr><td colspan="5" class="text-center">Không có dữ liệu</td></tr>';
+                        html = '<tr><td colspan="6" class="text-center">Không có dữ liệu</td></tr>';
                     }
                     
                     $('#gia-thuoc-table tbody').html(html);
