@@ -336,12 +336,13 @@ class DonBanLeController extends Controller
             }
 
             // Tính tổng tiền và VAT
-            $tongTien = 0;
+            $tongTienHang = 0;
             $tongVat = 0;
 
             foreach ($request->items as $item) {
-                $tongTien += $item['thanh_tien'];
-                $tongVat += $item['tien_thue'] ?? 0;
+                $thanhTien = $item['so_luong'] * $item['gia_ban'];
+                $tongTienHang += $thanhTien;
+                $tongVat += $thanhTien * ($item['thue_suat'] ?? 0) / 100;
             }
 
             // Tạo đơn bán lẻ với trạng thái CHỜ XỬ LÝ
@@ -351,9 +352,9 @@ class DonBanLeController extends Controller
                 'khach_hang_id' => $khachHangId,
                 'ngay_ban' => Carbon::now(),
                 'trang_thai' => 'cho_xu_ly', // Thay đổi từ 'hoan_tat' thành 'cho_xu_ly'
-                'tong_tien' => $tongTien - $tongVat,
+                'tong_tien' => $tongTienHang,
                 'vat' => $tongVat,
-                'tong_cong' => $tongTien,
+                'tong_cong' => $tongTienHang + $tongVat,
             ]);
 
             // Chỉ thêm chi tiết đơn bán lẻ, KHÔNG cập nhật tồn kho và lịch sử

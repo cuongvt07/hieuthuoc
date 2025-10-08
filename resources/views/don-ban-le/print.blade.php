@@ -102,9 +102,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="shop-name">NHÀ THUỐC AN TÂY</div>
+            <div class="shop-name">NHÀ THUỐC AN TÂM</div>
             <div class="shop-address">Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.</div>
-            <div class="shop-contact">Điện thoại:024 2243 0103 - Email: info@antammed.com</div>
+            <div class="shop-contact">Điện thoại: 024 2243 0103 - Email: info@antammed.com</div>
         </div>
 
         <div class="order-title">
@@ -130,36 +130,53 @@
                     <th>Đơn vị</th>
                     <th>Số lượng</th>
                     <th>Đơn giá</th>
+                    <th>VAT</th>
                     <th>Thành tiền</th>
                 </tr>
             </thead>
             <tbody>
+                @php
+                    $subtotal = 0;
+                @endphp
                 @foreach($donBanLe->chiTietDonBanLe as $index => $chiTiet)
+                @php
+                    $line_total = $chiTiet->so_luong * $chiTiet->gia_ban;
+                    $subtotal += $line_total;
+                    $don_vi = $chiTiet->don_vi == 0 ? $chiTiet->loThuoc->thuoc->don_vi_goc : $chiTiet->loThuoc->thuoc->don_vi_le;
+                @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $chiTiet->loThuoc->thuoc->ten_thuoc }}</td>
-                    <td>{{ $chiTiet->don_vi }}</td>
+                    <td>{{ $don_vi }}</td>
                     <td>{{ $chiTiet->so_luong }}</td>
                     <td class="text-right">{{ number_format($chiTiet->gia_ban, 0, ',', '.') }} đ</td>
-                    <td class="text-right">{{ number_format($chiTiet->thanh_tien, 0, ',', '.') }} đ</td>
+                    <td class="text-right">{{ number_format($chiTiet->thue_suat, 0) }}%</td>
+                    <td class="text-right">{{ number_format($line_total, 0, ',', '.') }} đ</td>
                 </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
-                    <th colspan="5" class="text-right">Tổng tiền hàng:</th>
-                    <td class="text-right">{{ number_format($donBanLe->tong_tien, 0, ',', '.') }} đ</td>
+                    <th colspan="6" class="text-right">Tổng tiền hàng:</th>
+                    <td class="text-right">{{ number_format($subtotal, 0, ',', '.') }} đ</td>
                 </tr>
                 <tr>
-                    <th colspan="5" class="text-right">VAT:</th>
+                    <th colspan="6" class="text-right">VAT:</th>
                     <td class="text-right">{{ number_format($donBanLe->vat, 0, ',', '.') }} đ</td>
                 </tr>
                 <tr>
-                    <th colspan="5" class="text-right">Tổng cộng:</th>
-                    <td class="text-right">{{ number_format($donBanLe->tong_cong, 0, ',', '.') }} đ</td>
+                    <th colspan="6" class="text-right">Tổng cộng:</th>
+                    <td class="text-right">{{ number_format($subtotal + $donBanLe->vat, 0, ',', '.') }} đ</td>
                 </tr>
             </tfoot>
         </table>
+
+        <div class="signatures" style="justify-content: flex-end;">
+            <div class="signature-block" style="max-width: 200px;">
+            <div>Người bán</div>
+            <div class="signature-name">{{ Auth::user()->ho_ten }}</div>
+            </div>
+        </div>
 
         <div class="footer">
             <p>Cảm ơn Quý khách đã sử dụng dịch vụ của chúng tôi!</p>
