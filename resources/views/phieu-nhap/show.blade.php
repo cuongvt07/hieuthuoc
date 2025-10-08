@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Chi Tiết Phiếu Nhập - Hệ Thống Quản Lý Hiệu Thuốc')
+@section('title', 'Chi Tiết Phiếu Nhập - Hiệu Thuốc An Tây')
 
 @section('page-title', 'Chi Tiết Phiếu Nhập')
 
@@ -90,16 +90,16 @@
         </a>
     </div>
     <div class="col-md-6 text-end">
-        <button type="button" class="btn btn-primary" onclick="window.print()">
+        <button type="button" class="btn btn-primary" id="print-invoice-btn">
             <i class="bi bi-printer me-1"></i> In Phiếu Nhập
         </button>
     </div>
 </div>
 
-<div class="invoice-container">
+<div class="invoice-container" id="invoice-container">
     {{-- Header --}}
     <div class="invoice-header text-center">
-        <h4>PHIẾU NHẬP KHO</h4>
+        <h4>PHIẾU NHẬP</h4>
         <div class="invoice-meta row text-center fw-bold fs-5">
             <div class="col-md-4">
                 Mã phiếu: {{ $phieuNhap->ma_phieu }}
@@ -168,7 +168,7 @@
                     </td>
                     <td>{{ $chiTiet->loThuoc->ma_lo ?? $chiTiet->loThuoc->so_lo_nha_san_xuat ?? 'N/A' }}</td>
                     <td>{{ \Carbon\Carbon::parse($chiTiet->han_su_dung)->format('d/m/Y') }}</td>
-                    <td>{{ $chiTiet->so_luong }} {{ $chiTiet->don_vi }}</td>
+                    <td>{{ number_format(10, 2) }}</td>
                     <td class="text-end">{{ number_format($chiTiet->gia_nhap) }}</td>
                     <td class="text-end">{{ number_format($chiTiet->thanh_tien) }}</td>
                 </tr>
@@ -205,18 +205,20 @@
 
     {{-- Chữ ký --}}
     <div class="row signature-block">
-        <div class="col">
+        <div class="col text-center">
             <p><strong>Người lập phiếu</strong></p>
             <span>{{ $phieuNhap->nguoiDung->ho_ten ?? 'N/A' }}</span>
         </div>
-        <div class="col">
-            <p><strong>Thủ kho</strong></p>
-            <span>(Ký, ghi rõ họ tên)</span>
-        </div>
-        <div class="col">
-            <p><strong>Kế toán</strong></p>
-            <span>(Ký, ghi rõ họ tên)</span>
-        </div>
     </div>
 </div>
+<script>
+    document.getElementById('print-invoice-btn').addEventListener('click', function() {
+        var printContents = document.getElementById('invoice-container').innerHTML;
+        var originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        location.reload();
+    });
+</script>
 @endsection
