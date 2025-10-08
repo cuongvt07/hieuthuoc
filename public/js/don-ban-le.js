@@ -813,29 +813,32 @@ $(function () {
         item.gia_ban = parseFloat(row.find('.price-input').val()) || 0;
         item.thue_suat = parseFloat(row.find('.vat-input').val()) || 0;
         
-        // Tính toán thành tiền dựa trên số lượng, giá bán và tỉ lệ quy đổi
+        // Tính toán thành tiền và VAT
         item.thanh_tien = item.so_luong * item.gia_ban;
         item.tien_thue = item.thanh_tien * (item.thue_suat / 100);
+        const tongCong = item.thanh_tien + item.tien_thue;
 
         // Nếu đây là đơn vị bán, hiển thị quy đổi
         if ($(this).hasClass('quantity-input')) {
             const tiLe = parseFloat(quantityInput.data('ti-le')) || 1;
             const donVi = quantityInput.data('don-vi'); // "don_vi_goc" hoặc "don_vi_ban"
-            
             // FIX: Log debug để kiểm tra don_vi khi edit
             console.log('Edit inline - don_vi:', donVi);
-            
             if (donVi === 'don_vi_ban' && tiLe > 1) {
                 // Hiển thị cảnh báo cho người dùng về quy đổi
                 const soLuongDonViGoc = item.so_luong / tiLe;
                 const formattedSoLuongGoc = soLuongDonViGoc.toFixed(2).replace(/\.00$/, '');
-                
                 // Hiển thị thông báo quy đổi, sử dụng đơn vị gốc từ item
                 showToast('info', `Quy đổi: ${item.so_luong} ${selectedProduct.don_vi_ban || 'đơn vị bán'} ≈ ${formattedSoLuongGoc} ${item.don_vi_goc || 'đơn vị gốc'}`, 'bi bi-info-circle-fill');
             }
         }
 
-        row.find('td:eq(6)').text(formatCurrency(item.thanh_tien));
+        // Hiển thị lại thành tiền: tổng cộng = thành tiền + VAT
+        row.find('td:eq(6)').html(
+            `<div>Thành tiền: ${formatCurrency(item.thanh_tien)}</div>` +
+            `<div>VAT: ${formatCurrency(item.tien_thue)}</div>` +
+            `<div><strong>Tổng cộng: ${formatCurrency(tongCong)}</strong></div>`
+        );
         updateOrderTotal();
     });
 
@@ -851,7 +854,7 @@ $(function () {
     function updateOrderTotal() {
         let total = 0;
         orderItems.forEach(item => {
-            total += item.thanh_tien;
+            total += (item.thanh_tien + item.tien_thue);
         });
         $('#total-amount').text(formatCurrency(total));
     }
