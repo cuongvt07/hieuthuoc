@@ -578,7 +578,7 @@
         if (donBanLe.chi_tiet_don_ban_le && donBanLe.chi_tiet_don_ban_le.length > 0) {
             donBanLe.chi_tiet_don_ban_le.forEach((item, index) => {
                 // Hiển thị đơn vị đúng
-                const donViText = item.don_vi === 0 ? 
+                const donViText = item.don_vi === "0" ? 
                     item.lo_thuoc.thuoc.don_vi_goc : 
                     item.lo_thuoc.thuoc.don_vi_ban;
                 
