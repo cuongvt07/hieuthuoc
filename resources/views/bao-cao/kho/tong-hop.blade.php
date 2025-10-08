@@ -22,6 +22,17 @@
                     </select>
                 </div>
 
+                <div class="col-md-3">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" name="tu_ngay" class="form-control datepicker"
+                            value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" name="den_ngay" class="form-control datepicker"
+                            value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
+                </div>
+
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary me-2">Lọc</button>
                     <a href="{{ route('bao-cao.kho.index', ['export' => 'excel'] + request()->except(['page'])) }}" 

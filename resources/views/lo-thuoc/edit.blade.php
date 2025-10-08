@@ -56,7 +56,7 @@
                             
                             <div class="mb-3">
                                 <label for="han_su_dung" class="form-label">Hạn sử dụng <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control @error('han_su_dung') is-invalid @enderror" id="han_su_dung" name="han_su_dung" value="{{ old('han_su_dung', \Carbon\Carbon::parse($loThuoc->han_su_dung)->format('Y-m-d')) }}" required>
+                                <input type="date" class="form-control @error('han_su_dung') is-invalid @enderror" id="han_su_dung" name="han_su_dung" value="{{ old('han_su_dung', \Carbon\Carbon::parse($loThuoc->han_su_dung)->format('Y-m-d')) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                                 @error('han_su_dung')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -69,7 +69,7 @@
                             
                             <div class="mb-3">
                                 <label for="kho_id" class="form-label">Kho lưu trữ <span class="text-danger">*</span></label>
-                                <select class="form-select @error('kho_id') is-invalid @enderror" id="kho_id" name="kho_id" required>
+                                <select class="form-select @error('kho_id') is-invalid @enderror" id="kho_id" name="kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     @foreach($khos as $kho)
                                         <option value="{{ $kho->kho_id }}" {{ old('kho_id', $loThuoc->kho_id) == $kho->kho_id ? 'selected' : '' }}>
                                             {{ $kho->ten_kho }}

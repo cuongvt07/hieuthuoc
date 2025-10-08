@@ -117,12 +117,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="sdt" class="form-label">Số Điện Thoại <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="sdt" name="sdt" required>
+                        <input type="text" class="form-control" id="sdt" name="sdt" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="sdt_error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="ho_ten" class="form-label">Họ Tên <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="ho_ten" name="ho_ten" required>
+                        <input type="text" class="form-control" id="ho_ten" name="ho_ten" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="ho_ten_error"></div>
                     </div>
                 </div>
@@ -148,12 +148,12 @@
                     <input type="hidden" id="edit_khach_hang_id" name="khach_hang_id">
                     <div class="mb-3">
                         <label for="edit_sdt" class="form-label">Số Điện Thoại <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_sdt" name="sdt" required>
+                        <input type="text" class="form-control" id="edit_sdt" name="sdt" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_sdt_error"></div>
                     </div>
                     <div class="mb-3">
                         <label for="edit_ho_ten" class="form-label">Họ Tên <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="edit_ho_ten" name="ho_ten" required>
+                        <input type="text" class="form-control" id="edit_ho_ten" name="ho_ten" requiredmsg="Trường này yêu cầu bắt buộc">
                         <div class="invalid-feedback" id="edit_ho_ten_error"></div>
                     </div>
                 </div>

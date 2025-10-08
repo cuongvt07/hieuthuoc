@@ -44,7 +44,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>STT</th>
-                            <th>Tên thuốc</th>
+                            <th>Tên sản phẩm</th>
                             <th>Đơn vị</th>
                             <th class="text-end">Số lượng tồn</th>
                             <th class="text-end">Giá trị tồn</th>

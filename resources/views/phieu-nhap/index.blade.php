@@ -456,6 +456,13 @@
                                         </a>
                                     </li>
                                     ` : ''}
+                                    ${receipt.trang_thai === 'hoan_tat' ? `
+                                    <li>
+                                        <a class="dropdown-item" href="/phieu-nhap/${receipt.phieu_id}" target="_blank">
+                                            <i class="bi bi-printer"></i> In phiếu
+                                        </a>
+                                    </li>
+                                    ` : ''}
                                 </ul>
                             </div>
                         </td>

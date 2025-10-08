@@ -115,8 +115,8 @@
 <body>
     <div class="sidebar">
         <div class="d-flex flex-column h-100">
-            <div class="p-3">
-                <h3 class="text-white">Hiệu Thuốc</h3>
+            <div class="p-3 d-flex justify-content-center">
+                <img src="{{ asset('storage/b4c20e02-17eb-4926-a04c-c064b2b57735.jpg') }}" alt="Ảnh" width="100">
             </div>
             <div class="flex-grow-1">
                 <div class="list-group rounded-0">
@@ -304,12 +304,6 @@
                             </div>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a>
-                            </li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-key me-2"></i>Đổi mật khẩu</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
                             <li>
                                 <form action="{{ route('logout') }}" method="post">
                                     @csrf

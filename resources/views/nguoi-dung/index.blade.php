@@ -77,6 +77,7 @@
                                 <tr>
                                     <th style="width: 50px;"></th>
                                     <th>Tên Đăng Nhập</th>
+                                    <th>Họ Tên</th>
                                     <th>Email</th>
                                     <th>Số Điện Thoại</th>
                                     <th>Trạng Thái</th>
@@ -220,19 +221,19 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="ten_dang_nhap" class="form-label">Tên Đăng Nhập <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ten_dang_nhap" name="ten_dang_nhap" required>
+                            <input type="text" class="form-control" id="ten_dang_nhap" name="ten_dang_nhap" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ten_dang_nhap_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="ho_ten" class="form-label">Họ Tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ho_ten" name="ho_ten" required>
+                            <input type="text" class="form-control" id="ho_ten" name="ho_ten" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ho_ten_error"></div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <input type="email" class="form-control" id="email" name="email" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="email_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -244,7 +245,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="vai_tro" class="form-label">Vai Trò <span class="text-danger">*</span></label>
-                            <select class="form-select" id="vai_tro" name="vai_tro" required>
+                            <select class="form-select" id="vai_tro" name="vai_tro" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <option value="">-- Chọn vai trò --</option>
                                 <option value="admin">Quản Trị Viên</option>
                                 <option value="duoc_si">Dược Sĩ</option>
@@ -255,12 +256,12 @@
                             <label class="form-label">Trạng Thái <span class="text-danger">*</span></label>
                             <div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_1" value="1" checked>
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_1" value="hoat_dong" checked>
                                     <label class="form-check-label" for="trang_thai_1">Hoạt động</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_0" value="0">
-                                    <label class="form-check-label" for="trang_thai_0">Khóa</label>
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_0" value="ngung">
+                                    <label class="form-check-label" for="trang_thai_0">Ngừng hoạt động</label>
                                 </div>
                             </div>
                             <div class="invalid-feedback" id="trang_thai_error"></div>
@@ -270,7 +271,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="mat_khau" class="form-label">Mật Khẩu <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="mat_khau" name="mat_khau" required>
+                                <input type="password" class="form-control" id="mat_khau" name="mat_khau" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <button class="btn btn-outline-secondary toggle-password" type="button" data-target="mat_khau">
                                     <i class="bi bi-eye"></i>
                                 </button>
@@ -290,6 +291,7 @@
 </div>
 
 <!-- Modal sửa người dùng -->
+<!-- Modal sửa người dùng -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -303,19 +305,19 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_ten_dang_nhap" class="form-label">Tên Đăng Nhập <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ten_dang_nhap" name="ten_dang_nhap" required>
+                            <input type="text" class="form-control" id="edit_ten_dang_nhap" name="ten_dang_nhap" >
                             <div class="invalid-feedback" id="edit_ten_dang_nhap_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="edit_ho_ten" class="form-label">Họ Tên <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ho_ten" name="ho_ten" required>
+                            <input type="text" class="form-control" id="edit_ho_ten" name="ho_ten" >
                             <div class="invalid-feedback" id="edit_ho_ten_error"></div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                            <input type="email" class="form-control" id="edit_email" name="email" >
                             <div class="invalid-feedback" id="edit_email_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -327,7 +329,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_vai_tro" class="form-label">Vai Trò <span class="text-danger">*</span></label>
-                            <select class="form-select" id="edit_vai_tro" name="vai_tro" required>
+                            <select class="form-select" id="edit_vai_tro" name="vai_tro" >
                                 <option value="admin">Quản Trị Viên</option>
                                 <option value="duoc_si">Dược Sĩ</option>
                             </select>
@@ -337,12 +339,12 @@
                             <label class="form-label">Trạng Thái <span class="text-danger">*</span></label>
                             <div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_1" value="1">
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_1" value="hoat_dong">
                                     <label class="form-check-label" for="edit_trang_thai_1">Hoạt động</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_0" value="0">
-                                    <label class="form-check-label" for="edit_trang_thai_0">Khóa</label>
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_0" value="ngung">
+                                    <label class="form-check-label" for="edit_trang_thai_0">Ngừng hoạt động</label>
                                 </div>
                             </div>
                             <div class="invalid-feedback" id="edit_trang_thai_error"></div>
@@ -357,6 +359,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- Modal đổi mật khẩu -->
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
@@ -373,7 +376,7 @@
                     <div class="mb-3">
                         <label for="new_password" class="form-label">Mật Khẩu Mới <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="new_password" name="mat_khau" required>
+                            <input type="password" class="form-control" id="new_password" name="mat_khau" requiredmsg="Trường này yêu cầu bắt buộc">
                             <button class="btn btn-outline-secondary toggle-password" type="button" data-target="new_password">
                                 <i class="bi bi-eye"></i>
                             </button>
@@ -468,6 +471,12 @@
         // Hàm kiểm tra quyền chỉnh sửa
         function hasEditPermission() {
             return userRole === 'admin';
+        }
+
+        function resetEditModal() {
+            $('#editUserForm')[0].reset();
+            $('#editUserForm .is-invalid').removeClass('is-invalid');
+            $('#editUserForm .invalid-feedback').text('');
         }
 
         // Vô hiệu hóa các nút thao tác nếu không phải admin
@@ -659,6 +668,9 @@
                 showToast('Bạn không có quyền sửa thông tin này', 'warning');
                 return;
             }
+
+             resetEditModal();
+
             $.ajax({
                 url: `/nguoi-dung/${id}`,
                 type: "GET",
@@ -686,19 +698,17 @@
             });
         }
 
-        // Cập nhật người dùng
+                // Cập nhật người dùng
         $('#editUserForm').submit(function(e) {
             e.preventDefault();
             const id = $('#edit_nguoi_dung_id').val();
-            if (!hasEditPermission() && id != currentUserId) {
-                showToast('Bạn không có quyền sửa thông tin này', 'warning');
-                return;
-            }
-            
             const formData = new FormData(this);
+            formData.set('trang_thai', $('input[name="trang_thai"]:checked').val() || '');
+            formData.append('_method', 'PUT'); // simulate PUT
+
             $.ajax({
                 url: `/nguoi-dung/${id}`,
-                type: "PUT",
+                type: "POST",
                 data: formData,
                 dataType: "json",
                 processData: false,

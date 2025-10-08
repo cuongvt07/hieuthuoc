@@ -274,7 +274,7 @@ class BaoCaoTonKhoController extends Controller
         switch($loaiBaoCao) {
             case 'thuoc':
                 $sheet->setCellValue('A'.$row, 'Mã thuốc');
-                $sheet->setCellValue('B'.$row, 'Tên thuốc');
+                $sheet->setCellValue('B'.$row, 'Tên sản phẩm');
                 $sheet->setCellValue('C'.$row, 'Đvt');
                 $sheet->setCellValue('D'.$row, 'Tồn kho');
                 $sheet->setCellValue('E'.$row, 'Đơn giá TB');

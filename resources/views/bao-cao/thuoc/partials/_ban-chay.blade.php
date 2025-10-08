@@ -6,7 +6,7 @@
                 <thead>
                     <tr>
                         <th>STT</th>
-                        <th>Tên thuốc</th>
+                        <th>Tên sản phẩm</th>
                         <th>Số đơn hàng</th>
                         <th>Tổng số lượng</th>
                         <th>Doanh số</th>

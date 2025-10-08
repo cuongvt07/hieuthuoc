@@ -117,7 +117,7 @@
                             <thead>
                                 <tr>
                                     <th>Mã Thuốc</th>
-                                    <th>Tên Thuốc</th>
+                                    <th>Tên sản phẩm</th>
                                     <th>Nhóm Thuốc</th>
                                     <th>Kho</th>
                                     <th>Đơn Vị Gốc</th>
@@ -137,7 +137,7 @@
                                         @endif
                                     </td>
                                     <td>{{ $item->nhomThuoc->ten_nhom }}</td>
-                                    <td>{{ $item->kho->ten_kho }}</td>
+                                    <td>{{ $item->kho->ten_kho ?? 'Không xác định' }}</td>
                                     <td>{{ $item->don_vi_goc }}</td>
                                     <td>{{ $item->don_vi_ban }}</td>
                                     <td>{{ $item->ti_le_quy_doi }}</td>
@@ -184,12 +184,12 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="ma_nhom" class="form-label">Mã Nhóm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ma_nhom" name="ma_nhom" required>
+                            <input type="text" class="form-control" id="ma_nhom" name="ma_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ma_nhom_error"></div>
                         </div>
                         <div class="mb-3">
                             <label for="ten_nhom" class="form-label">Tên Nhóm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ten_nhom" name="ten_nhom" required>
+                            <input type="text" class="form-control" id="ten_nhom" name="ten_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ten_nhom_error"></div>
                         </div>
                         <div class="mb-3">
@@ -219,12 +219,12 @@
                         <input type="hidden" id="edit_nhom_id" name="nhom_id">
                         <div class="mb-3">
                             <label for="edit_ma_nhom" class="form-label">Mã Nhóm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ma_nhom" name="ma_nhom" required>
+                            <input type="text" class="form-control" id="edit_ma_nhom" name="ma_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="edit_ma_nhom_error"></div>
                         </div>
                         <div class="mb-3">
                             <label for="edit_ten_nhom" class="form-label">Tên Nhóm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ten_nhom" name="ten_nhom" required>
+                            <input type="text" class="form-control" id="edit_ten_nhom" name="ten_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="edit_ten_nhom_error"></div>
                         </div>
                         <div class="mb-3">
@@ -274,12 +274,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="ma_thuoc" class="form-label">Mã Thuốc <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="ma_thuoc" name="ma_thuoc" required>
+                                <input type="text" class="form-control" id="ma_thuoc" name="ma_thuoc" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="ma_thuoc_error"></div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="nhom_id" class="form-label">Nhóm Thuốc <span class="text-danger">*</span></label>
-                                <select class="form-select" id="nhom_id" name="nhom_id" required>
+                                <select class="form-select" id="nhom_id" name="nhom_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn nhóm thuốc --</option>
                                     @foreach ($nhomThuoc as $nhom)
                                     @if ($nhom->trang_thai == 0)
@@ -291,7 +291,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="kho_id" class="form-label">Kho <span class="text-danger">*</span></label>
-                                <select class="form-select" id="kho_id" name="kho_id" required>
+                                <select class="form-select" id="kho_id" name="kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn kho --</option>
                                     @foreach ($kho as $k)
                                     <option value="{{ $k->kho_id }}">{{ $k->ten_kho }}</option>
@@ -301,24 +301,24 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="ten_thuoc" class="form-label">Tên Thuốc <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="ten_thuoc" name="ten_thuoc" required>
+                            <label for="ten_thuoc" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ten_thuoc" name="ten_thuoc" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="ten_thuoc_error"></div>
                         </div>
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="don_vi_goc" class="form-label">Đơn Vị Gốc <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="don_vi_goc" name="don_vi_goc" required>
+                                <input type="text" class="form-control" id="don_vi_goc" name="don_vi_goc" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="don_vi_goc_error"></div>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="don_vi_ban" class="form-label">Đơn Vị Bán <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="don_vi_ban" name="don_vi_ban" required>
+                                <input type="text" class="form-control" id="don_vi_ban" name="don_vi_ban" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="don_vi_ban_error"></div>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ti_le_quy_doi" class="form-label">Tỉ Lệ Quy Đổi <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control" id="ti_le_quy_doi" name="ti_le_quy_doi" required>
+                                <input type="number" step="0.01" class="form-control" id="ti_le_quy_doi" name="ti_le_quy_doi" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="ti_le_quy_doi_error"></div>
                             </div>
                         </div>
@@ -350,12 +350,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="edit_ma_thuoc" class="form-label">Mã Thuốc <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_ma_thuoc" name="ma_thuoc" required>
+                                <input type="text" class="form-control" id="edit_ma_thuoc" name="ma_thuoc" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="edit_ma_thuoc_error"></div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="edit_nhom_id" class="form-label">Nhóm Thuốc <span class="text-danger">*</span></label>
-                                <select class="form-select" id="edit_nhom_id" name="nhom_id" required>
+                                <select class="form-select" id="edit_nhom_id" name="nhom_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn nhóm thuốc --</option>
                                     @foreach ($nhomThuoc as $nhom)
                                     <option value="{{ $nhom->nhom_id }}">{{ $nhom->ten_nhom }}</option>
@@ -365,24 +365,24 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="edit_ten_thuoc" class="form-label">Tên Thuốc <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ten_thuoc" name="ten_thuoc" required>
+                            <label for="edit_ten_thuoc" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_ten_thuoc" name="ten_thuoc" requiredmsg="Trường này yêu cầu bắt buộc">
                             <div class="invalid-feedback" id="edit_ten_thuoc_error"></div>
                         </div>
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="edit_don_vi_goc" class="form-label">Đơn Vị Gốc <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_don_vi_goc" name="don_vi_goc" required>
+                                <input type="text" class="form-control" id="edit_don_vi_goc" name="don_vi_goc" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="edit_don_vi_goc_error"></div>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="edit_don_vi_ban" class="form-label">Đơn Vị Bán <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_don_vi_ban" name="don_vi_ban" required>
+                                <input type="text" class="form-control" id="edit_don_vi_ban" name="don_vi_ban" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="edit_don_vi_ban_error"></div>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="edit_ti_le_quy_doi" class="form-label">Tỉ Lệ Quy Đổi <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" class="form-control" id="edit_ti_le_quy_doi" name="ti_le_quy_doi" required>
+                                <input type="number" step="0.01" class="form-control" id="edit_ti_le_quy_doi" name="ti_le_quy_doi" requiredmsg="Trường này yêu cầu bắt buộc">
                                 <div class="invalid-feedback" id="edit_ti_le_quy_doi_error"></div>
                             </div>
                         </div>

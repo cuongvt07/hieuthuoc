@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\DonBanLe;
-use App\Models\ChiTietDonBanLe;
 use App\Models\KhachHang;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -15,24 +14,43 @@ class BaoCaoKhachHangController extends Controller
 {
     public function index(Request $request)
     {
+        // Lấy danh sách khách hàng để hiển thị trong dropdown lọc
         $khachHangs = KhachHang::orderBy('ho_ten')->get();
 
+        // Xử lý xuất Excel
         if ($request->has('export') && $request->export == 'excel') {
             return $this->exportExcel($request);
         }
 
-        $query = DonBanLe::with(['chiTietDonBanLe.loThuoc.thuoc', 'khachHang'])
-            ->whereNotNull('khach_hang_id');
+        // Query tổng hợp theo khách hàng, chỉ lấy đơn hoàn tất
+        $query = DonBanLe::selectRaw('
+                don_ban_le.khach_hang_id,
+                COUNT(DISTINCT don_ban_le.don_id) as so_luong_don,
+                (
+                    SELECT SUM(tong_cong)
+                    FROM don_ban_le sub_don
+                    WHERE sub_don.khach_hang_id = don_ban_le.khach_hang_id
+                        AND sub_don.trang_thai = "hoan_tat"
+                ) as tong_chi_tieu,
+                COALESCE(SUM(chi_tiet_don_ban_le.so_luong), 0) as tong_so_luong
+            ')
+            ->leftJoin('chi_tiet_don_ban_le', 'don_ban_le.don_id', '=', 'chi_tiet_don_ban_le.don_id')
+            ->with(['khachHang'])
+            ->whereNotNull('don_ban_le.khach_hang_id')
+            ->where('don_ban_le.trang_thai', 'hoan_tat')
+            ->groupBy('don_ban_le.khach_hang_id');
 
+        // Lọc theo khach_hang_id
         if ($request->filled('khach_hang_id')) {
-            $query->where('khach_hang_id', $request->khach_hang_id);
+            $query->where('don_ban_le.khach_hang_id', $request->khach_hang_id);
         }
 
+        // Lọc theo khoảng thời gian
         if ($request->filled('tu_ngay')) {
             try {
                 $tuNgay = Carbon::createFromFormat('Y-m-d', $request->tu_ngay, 'Asia/Ho_Chi_Minh')
                     ->startOfDay();
-                $query->whereDate('ngay_tao', '>=', $tuNgay);
+                $query->whereDate('don_ban_le.ngay_ban', '>=', $tuNgay);
             } catch (\Exception $e) {
                 \Log::warning('Invalid date format for tu_ngay: ' . $request->tu_ngay . ' - ' . $e->getMessage());
             }
@@ -42,15 +60,15 @@ class BaoCaoKhachHangController extends Controller
             try {
                 $denNgay = Carbon::createFromFormat('Y-m-d', $request->den_ngay, 'Asia/Ho_Chi_Minh')
                     ->endOfDay();
-                $query->whereDate('ngay_tao', '<=', $denNgay);
+                $query->whereDate('don_ban_le.ngay_ban', '<=', $denNgay);
             } catch (\Exception $e) {
                 \Log::warning('Invalid date format for den_ngay: ' . $request->den_ngay . ' - ' . $e->getMessage());
             }
         }
 
-        $donHangs = $query->orderBy('ngay_tao', 'desc')->paginate(10);
-
-        return view('bao-cao.khach-hang.index', compact('khachHangs', 'donHangs'));
+        // Lấy dữ liệu tổng hợp và phân trang
+        $baoCaoKhachHangs = $query->orderBy('tong_chi_tieu', 'desc')->paginate(10);
+        return view('bao-cao.khach-hang.index', compact('khachHangs', 'baoCaoKhachHangs'));
     }
 
     private function exportExcel(Request $request)
@@ -58,38 +76,84 @@ class BaoCaoKhachHangController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Tiêu đề báo cáo
-        $sheet->setCellValue('A1', 'BÁO CÁO LỊCH SỬ MUA HÀNG KHÁCH HÀNG');
+        // Thông tin nhà thuốc ở đầu file
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
         $sheet->mergeCells('A1:F1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+        $sheet->setCellValue('A2', 'Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.');
+        $sheet->mergeCells('A2:F2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'Điện thoại:024 2243 0103 - Email: info@antammed.com');
+        $sheet->mergeCells('A3:F3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Cách 1 dòng
+        $sheet->setCellValue('A4', '');
+
+        // Tiêu đề báo cáo
+        $sheet->setCellValue('A5', 'BÁO CÁO LỊCH SỬ MUA HÀNG KHÁCH HÀNG');
+        $sheet->mergeCells('A5:F5');
+        $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Hiển thị tên khách hàng nếu lọc theo khach_hang_id
+        $rowHeader = 6;
         if ($request->filled('khach_hang_id')) {
             $khachHang = KhachHang::find($request->khach_hang_id);
-            $sheet->setCellValue('A2', 'Khách hàng: ' . ($khachHang->ho_ten ?? 'N/A'));
-            $sheet->mergeCells('A2:F2');
+            $sheet->setCellValue('A' . $rowHeader, 'Khách hàng: ' . ($khachHang->ho_ten ?? 'N/A'));
+            $sheet->mergeCells('A' . $rowHeader . ':F' . $rowHeader);
+            $sheet->getStyle('A' . $rowHeader)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $rowHeader++;
         }
 
-        // Header (đã điều chỉnh)
-        $sheet->setCellValue('A4', 'STT');
-        $sheet->setCellValue('B4', 'Khách hàng');
-        $sheet->setCellValue('C4', 'Mã đơn');
-        $sheet->setCellValue('D4', 'Số lượng');
-        $sheet->setCellValue('E4', 'Thành tiền');
-        $sheet->setCellValue('F4', 'Ngày tạo đơn');
+        // Header
+        $sheet->setCellValue('A' . $rowHeader, 'STT');
+        $sheet->setCellValue('B' . $rowHeader, 'Khách hàng');
+        $sheet->setCellValue('C' . $rowHeader, 'Số điện thoại');
+        $sheet->setCellValue('D' . $rowHeader, 'Số lượng đơn');
+        $sheet->setCellValue('E' . $rowHeader, 'Tổng số lượng');
+        $sheet->setCellValue('F' . $rowHeader, 'Tổng chi tiêu');
+        $sheet->getStyle('A' . $rowHeader . ':F' . $rowHeader)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $rowHeader . ':F' . $rowHeader)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $query = DonBanLe::with(['chiTietDonBanLe.loThuoc.thuoc', 'khachHang'])
-            ->whereNotNull('khach_hang_id');
+        // Query tổng hợp theo khách hàng, chỉ lấy đơn hoàn tất
+        $query = DonBanLe::selectRaw('
+                don_ban_le.khach_hang_id,
+                COUNT(DISTINCT don_ban_le.don_id) as so_luong_don,
+                (
+                    SELECT SUM(tong_cong)
+                    FROM don_ban_le sub_don
+                    WHERE sub_don.khach_hang_id = don_ban_le.khach_hang_id
+                        AND sub_don.trang_thai = "hoan_tat"
+                ) as tong_chi_tieu,
+                COALESCE(SUM(chi_tiet_don_ban_le.so_luong), 0) as tong_so_luong
+            ')
+            ->leftJoin('chi_tiet_don_ban_le', 'don_ban_le.don_id', '=', 'chi_tiet_don_ban_le.don_id')
+            ->with(['khachHang'])
+            ->whereNotNull('don_ban_le.khach_hang_id')
+            ->where('don_ban_le.trang_thai', 'hoan_tat')
+            ->groupBy('don_ban_le.khach_hang_id');
 
+        // Áp dụng bộ lọc
         if ($request->filled('khach_hang_id')) {
-            $query->where('khach_hang_id', $request->khach_hang_id);
+            $query->where('don_ban_le.khach_hang_id', $request->khach_hang_id);
         }
 
         if ($request->filled('tu_ngay')) {
             try {
                 $tuNgay = Carbon::createFromFormat('Y-m-d', $request->tu_ngay, 'Asia/Ho_Chi_Minh')
                     ->startOfDay();
-                $query->whereDate('ngay_tao', '>=', $tuNgay);
+                $query->whereDate('don_ban_le.ngay_ban', '>=', $tuNgay);
+                // Áp dụng bộ lọc cho subquery
+                $query->whereRaw('EXISTS (
+                    SELECT 1 FROM don_ban_le sub_don
+                    WHERE sub_don.khach_hang_id = don_ban_le.khach_hang_id
+                        AND sub_don.trang_thai = "hoan_tat"
+                        AND sub_don.ngay_ban >= ?
+                )', [$tuNgay]);
             } catch (\Exception $e) {
                 \Log::warning('Invalid date format for tu_ngay: ' . $request->tu_ngay . ' - ' . $e->getMessage());
             }
@@ -99,52 +163,56 @@ class BaoCaoKhachHangController extends Controller
             try {
                 $denNgay = Carbon::createFromFormat('Y-m-d', $request->den_ngay, 'Asia/Ho_Chi_Minh')
                     ->endOfDay();
-                $query->whereDate('ngay_tao', '<=', $denNgay);
+                $query->whereDate('don_ban_le.ngay_ban', '<=', $denNgay);
+                // Áp dụng bộ lọc cho subquery
+                $query->whereRaw('EXISTS (
+                    SELECT 1 FROM don_ban_le sub_don
+                    WHERE sub_don.khach_hang_id = don_ban_le.khach_hang_id
+                        AND sub_don.trang_thai = "hoan_tat"
+                        AND sub_don.ngay_ban <= ?
+                )', [$denNgay]);
             } catch (\Exception $e) {
                 \Log::warning('Invalid date format for den_ngay: ' . $request->den_ngay . ' - ' . $e->getMessage());
             }
         }
 
-        $donHangs = $query->orderBy('ngay_tao', 'desc')->get();
+        $baoCaoKhachHangs = $query->orderBy('tong_chi_tieu', 'desc')->get();
 
-        $row = 5;
+        // Điền dữ liệu
+    $row = $rowHeader + 1;
         $stt = 1;
+        $tongSoLuongDon = 0;
         $tongSoLuong = 0;
-        $tongTien = 0;
+        $tongChiTieu = 0;
 
-        foreach ($donHangs as $donHang) {
-            foreach ($donHang->chiTietDonBanLe as $chiTiet) {
-                $sheet->setCellValue('A' . $row, $stt++); // STT
-                $sheet->setCellValue('B' . $row, $donHang->khachHang->ho_ten ?? 'N/A'); // Khách hàng
-                $sheet->setCellValue('C' . $row, $donHang->ma_don ?? 'N/A'); // Mã đơn
-                $sheet->setCellValue('D' . $row, $chiTiet->so_luong ?? 0); // Số lượng
-                $sheet->setCellValue('E' . $row, number_format($chiTiet->thanh_tien ?? 0)); // Thành tiền
-                $sheet->setCellValue('F' . $row, Carbon::parse($donHang->ngay_tao)->format('d/m/Y H:i')); // Ngày tạo đơn
+        foreach ($baoCaoKhachHangs as $baoCao) {
+            $sheet->setCellValue('A' . $row, $stt++);
+            $sheet->setCellValue('B' . $row, $baoCao->khachHang ? $baoCao->khachHang->ho_ten : 'N/A');
+            $sheet->setCellValue('C' . $row, $baoCao->khachHang ? ($baoCao->khachHang->sdt ?? 'N/A') : 'N/A');
+            $sheet->setCellValue('D' . $row, $baoCao->so_luong_don);
+            $sheet->setCellValue('E' . $row, $baoCao->tong_so_luong);
+            $sheet->setCellValue('F' . $row, number_format($baoCao->tong_chi_tieu, 0, ',', '.') . ' VNĐ');
 
-                $tongSoLuong += $chiTiet->so_luong ?? 0;
-                $tongTien += $chiTiet->thanh_tien ?? 0;
+            $tongSoLuongDon += $baoCao->so_luong_don;
+            $tongSoLuong += $baoCao->tong_so_luong;
+            $tongChiTieu += $baoCao->tong_chi_tieu;
 
-                $row++;
-            }
+            $row++;
         }
 
         // Thêm dòng tổng cộng
         $sheet->setCellValue('A' . $row, 'TỔNG CỘNG');
         $sheet->mergeCells('A' . $row . ':C' . $row);
         $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('D' . $row, $tongSoLuong);
-        $sheet->setCellValue('E' . $row, number_format($tongTien));
-        $sheet->getStyle('A' . $row . ':E' . $row)->getFont()->setBold(true);
+        $sheet->setCellValue('D' . $row, $tongSoLuongDon);
+        $sheet->setCellValue('E' . $row, $tongSoLuong);
+        $sheet->setCellValue('F' . $row, number_format($tongChiTieu, 0, ',', '.') . ' VNĐ');
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFont()->setBold(true);
 
         // Auto size columns
         foreach (range('A', 'F') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-
-        // Thêm dòng Người xuất ở cuối cùng
-        $lastRow = $sheet->getHighestRow() + 2;
-        $sheet->setCellValue('F' . $lastRow, 'Người xuất:');
-        $sheet->getStyle('F' . $lastRow)->getFont()->setItalic(true);
 
         $writer = new Xlsx($spreadsheet);
         $filename = 'bao-cao-khach-hang-' . date('Y-m-d-H-i-s') . '.xlsx';

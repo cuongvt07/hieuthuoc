@@ -111,39 +111,26 @@ class NguoiDungController extends Controller
     {
         $validatedData = $request->validate([
             'ten_dang_nhap' => [
-                'required', 
                 'string', 
                 'max:50', 
                 Rule::unique('nguoi_dung')->ignore($nguoiDung->nguoi_dung_id, 'nguoi_dung_id')
             ],
-            'ho_ten' => 'required|string|max:100',
-            'email' => 'required|email|max:100',
+            'ho_ten' => 'string|max:100',
+            'email' => 'email|max:100',
             'sdt' => 'nullable|string|max:20',
             'vai_tro' => ['required', Rule::in(['admin', 'duoc_si'])],
             'trang_thai' => ['required', Rule::in(['ngung', 'hoat_dong'])],
-        ], [
-            'ten_dang_nhap.required' => 'Tên đăng nhập không được để trống',
-            'ten_dang_nhap.unique' => 'Tên đăng nhập đã tồn tại',
-            'ho_ten.required' => 'Họ tên không được để trống',
-            'email.required' => 'Email không được để trống',
-            'email.email' => 'Email không hợp lệ',
-            'vai_tro.required' => 'Vai trò không được để trống',
-            'vai_tro.in' => 'Vai trò không hợp lệ',
         ]);
 
         $nguoiDung->update($validatedData);
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Người dùng đã được cập nhật thành công.',
-                'nguoiDung' => $nguoiDung
-            ]);
-        }
-
-        return redirect()->route('nguoi-dung.index')
-            ->with('success', 'Người dùng đã được cập nhật thành công.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Người dùng đã được cập nhật thành công.',
+            'nguoiDung' => $nguoiDung
+        ]);
     }
+
 
     /**
      * Change password for a user.

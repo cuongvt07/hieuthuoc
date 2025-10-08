@@ -202,7 +202,7 @@
                                         <thead class="thead-light">
                                             <tr>
                                                 <th>Mã thuốc</th>
-                                                <th>Tên thuốc</th>
+                                                <th>Tên sản phẩm</th>
                                                 <th>Lô thuốc (HSD, tồn kho)</th>
                                                 <th>Đơn vị</th>
                                                 <th>Giá bán</th>

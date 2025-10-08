@@ -128,7 +128,7 @@
                     </div>
                     <div class="info-item">
                         <div class="info-label">Kho lưu trữ:</div>
-                        <div class="info-value">{{ $loThuoc->kho->ten_kho }}</div>
+                        <div class="info-value">{{ $loThuoc->kho->ten_kho ?? 'Không xác định' }}</div>
                     </div>
                 </div>
                 
@@ -343,7 +343,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <label for="adjustment_type" class="form-label">Loại điều chỉnh</label>
-                                        <select class="form-select @error('adjustment_type') is-invalid @enderror" id="adjustment_type" name="adjustment_type" required>
+                                        <select class="form-select @error('adjustment_type') is-invalid @enderror" id="adjustment_type" name="adjustment_type" requiredmsg="Trường này yêu cầu bắt buộc">
                                             <option value="increase">Tăng</option>
                                             <option value="decrease">Giảm</option>
                                         </select>
@@ -354,7 +354,7 @@
                                     <div class="col-md-4">
                                         <label for="adjustment_amount" class="form-label">Số lượng</label>
                                         <div class="input-group">
-                                            <input type="number" step="0.01" min="0.01" class="form-control @error('adjustment_amount') is-invalid @enderror" id="adjustment_amount" name="adjustment_amount" required>
+                                            <input type="number" step="0.01" min="0.01" class="form-control @error('adjustment_amount') is-invalid @enderror" id="adjustment_amount" name="adjustment_amount" requiredmsg="Trường này yêu cầu bắt buộc">
                                             <span class="input-group-text">{{ $loThuoc->thuoc->don_vi_goc }}</span>
                                             @error('adjustment_amount')
                                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -363,7 +363,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label for="reason" class="form-label">Lý do</label>
-                                        <input type="text" class="form-control @error('reason') is-invalid @enderror" id="reason" name="reason" required>
+                                        <input type="text" class="form-control @error('reason') is-invalid @enderror" id="reason" name="reason" requiredmsg="Trường này yêu cầu bắt buộc">
                                         @error('reason')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -415,7 +415,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <label for="target_kho_id" class="form-label">Kho đích</label>
-                                        <select class="form-select @error('target_kho_id') is-invalid @enderror" id="target_kho_id" name="target_kho_id" required>
+                                        <select class="form-select @error('target_kho_id') is-invalid @enderror" id="target_kho_id" name="target_kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                             <option value="">-- Chọn kho đích --</option>
                                             @foreach($khos as $kho)
                                                 @if($kho->kho_id != $loThuoc->kho_id)
@@ -430,7 +430,7 @@
                                     <div class="col-md-6">
                                         <label for="transfer_amount" class="form-label">Số lượng chuyển</label>
                                         <div class="input-group">
-                                            <input type="number" step="0.01" min="0.01" max="{{ $loThuoc->ton_kho_hien_tai }}" class="form-control @error('transfer_amount') is-invalid @enderror" id="transfer_amount" name="transfer_amount" required>
+                                            <input type="number" step="0.01" min="0.01" max="{{ $loThuoc->ton_kho_hien_tai }}" class="form-control @error('transfer_amount') is-invalid @enderror" id="transfer_amount" name="transfer_amount" requiredmsg="Trường này yêu cầu bắt buộc">
                                             <span class="input-group-text">{{ $loThuoc->thuoc->don_vi_goc }}</span>
                                             @error('transfer_amount')
                                                 <div class="invalid-feedback">{{ $message }}</div>

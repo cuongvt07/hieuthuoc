@@ -36,6 +36,17 @@ class BaoCaoLoThuocController extends Controller
             $query->where('kho_id', $request->kho_id);
         }
 
+        // Filter theo ngày tạo
+        if ($request->filled('tu_ngay')) {
+            $tuNgay = Carbon::parse($request->tu_ngay)->startOfDay();
+            $query->where('ngay_tao', '>=', $tuNgay);
+        }
+
+        if ($request->filled('den_ngay')) {
+            $denNgay = Carbon::parse($request->den_ngay)->endOfDay();
+            $query->where('ngay_tao', '<=', $denNgay);
+        }
+
         if ($request->filled('trang_thai')) {
             $now = Carbon::now();
             
@@ -74,6 +85,17 @@ class BaoCaoLoThuocController extends Controller
             $query->where('kho_id', $request->kho_id);
         }
 
+        // Filter theo ngày tạo cho export
+        if ($request->filled('tu_ngay')) {
+            $tuNgay = Carbon::parse($request->tu_ngay)->startOfDay();
+            $query->where('ngay_tao', '>=', $tuNgay);
+        }
+
+        if ($request->filled('den_ngay')) {
+            $denNgay = Carbon::parse($request->den_ngay)->endOfDay();
+            $query->where('ngay_tao', '<=', $denNgay);
+        }
+
         if ($request->filled('trang_thai')) {
             $now = Carbon::now();
             
@@ -96,6 +118,23 @@ class BaoCaoLoThuocController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        // Thông tin nhà thuốc ở đầu file
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
+        $sheet->mergeCells('A1:I1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', 'Địa chỉ: Tầng 1 Tòa G3, Tổ hợp thương mại dịch vụ ADG-Garden, phường Vĩnh Tuy, Hà Nội.');
+        $sheet->mergeCells('A2:I2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'Điện thoại:024 2243 0103 - Email: info@antammed.com');
+        $sheet->mergeCells('A3:I3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Cách 1 dòng
+        $sheet->setCellValue('A4', '');
+
         // Set title
         $title = 'BÁO CÁO LÔ THUỐC';
         if ($request->filled('trang_thai')) {
@@ -111,13 +150,13 @@ class BaoCaoLoThuocController extends Controller
                     break;
             }
         }
-        $sheet->setCellValue('A1', $title);
-        $sheet->mergeCells('A1:F1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('A5', $title);
+        $sheet->mergeCells('A5:I5');
+        $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Set filters if any
-        $row = 2;
+        $row = 6;
         if ($request->filled('kho_id')) {
             $kho = Kho::find($request->kho_id);
             $sheet->setCellValue('A' . $row, 'Kho: ' . $kho->ten_kho);
@@ -132,21 +171,36 @@ class BaoCaoLoThuocController extends Controller
             $row++;
         }
 
+        // Hiển thị filter ngày trong Excel
+        if ($request->filled('tu_ngay') || $request->filled('den_ngay')) {
+            $dateRange = 'Thời gian: ';
+            if ($request->filled('tu_ngay')) {
+                $dateRange .= 'từ ' . Carbon::parse($request->tu_ngay)->format('d/m/Y');
+            }
+            if ($request->filled('den_ngay')) {
+                $dateRange .= ($request->filled('tu_ngay') ? ' đến ' : 'đến ') . Carbon::parse($request->den_ngay)->format('d/m/Y');
+            }
+            $sheet->setCellValue('A' . $row, $dateRange);
+            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $row++;
+        }
+
         // Add some spacing
         $row++;
 
         // Set headers
         $sheet->setCellValue('A' . $row, 'Mã lô');
-        $sheet->setCellValue('B' . $row, 'Tên thuốc');
+        $sheet->setCellValue('B' . $row, 'Tên sản phẩm');
         $sheet->setCellValue('C' . $row, 'Kho');
         $sheet->setCellValue('D' . $row, 'Số lượng tồn');
         $sheet->setCellValue('E' . $row, 'Giá vốn');
         $sheet->setCellValue('F' . $row, 'Thành tiền');
         $sheet->setCellValue('G' . $row, 'Hạn sử dụng');
-        $sheet->setCellValue('H' . $row, 'Trạng thái');
+        $sheet->setCellValue('H' . $row, 'Ngày tạo');
+        $sheet->setCellValue('I' . $row, 'Trạng thái');
 
         // Style the header row
-        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -182,9 +236,10 @@ class BaoCaoLoThuocController extends Controller
             $sheet->setCellValue('E' . $row, number_format($lo->gia_nhap_tb));
             $sheet->setCellValue('F' . $row, number_format($thanhTien));
             $sheet->setCellValue('G' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
-            $sheet->setCellValue('H' . $row, $trangThai);
+            $sheet->setCellValue('H' . $row, Carbon::parse($lo->ngay_tao)->format('d/m/Y H:i'));
+            $sheet->setCellValue('I' . $row, $trangThai);
 
-            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+            $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                 'borders' => [
                     'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                 ]
@@ -199,10 +254,10 @@ class BaoCaoLoThuocController extends Controller
         $sheet->setCellValue('D' . $row, $tongSoLuong);
         $sheet->mergeCells('E' . $row . ':E' . $row);
         $sheet->setCellValue('F' . $row, number_format($tongGiaTri));
-        $sheet->mergeCells('G' . $row . ':H' . $row);
+        $sheet->mergeCells('G' . $row . ':I' . $row);
 
         // Style the totals row
-        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -214,14 +269,14 @@ class BaoCaoLoThuocController extends Controller
         ]);
 
         // Auto size columns
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'I') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // Thêm dòng Người xuất ở cuối cùng
-        $lastRow = $sheet->getHighestRow() + 2;
-        $sheet->setCellValue('H' . $lastRow, 'Người xuất:');
-        $sheet->getStyle('H' . $lastRow)->getFont()->setItalic(true);
+        // Thêm dòng Người xuất cách 3 dòng
+        $row += 3;
+        $sheet->setCellValue('H' . $row, 'Người xuất');
+        $sheet->getStyle('H' . $row)->getFont()->setBold(true);
 
         // Create the excel file
         $writer = new Xlsx($spreadsheet);

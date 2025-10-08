@@ -26,14 +26,14 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="ma_phieu" class="form-label required-field">Mã phiếu</label>
-                    <input type="text" class="form-control @error('ma_phieu') is-invalid @enderror" id="ma_phieu" name="ma_phieu" value="{{ old('ma_phieu', $phieuNhap->ma_phieu) }}" required>
+                    <input type="text" class="form-control @error('ma_phieu') is-invalid @enderror" id="ma_phieu" name="ma_phieu" value="{{ old('ma_phieu', $phieuNhap->ma_phieu) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                     @error('ma_phieu')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-md-6">
                     <label for="ncc_id" class="form-label required-field">Nhà cung cấp</label>
-                    <select class="form-select @error('ncc_id') is-invalid @enderror" id="ncc_id" name="ncc_id" required>
+                    <select class="form-select @error('ncc_id') is-invalid @enderror" id="ncc_id" name="ncc_id" requiredmsg="Trường này yêu cầu bắt buộc">
                         <option value="">-- Chọn nhà cung cấp --</option>
                         @foreach($nhaCungCaps as $ncc)
                             <option value="{{ $ncc->ncc_id }}" {{ old('ncc_id', $phieuNhap->ncc_id) == $ncc->ncc_id ? 'selected' : '' }}>{{ $ncc->ten_ncc }}</option>
@@ -48,14 +48,14 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="ngay_nhap" class="form-label required-field">Ngày nhập</label>
-                    <input type="date" class="form-control @error('ngay_nhap') is-invalid @enderror" id="ngay_nhap" name="ngay_nhap" value="{{ old('ngay_nhap', $phieuNhap->ngay_nhap) }}" required>
+                    <input type="date" class="form-control @error('ngay_nhap') is-invalid @enderror" id="ngay_nhap" name="ngay_nhap" value="{{ old('ngay_nhap', $phieuNhap->ngay_nhap) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                     @error('ngay_nhap')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-md-6">
                     <label for="ngay_chung_tu" class="form-label required-field">Ngày chứng từ</label>
-                    <input type="date" class="form-control @error('ngay_chung_tu') is-invalid @enderror" id="ngay_chung_tu" name="ngay_chung_tu" value="{{ old('ngay_chung_tu', $phieuNhap->ngay_chung_tu) }}" required>
+                    <input type="date" class="form-control @error('ngay_chung_tu') is-invalid @enderror" id="ngay_chung_tu" name="ngay_chung_tu" value="{{ old('ngay_chung_tu', $phieuNhap->ngay_chung_tu) }}" requiredmsg="Trường này yêu cầu bắt buộc">
                     @error('ngay_chung_tu')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

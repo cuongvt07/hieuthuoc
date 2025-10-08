@@ -16,30 +16,6 @@
         <div class="card">
             <div class="card-body">
                 <form id="filterForm" method="GET" class="row g-3">
-                    <!-- <div class="col-md-4">
-                        <label class="form-label">Thuốc</label>
-                        <select name="thuoc_id" class="form-select select2">
-                            <option value="">-- Tất cả --</option>
-                            @foreach($thuocs as $thuoc)
-                                <option value="{{ $thuoc->thuoc_id }}" {{ request('thuoc_id') == $thuoc->thuoc_id ? 'selected' : '' }}>
-                                    {{ $thuoc->ten_thuoc }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div> -->
-
-                    <!-- <div class="col-md-4">
-                        <label class="form-label">Kho</label>
-                        <select name="kho_id" class="form-select select2">
-                            <option value="">-- Tất cả --</option>
-                            @foreach($khos as $kho)
-                                <option value="{{ $kho->kho_id }}" {{ request('kho_id') == $kho->kho_id ? 'selected' : '' }}>
-                                    {{ $kho->ten_kho }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div> -->
-
                     <div class="col-md-4">
                         <label class="form-label">Trạng thái</label>
                         <select name="trang_thai" class="form-select">
@@ -48,6 +24,17 @@
                             <option value="sap_het_han" {{ request('trang_thai') == 'sap_het_han' ? 'selected' : '' }}>Sắp hết hạn (<  tháng)</option>
                             <option value="het_han" {{ request('trang_thai') == 'het_han' ? 'selected' : '' }}>Hết hạn</option>
                         </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Từ ngày</label>
+                        <input type="date" name="tu_ngay" class="form-control datepicker"
+                               value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Đến ngày</label>
+                        <input type="date" name="den_ngay" class="form-control datepicker"
+                               value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
                     </div>
 
                     <div class="col-12">
@@ -73,7 +60,7 @@
                 <thead>
                     <tr>
                         <th>Mã lô</th>
-                        <th>Tên thuốc</th>
+                        <th>Tên sản phẩm</th>
                         <th>Kho</th>
                         <th>Số lượng tồn</th>
                         <th>Hạn sử dụng</th>
@@ -85,7 +72,7 @@
                         <tr>
                             <td>{{ $lo->ma_lo }}</td>
                             <td>{{ $lo->thuoc->ten_thuoc }}</td>
-                            <td>{{ $lo->kho->ten_kho }}</td>
+                            <td>{{ $lo->kho->ten_kho ?? 'Không xác định' }}</td>
                             <td class="text-end">{{ number_format($lo->ton_kho_hien_tai) }} / {{ $lo->thuoc->don_vi_goc}}</td>
                             <td>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</td>
                             <td>

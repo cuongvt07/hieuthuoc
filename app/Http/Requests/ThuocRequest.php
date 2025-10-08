@@ -57,7 +57,7 @@ class ThuocRequest extends FormRequest
             'nhom_id.exists' => 'Nhóm thuốc không tồn tại.',
             'ma_thuoc.required' => 'Vui lòng nhập mã thuốc.',
             'ma_thuoc.unique' => 'Mã thuốc đã tồn tại.',
-            'ten_thuoc.required' => 'Vui lòng nhập tên thuốc.',
+            'ten_thuoc.required' => 'Vui lòng nhập Tên sản phẩm.',
             'don_vi_goc.required' => 'Vui lòng nhập đơn vị gốc.',
             'don_vi_ban.required' => 'Vui lòng nhập đơn vị bán.',
             'ti_le_quy_doi.required' => 'Vui lòng nhập tỉ lệ quy đổi.',
