@@ -21,8 +21,9 @@
                         <select name="trang_thai" class="form-select">
                             <option value="">-- Tất cả --</option>
                             <option value="con_han" {{ request('trang_thai') == 'con_han' ? 'selected' : '' }}>Còn hạn</option>
-                            <option value="sap_het_han" {{ request('trang_thai') == 'sap_het_han' ? 'selected' : '' }}>Sắp hết hạn (<  tháng)</option>
-                            <option value="het_han" {{ request('trang_thai') == 'het_han' ? 'selected' : '' }}>Hết hạn</option>
+                            <option value="sap_het_han" {{ request('trang_thai') == 'sap_het_han' ? 'selected' : '' }}>Sắp hết hạn (≤ 1 tháng)</option>
+                            <option value="het_han_chua_huy" {{ request('trang_thai') == 'het_han_chua_huy' ? 'selected' : '' }}>Hết hạn (chưa hủy)</option>
+                            <option value="het_han_da_huy" {{ request('trang_thai') == 'het_han_da_huy' ? 'selected' : '' }}>Hết hạn (đã hủy)</option>
                         </select>
                     </div>
 
@@ -45,6 +46,9 @@
                             <a href="{{ route('bao-cao.lo-thuoc.index', ['export' => 'excel'] + request()->all()) }}" class="btn btn-success">
                                 <i class="bi bi-file-excel"></i> Xuất Excel
                             </a>
+                            <button type="button" class="btn btn-secondary" id="resetFilter">
+                                <i class="bi bi-x-circle"></i> Reset lọc
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -64,7 +68,7 @@
                         <th>Kho</th>
                         <th>Số lượng tồn</th>
                         <th>Hạn sử dụng</th>
-                        <th>Trạng thái</th>
+                        <th>Trạng thái<br><small class="text-muted">(chi tiết)</small></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,13 +83,15 @@
                                 @php
                                     $now = \Carbon\Carbon::now();
                                     $hsd = \Carbon\Carbon::parse($lo->han_su_dung);
+                                    $daysDiff = $now->diffInDays($hsd, false);
                                     $monthsDiff = $now->diffInMonths($hsd, false);
                                 @endphp
-                                
-                                @if($now > $hsd)
-                                    <span class="badge bg-danger">Hết hạn</span>
-                                @elseif($monthsDiff <= 6)
-                                    <span class="badge bg-warning">Sắp hết hạn</span>
+                                @if($lo->da_huy)
+                                    <span class="badge bg-dark">Hết hạn (đã hủy)</span>
+                                @elseif($now > $hsd)
+                                    <span class="badge bg-danger">Hết hạn (chưa hủy)</span>
+                                @elseif($monthsDiff < 1 && $daysDiff >= 0)
+                                    <span class="badge bg-warning">Sắp hết hạn (còn {{ $daysDiff }} ngày)</span>
                                 @else
                                     <span class="badge bg-success">Còn hạn</span>
                                 @endif
@@ -113,8 +119,11 @@
         $('.select2').select2({
             theme: 'bootstrap-5'
         });
-        
         $('.form-select').change(function() {
+            $('#filterForm').submit();
+        });
+        $('#resetFilter').click(function() {
+            $('#filterForm').find('input, select').val('');
             $('#filterForm').submit();
         });
     });

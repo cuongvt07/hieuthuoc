@@ -115,4 +115,4 @@ Quản lý danh mục : k có xoá chỉ có đình chỉ // done
 cái biểu đồ tròn ở dashboard thì sẽ realtime tồn kho  // 
 
 
-Báo Cáo Tổng Hợp Kho  /Báo Cáo Lô Thuốc  : chưa có lọc theo khoảngh thời gian
+BÁO CÁO TỒN KHO  /Báo Cáo Lô Thuốc  : chưa có lọc theo khoảngh thời gian

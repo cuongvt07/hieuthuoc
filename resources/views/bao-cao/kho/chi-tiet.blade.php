@@ -10,17 +10,27 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('bao-cao.kho.index') }}" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Chọn kho</label>
-                    <select name="kho_id" class="form-select">
-                        <option value="">Tất cả kho</option>
-                        @foreach($khos as $kho)
-                            <option value="{{ $kho->kho_id }}" {{ request('kho_id') == $kho->kho_id ? 'selected' : '' }}>
-                                {{ $kho->ten_kho }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Chọn kho</label>
+                        <select name="kho_id" class="form-select">
+                            <option value="">Tất cả kho</option>
+                            @foreach($khos as $kho)
+                                <option value="{{ $kho->kho_id }}" {{ request('kho_id') == $kho->kho_id ? 'selected' : '' }}>
+                                    {{ $kho->ten_kho }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Từ ngày</label>
+                        <input type="date" name="tu_ngay" class="form-control datepicker"
+                                value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Đến ngày</label>
+                        <input type="date" name="den_ngay" class="form-control datepicker"
+                                value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
+                    </div>
 
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary me-2">Lọc</button>
@@ -48,7 +58,7 @@
                             <th>Đơn vị</th>
                             <th class="text-end">Số lượng tồn</th>
                             <th class="text-end">Giá trị tồn</th>
-                            <th>Trạng thái HSD</th>
+                            
                         </tr>
                     </thead>
                     <tbody>
@@ -67,17 +77,7 @@
                                 <td>{{ $thuoc->don_vi_goc }}</td>
                                 <td class="text-end">{{ number_format($thuoc->tong_ton_kho) }}</td>
                                 <td class="text-end">{{ number_format($thuoc->gia_tri_ton) }} VNĐ</td>
-                                <td>
-                                    @if($thuoc->da_het_han > 0)
-                                        <span class="badge bg-danger">{{ $thuoc->da_het_han }} lô hết hạn</span>
-                                    @endif
-                                    @if($thuoc->sap_het_han > 0)
-                                        <span class="badge bg-warning">{{ $thuoc->sap_het_han }} lô sắp hết hạn</span>
-                                    @endif
-                                    @if($thuoc->da_het_han == 0 && $thuoc->sap_het_han == 0)
-                                        <span class="badge bg-success">Còn hạn</span>
-                                    @endif
-                                </td>
+                                
                             </tr>
                         @empty
                             <tr>

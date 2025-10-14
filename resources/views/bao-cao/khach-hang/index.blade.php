@@ -1,4 +1,4 @@
-blade<!-- resources/views/bao-cao/khach-hang/index.blade.php -->
+<!-- resources/views/bao-cao/khach-hang/index.blade.php -->
 @extends('layouts.app')
 
 @section('title', 'Báo Cáo Khách Hàng - Hệ Thống Quản Lý Hiệu Thuốc')
@@ -47,6 +47,7 @@ blade<!-- resources/views/bao-cao/khach-hang/index.blade.php -->
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary me-2">Lọc</button>
+                        <button type="button" id="resetFilterBtn" class="btn btn-secondary me-2">Reset lọc</button>
                         <a href="{{ route('bao-cao.khach-hang.index', ['export' => 'excel'] + request()->all()) }}"
                            class="btn btn-success">
                             <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
@@ -73,6 +74,7 @@ blade<!-- resources/views/bao-cao/khach-hang/index.blade.php -->
                 </thead>
                 <tbody>
                     @php
+                        $tongSoDon = $baoCaoKhachHangs->sum('so_luong_don');
                         $tongChiTieu = $baoCaoKhachHangs->sum('tong_chi_tieu');
                     @endphp
                     @forelse($baoCaoKhachHangs as $index => $baoCao)
@@ -92,7 +94,7 @@ blade<!-- resources/views/bao-cao/khach-hang/index.blade.php -->
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-end"><strong>TỔNG CỘNG:</strong></td>
-                        <td class="text-end"><strong>{{ $baoCao->so_luong_don }}</strong></td>
+                        <td class="text-end"><strong>{{ $tongSoDon }}</strong></td>
                         <td class="text-end"><strong>{{ number_format($tongChiTieu, 0, ',', '.') }} VNĐ</strong></td>
                     </tr>
                 </tfoot>
@@ -106,4 +108,15 @@ blade<!-- resources/views/bao-cao/khach-hang/index.blade.php -->
 @section('scripts')
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'bootstrap-5' });
+        $('#resetFilterBtn').click(function() {
+            $('select[name="khach_hang_id"]').val('').trigger('change');
+            $('input[name="tu_ngay"]').val('');
+            $('input[name="den_ngay"]').val('');
+            $('#filterForm').submit();
+        });
+    });
+</script>
 @endsection

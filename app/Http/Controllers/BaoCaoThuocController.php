@@ -98,7 +98,7 @@ class BaoCaoThuocController extends Controller
 
         if ($loaiBaoCao == 'doanh_so') {
             // Thông tin nhà thuốc ở đầu file
-            $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
+            $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂM');
             $sheet->mergeCells('A1:E1');
             $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
             $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -114,8 +114,15 @@ class BaoCaoThuocController extends Controller
             // Cách 1 dòng
             $sheet->setCellValue('A4', '');
 
-            // Tiêu đề báo cáo
-            $sheet->setCellValue('A5', 'BÁO CÁO DOANH SỐ THUỐC');
+            // Tiêu đề báo cáo động theo bộ lọc
+            $title = 'BÁO CÁO DOANH SỐ THUỐC';
+            if ($request->filled('thuoc_id')) {
+                $thuoc = \App\Models\Thuoc::find($request->thuoc_id);
+                if ($thuoc) {
+                    $title .= ' ' . $thuoc->ten_thuoc;
+                }
+            }
+            $sheet->setCellValue('A5', $title);
             $sheet->mergeCells('A5:E5');
             $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
             $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -124,7 +131,7 @@ class BaoCaoThuocController extends Controller
             $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
             $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
             
-            $sheet->setCellValue('A6', 'Từ ngày: ' . $startDate->format('d/m/Y') . ' - Đến ngày: ' . $endDate->format('d/m/Y'));
+            $sheet->setCellValue('A6', '(Từ ngày: ' . $startDate->format('d/m/Y') . ' - Đến ngày: ' . $endDate->format('d/m/Y') . ')');
             $sheet->mergeCells('A6:E6');
             $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -205,14 +212,22 @@ class BaoCaoThuocController extends Controller
             $totalRange = 'A' . $row . ':E' . $row;
             $sheet->getStyle($totalRange)->getFont()->setBold(true);
             
-            // Thêm dòng Người xuất cách 3 dòng
-            $row += 3;
-            $sheet->setCellValue('D' . $row, 'Người xuất');
-            $sheet->getStyle('D' . $row)->getFont()->setBold(true);
-            
-            // Thêm ngày xuất báo cáo
+            // Thêm phần cuối: Hà Nội, ngày ... tháng ... năm ...
+            $row += 2;
+            $now = Carbon::now();
+            $sheet->setCellValue('D' . $row, 'Hà Nội, ngày ' . $now->day . ' tháng ' . $now->month . ' năm ' . $now->year);
+            $sheet->mergeCells('D' . $row . ':E' . $row);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $row += 2;
+            $sheet->setCellValue('D' . $row, 'Người lập');
+            $sheet->mergeCells('D' . $row . ':E' . $row);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
             $row += 1;
-            $sheet->setCellValue('D' . $row, 'Ngày: ' . Carbon::now()->format('d/m/Y H:i'));
+            $sheet->setCellValue('D' . $row, '(Ký và ghi rõ họ tên)');
+            $sheet->mergeCells('D' . $row . ':E' . $row);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         }
 
         // Auto size columns

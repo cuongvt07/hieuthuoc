@@ -137,7 +137,7 @@ class BaoCaoKhoController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Thông tin nhà thuốc ở đầu file
-        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂM');
         $sheet->mergeCells('A1:E1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -159,6 +159,21 @@ class BaoCaoKhoController extends Controller
             $sheet->setCellValue('A5', 'BÁO CÁO CHI TIẾT KHO: ' . $kho->ten_kho);
             $sheet->mergeCells('A5:E5');
 
+            // Dòng từ ngày ... đến ngày ...
+            $tuNgay = $request->filled('tu_ngay') ? Carbon::parse($request->tu_ngay)->format('d/m/Y') : '';
+            $denNgay = $request->filled('den_ngay') ? Carbon::parse($request->den_ngay)->format('d/m/Y') : '';
+            $dateRange = '';
+            if ($tuNgay && $denNgay) {
+                $dateRange = '(Từ ngày ' . $tuNgay . ' đến ngày ' . $denNgay . ')';
+            } elseif ($tuNgay) {
+                $dateRange = '(Từ ngày ' . $tuNgay . ')';
+            } elseif ($denNgay) {
+                $dateRange = '(Đến ngày ' . $denNgay . ')';
+            }
+            $sheet->setCellValue('A6', $dateRange);
+            $sheet->mergeCells('A6:E6');
+            $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
             // Headers
             $sheet->setCellValue('A7', 'STT');
             $sheet->setCellValue('B7', 'Tên sản phẩm');
@@ -174,7 +189,7 @@ class BaoCaoKhoController extends Controller
                          ->where('lo_thuoc.kho_id', '=', $request->kho_id);
                 })
                 ->where('trang_thai', 1)
-                ->groupBy('thuoc.thuoc_id')
+                ->groupBy('thuoc.thuoc_id', 'thuoc.kho_id')
                 ->having('tong_ton_kho', '>', 0)
                 ->orderBy('thuoc.ten_thuoc')
                 ->get();
@@ -203,9 +218,10 @@ class BaoCaoKhoController extends Controller
             $sheet->setCellValue('E' . $row, number_format($tongGiaTri, 0, ',', '.'));
             $sheet->getStyle('A' . $row . ':E' . $row)->getFont()->setBold(true);
 
+
         } else {
             // Export tổng hợp tất cả kho
-            $sheet->setCellValue('A5', 'BÁO CÁO TỔNG HỢP KHO');
+            $sheet->setCellValue('A5', 'BÁO CÁO TỒN KHO');
             $sheet->mergeCells('A5:E5');
 
             // Headers
@@ -265,20 +281,32 @@ class BaoCaoKhoController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // Thêm dòng Người xuất cách 3 dòng
-        $row += 3;
-        $sheet->setCellValue('D' . $row, 'Người xuất');
-        $sheet->getStyle('D' . $row)->getFont()->setBold(true);
+        // Thêm phần cuối: Hà Nội, ngày ... tháng ... năm ...
+        $row += 2;
+        $now = Carbon::now();
+        $sheet->setCellValue('D' . $row, 'Hà Nội, ngày ' . $now->day . ' tháng ' . $now->month . ' năm ' . $now->year);
+        $sheet->mergeCells('D' . $row . ':E' . $row);
+        $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Create the excel file
-        $writer = new Xlsx($spreadsheet);
-        $filename = 'bao-cao-kho-' . date('Y-m-d-H-i-s') . '.xlsx';
+        $row += 2;
+        $sheet->setCellValue('D' . $row, 'Người lập');
+        $sheet->mergeCells('D' . $row . ':E' . $row);
+        $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
+        $row += 1;
+        $sheet->setCellValue('D' . $row, '(Ký và ghi rõ họ tên)');
+        $sheet->mergeCells('D' . $row . ':E' . $row);
+        $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $writer->save('php://output');
-        exit;
+    // Create the excel file
+    $writer = new Xlsx($spreadsheet);
+    $filename = 'bao-cao-kho-' . date('Y-m-d-H-i-s') . '.xlsx';
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+
+    $writer->save('php://output');
+    exit;
     }
 }

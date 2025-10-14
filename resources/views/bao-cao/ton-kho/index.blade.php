@@ -125,21 +125,22 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="col-md-8">
-                            <div class="d-flex justify-content-end gap-2 mt-4">
-                                <button type="submit" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-filter me-1"></i> Lọc dữ liệu
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">Lọc</button>
+                            <button type="button" id="resetFilterBtn" class="btn btn-secondary me-2">Reset</button>
+                            <a href="{{ route('bao-cao.ton-kho.index', ['export' => 'excel'] + request()->all()) }}"
+                               class="btn btn-success">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                            </a>
+                                <button type="button" class="btn btn-secondary" id="resetFilter">
+                                    <i class="bi bi-x-circle"></i> Reset lọc
                                 </button>
-                                <button type="submit" name="export" value="excel" class="btn btn-sm btn-success">
-                                    <i class="bi bi-file-excel me-1"></i> Xuất Excel
-                                </button>
-                                <button type="button" id="btnPrint" class="btn btn-sm btn-info text-white">
-                                    <i class="bi bi-printer me-1"></i> In báo cáo
-                                </button>
-                                <a href="{{ route('bao-cao.ton-kho.index') }}" class="btn btn-sm btn-secondary">
-                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Làm mới
-                                </a>
-                            </div>
+                            <button type="button" id="btnPrint" class="btn btn-sm btn-info text-white">
+                                <i class="bi bi-printer me-1"></i> In báo cáo
+                            </button>
+                            <a href="{{ route('bao-cao.ton-kho.index') }}" class="btn btn-sm btn-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Làm mới
+                            </a>
                         </div>
                     </div>
                 </form>
@@ -150,7 +151,7 @@
 
 <!-- Phần header cho in ấn -->
 <div class="print-header d-none d-print-block">
-    <h1 class="page-title">BÁO CÁO TỒN KHO</h1>
+    <h1 class="page-title">Báo cáo tồn kho</h1>
     <p>Ngày: {{ request('ngay_bao_cao', now()->format('d/m/Y')) }}</p>
     @if(request('kho_id') && $khos->where('kho_id', request('kho_id'))->first())
     <p>Kho: {{ $khos->where('kho_id', request('kho_id'))->first()->ten_kho }}</p>
@@ -401,6 +402,20 @@
         $('#btnPrint').click(function() {
             window.print();
         });
+        
+        $('#resetFilterBtn').click(function() {
+            $('select[name="kho_id"]').val('').trigger('change');
+            $('select[name="thuoc_id"]').val('').trigger('change');
+            $('input[name="ngay_bao_cao"]').val('');
+            $('#filterForm').submit();
+        });
+        document.getElementById('resetFilter').onclick = function() {
+            var form = this.closest('form');
+            Array.from(form.querySelectorAll('input, select')).forEach(function(el) {
+                if (el.type === 'select-one' || el.type === 'text' || el.type === 'date') el.value = '';
+            });
+            form.submit();
+        };
     });
 </script>
 @endsection

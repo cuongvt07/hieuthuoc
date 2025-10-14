@@ -244,7 +244,17 @@ class BaoCaoTonKhoController extends Controller
         $ngayBaoCao = $request->filled('ngay_bao_cao')
             ? Carbon::createFromFormat('d/m/Y', $request->ngay_bao_cao)->format('d/m/Y')
             : Carbon::now()->format('d/m/Y');
-        $sheet->setCellValue('A2', 'Ngày: ' . $ngayBaoCao);
+        $dateRange = '';
+        if ($request->filled('tu_ngay') && $request->filled('den_ngay')) {
+            $dateRange = '(Từ ngày ' . Carbon::createFromFormat('d/m/Y', $request->tu_ngay)->format('d/m/Y') . ' đến ngày ' . Carbon::createFromFormat('d/m/Y', $request->den_ngay)->format('d/m/Y') . ')';
+        } elseif ($request->filled('tu_ngay')) {
+            $dateRange = '(Từ ngày ' . Carbon::createFromFormat('d/m/Y', $request->tu_ngay)->format('d/m/Y') . ')';
+        } elseif ($request->filled('den_ngay')) {
+            $dateRange = '(Đến ngày ' . Carbon::createFromFormat('d/m/Y', $request->den_ngay)->format('d/m/Y') . ')';
+        } else {
+            $dateRange = '(Ngày: ' . $ngayBaoCao . ')';
+        }
+        $sheet->setCellValue('A2', $dateRange);
         $sheet->mergeCells('A2:F2');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -472,6 +482,24 @@ class BaoCaoTonKhoController extends Controller
                 }
                 break;
         }
+
+        // Sau khi ghi dòng tổng cộng
+        $row++;
+        // Thêm phần cuối: Hà Nội, ngày ... tháng ... năm ...
+        $now = Carbon::now();
+        $sheet->setCellValue('E' . $row, 'Hà Nội, ngày ' . $now->day . ' tháng ' . $now->month . ' năm ' . $now->year);
+        $sheet->mergeCells('E' . $row . ':F' . $row);
+        $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $row += 2;
+        $sheet->setCellValue('E' . $row, 'Người lập');
+        $sheet->mergeCells('E' . $row . ':F' . $row);
+        $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $row += 1;
+        $sheet->setCellValue('E' . $row, '(Ký và ghi rõ họ tên)');
+        $sheet->mergeCells('E' . $row . ':F' . $row);
+        $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $fileName = 'bao-cao-ton-kho-' . $ngayBaoCao . '.xlsx';
         $writer = new Xlsx($spreadsheet);

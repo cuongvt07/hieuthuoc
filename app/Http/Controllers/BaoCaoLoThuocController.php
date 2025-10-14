@@ -98,17 +98,29 @@ class BaoCaoLoThuocController extends Controller
 
         if ($request->filled('trang_thai')) {
             $now = Carbon::now();
-            
             switch($request->trang_thai) {
                 case 'con_han':
-                    $query->where('han_su_dung', '>', $now->copy()->addMonths(6));
+                    $query->where('han_su_dung', '>', $now->copy()->addMonths(1))
+                          ->where(function($q) {
+                              $q->where('da_huy', false)->orWhereNull('da_huy');
+                          });
                     break;
                 case 'sap_het_han':
-                    $query->where('han_su_dung', '<=', $now->copy()->addMonths(6))
-                          ->where('han_su_dung', '>', $now);
+                    $query->where('han_su_dung', '<=', $now->copy()->addMonths(1))
+                          ->where('han_su_dung', '>', $now)
+                          ->where(function($q) {
+                              $q->where('da_huy', false)->orWhereNull('da_huy');
+                          });
                     break;
-                case 'het_han':
-                    $query->where('han_su_dung', '<=', $now);
+                case 'het_han_chua_huy':
+                    $query->where('han_su_dung', '<=', $now)
+                          ->where(function($q) {
+                              $q->where('da_huy', false)->orWhereNull('da_huy');
+                          });
+                    break;
+                case 'het_han_da_huy':
+                    $query->where('han_su_dung', '<=', $now)
+                          ->where('da_huy', true);
                     break;
             }
         }
@@ -119,7 +131,7 @@ class BaoCaoLoThuocController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Thông tin nhà thuốc ở đầu file
-        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂY');
+        $sheet->setCellValue('A1', 'NHÀ THUỐC AN TÂM');
         $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -139,11 +151,14 @@ class BaoCaoLoThuocController extends Controller
         $title = 'BÁO CÁO LÔ THUỐC';
         if ($request->filled('trang_thai')) {
             switch($request->trang_thai) {
-                case 'het_han':
-                    $title .= ' HẾT HẠN';
+                case 'het_han_chua_huy':
+                    $title .= ' HẾT HẠN (CHƯA HỦY)';
+                    break;
+                case 'het_han_da_huy':
+                    $title .= ' HẾT HẠN (ĐÃ HỦY)';
                     break;
                 case 'sap_het_han':
-                    $title .= ' SẮP HẾT HẠN';
+                    $title .= ' SẮP HẾT HẠN (≤ 1 THÁNG)';
                     break;
                 case 'con_han':
                     $title .= ' CÒN HẠN';
@@ -173,15 +188,17 @@ class BaoCaoLoThuocController extends Controller
 
         // Hiển thị filter ngày trong Excel
         if ($request->filled('tu_ngay') || $request->filled('den_ngay')) {
-            $dateRange = 'Thời gian: ';
+            $dateRange = '(';
             if ($request->filled('tu_ngay')) {
-                $dateRange .= 'từ ' . Carbon::parse($request->tu_ngay)->format('d/m/Y');
+            $dateRange .= 'Từ ngày ' . Carbon::parse($request->tu_ngay)->format('d/m/Y');
             }
             if ($request->filled('den_ngay')) {
-                $dateRange .= ($request->filled('tu_ngay') ? ' đến ' : 'đến ') . Carbon::parse($request->den_ngay)->format('d/m/Y');
+            $dateRange .= ($request->filled('tu_ngay') ? ' đến ngày ' : 'Đến ngày ') . Carbon::parse($request->den_ngay)->format('d/m/Y');
             }
+            $dateRange .= ')';
             $sheet->setCellValue('A' . $row, $dateRange);
-            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $sheet->mergeCells('A' . $row . ':I' . $row); // rộng bằng tiêu đề
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $row++;
         }
 
@@ -196,11 +213,10 @@ class BaoCaoLoThuocController extends Controller
         $sheet->setCellValue('E' . $row, 'Giá vốn');
         $sheet->setCellValue('F' . $row, 'Thành tiền');
         $sheet->setCellValue('G' . $row, 'Hạn sử dụng');
-        $sheet->setCellValue('H' . $row, 'Ngày tạo');
-        $sheet->setCellValue('I' . $row, 'Trạng thái');
+        $sheet->setCellValue('H' . $row, 'Trạng thái');
 
         // Style the header row
-        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -215,12 +231,14 @@ class BaoCaoLoThuocController extends Controller
         foreach ($loThuocs as $lo) {
             $now = Carbon::now();
             $hsd = Carbon::parse($lo->han_su_dung);
+            $daysDiff = $now->diffInDays($hsd, false);
             $monthsDiff = $now->diffInMonths($hsd, false);
-            
-            if ($now > $hsd) {
-                $trangThai = 'Hết hạn';
-            } elseif ($monthsDiff <= 6) {
-                $trangThai = 'Sắp hết hạn';
+            if ($lo->da_huy) {
+                $trangThai = 'Hết hạn (đã hủy)';
+            } elseif ($now > $hsd) {
+                $trangThai = 'Hết hạn (chưa hủy)';
+            } elseif ($monthsDiff < 1 && $daysDiff >= 0) {
+                $trangThai = 'Sắp hết hạn (còn ' . $daysDiff . ' ngày)';
             } else {
                 $trangThai = 'Còn hạn';
             }
@@ -236,10 +254,9 @@ class BaoCaoLoThuocController extends Controller
             $sheet->setCellValue('E' . $row, number_format($lo->gia_nhap_tb));
             $sheet->setCellValue('F' . $row, number_format($thanhTien));
             $sheet->setCellValue('G' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
-            $sheet->setCellValue('H' . $row, Carbon::parse($lo->ngay_tao)->format('d/m/Y H:i'));
-            $sheet->setCellValue('I' . $row, $trangThai);
+            $sheet->setCellValue('H' . $row, $trangThai);
 
-            $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
                 'borders' => [
                     'allBorders' => ['borderStyle' => Border::BORDER_THIN]
                 ]
@@ -254,10 +271,10 @@ class BaoCaoLoThuocController extends Controller
         $sheet->setCellValue('D' . $row, $tongSoLuong);
         $sheet->mergeCells('E' . $row . ':E' . $row);
         $sheet->setCellValue('F' . $row, number_format($tongGiaTri));
-        $sheet->mergeCells('G' . $row . ':I' . $row);
+        $sheet->mergeCells('G' . $row . ':H' . $row);
 
         // Style the totals row
-        $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+        $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
             'font' => ['bold' => true],
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN]
@@ -269,24 +286,36 @@ class BaoCaoLoThuocController extends Controller
         ]);
 
         // Auto size columns
-        foreach (range('A', 'I') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // Thêm dòng Người xuất cách 3 dòng
-        $row += 3;
-        $sheet->setCellValue('H' . $row, 'Người xuất');
-        $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+        // Thêm phần cuối: Hà Nội, ngày ... tháng ... năm ...
+        $row += 2;
+        $now = Carbon::now();
+        $sheet->setCellValue('F' . $row, 'Hà Nội, ngày ' . $now->day . ' tháng ' . $now->month . ' năm ' . $now->year);
+        $sheet->mergeCells('F' . $row . ':H' . $row);
+        $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Create the excel file
-        $writer = new Xlsx($spreadsheet);
-        $filename = 'bao-cao-lo-thuoc-' . date('Y-m-d-H-i-s') . '.xlsx';
+        $row += 2;
+        $sheet->setCellValue('F' . $row, 'Người lập');
+        $sheet->mergeCells('F' . $row . ':H' . $row);
+        $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
+        $row += 1;
+        $sheet->setCellValue('F' . $row, '(Ký và ghi rõ họ tên)');
+        $sheet->mergeCells('F' . $row . ':H' . $row);
+        $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $writer->save('php://output');
-        exit;
+    // Create the excel file
+    $writer = new Xlsx($spreadsheet);
+    $filename = 'bao-cao-lo-thuoc-' . date('Y-m-d-H-i-s') . '.xlsx';
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+
+    $writer->save('php://output');
+    exit;
     }
 }

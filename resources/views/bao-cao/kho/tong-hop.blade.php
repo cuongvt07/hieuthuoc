@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Báo Cáo Tổng Hợp Kho')
+@section('title', 'BÁO CÁO TỒN KHO')
 
 @section('content')
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Báo Cáo Tổng Hợp Kho</h1>
+    <h1 class="h3 mb-4 text-gray-800">BÁO CÁO TỒN KHO</h1>
 
     <!-- Filters -->
     <div class="card mb-4">
@@ -34,11 +34,15 @@
                 </div>
 
                 <div class="col-12">
-                    <button type="submit" class="btn btn-primary me-2">Lọc</button>
-                    <a href="{{ route('bao-cao.kho.index', ['export' => 'excel'] + request()->except(['page'])) }}" 
-                       class="btn btn-success">
-                        <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
-                    </a>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary me-2">Lọc</button>
+                        <a href="{{ route('bao-cao.kho.index', ['export' => 'excel'] + request()->except(['page'])) }}" class="btn btn-success">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                        </a>
+                        <button type="button" class="btn btn-secondary" id="resetFilter">
+                            <i class="bi bi-x-circle"></i> Reset lọc
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -81,7 +85,7 @@
                                 <td class="text-end">{{ number_format($kho->tong_ton_kho) }}</td>
                                 <td class="text-end">{{ number_format($kho->tong_gia_tri) }} VNĐ</td>
                                 <td class="text-center">
-                                    <a href="{{ route('bao-cao.kho.index', ['kho_id' => $kho->kho_id]) }}" class="btn btn-sm btn-info">
+                                    <a href="{{ route('bao-cao.kho.index', array_merge(['kho_id' => $kho->kho_id], request()->only(['tu_ngay', 'den_ngay']))) }}" class="btn btn-sm btn-info">
                                         <i class="bi bi-eye"></i> Chi tiết
                                     </a>
                                 </td>
@@ -106,4 +110,16 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    document.getElementById('resetFilter').onclick = function() {
+        var form = this.closest('form');
+        Array.from(form.querySelectorAll('input, select')).forEach(function(el) {
+            if (el.type === 'select-one' || el.type === 'text' || el.type === 'date') el.value = '';
+        });
+        form.submit();
+    };
+</script>
 @endsection

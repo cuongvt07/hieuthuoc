@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Chi Tiết Phiếu Nhập - Hiệu Thuốc An Tây')
+@section('title', 'Chi Tiết Phiếu Nhập - Hiệu Thuốc AN TÂM')
 
 @section('page-title', 'Chi Tiết Phiếu Nhập')
 
