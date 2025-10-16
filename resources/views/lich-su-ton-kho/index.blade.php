@@ -9,26 +9,44 @@
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="GET" action="{{ route('lich-su-ton-kho.index') }}" class="row g-3">
+            <form id="filterForm" method="GET" action="{{ route('lich-su-ton-kho.index') }}" class="row g-3">
                 <div class="col-md-2">
-                    <label class="form-label">Từ ngày</label>
-                    <input type="date" class="form-control datepicker" name="tu_ngay" 
-                           value="{{ request('tu_ngay') }}" placeholder="dd/mm/yyyy">
+                    <label class="form-label">Thuốc</label>
+                    <select name="thuoc_id" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        @foreach($thuocs as $thuoc)
+                            <option value="{{ $thuoc->thuoc_id }}" {{ request('thuoc_id') == $thuoc->thuoc_id ? 'selected' : '' }}>
+                                {{ $thuoc->ten_thuoc }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label">Đến ngày</label>
-                    <input type="date" class="form-control datepicker" name="den_ngay" 
-                           value="{{ request('den_ngay') }}" placeholder="dd/mm/yyyy">
+                    <label class="form-label">Loại thay đổi</label>
+                    <select name="loai_thay_doi" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <option value="nhap" {{ request('loai_thay_doi') == 'nhap' ? 'selected' : '' }}>Nhập hàng</option>
+                        <option value="ban" {{ request('loai_thay_doi') == 'ban' ? 'selected' : '' }}>Bán hàng</option>
+                    </select>
                 </div>
-
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
+                <div class="col-md-2 mb-3">
+                    <label for="tu_ngay">Từ ngày:</label>
+                    <input type="date" class="form-control" id="tu_ngay" name="tu_ngay" 
+                        value="{{ request('tu_ngay') }}">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="den_ngay">Đến ngày:</label>
+                    <input type="date" class="form-control" id="den_ngay" name="den_ngay" 
+                        value="{{ request('den_ngay') }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-search me-1"></i> Tìm kiếm
                     </button>
-                    <a href="{{ route('lich-su-ton-kho.index') }}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
-                    </a>
+                    <button type="button" id="resetFilterBtn" class="btn btn-secondary">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset lọc
+                    </button>
                 </div>
             </form>
         </div>
@@ -99,6 +117,8 @@
 @endsection
 
 @section('scripts')
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
         // Initialize datepicker
@@ -107,6 +127,15 @@
             autoclose: true,
             todayHighlight: true,
             language: 'vi'
+        });
+
+        // Reset filter button
+        $('#resetFilterBtn').click(function() {
+            $('select[name="thuoc_id"]').val('').trigger('change');
+            $('select[name="loai_thay_doi"]').val('');
+            $('input[name="tu_ngay"]').val('');
+            $('input[name="den_ngay"]').val('');
+            $('#filterForm').submit();
         });
     });
 </script>

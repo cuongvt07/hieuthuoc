@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 class NhomThuocController extends Controller
 {
     /**
+     * Get all drug groups for dropdowns (used by JS)
+     */
+    public function all()
+    {
+        $nhomThuoc = NhomThuoc::orderBy('ten_nhom')->get();
+        return response()->json(['nhomThuoc' => $nhomThuoc]);
+    }
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)

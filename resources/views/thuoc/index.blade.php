@@ -34,8 +34,8 @@
 
                 <div class="list-group nhom-thuoc-list">
                     @foreach ($nhomThuoc as $nhom)
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item"
-                        data-id="{{ $nhom->nhom_id }}">
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item"
+                        data-id="{{ $nhom->nhom_id }}" style="cursor: pointer;">
                         <div>
                             <span class="fw-bold">{{ $nhom->ma_nhom }}</span> - {{ $nhom->ten_nhom }}
                             @if($nhom->trang_thai == 0)
@@ -50,7 +50,7 @@
                                 <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                             </button>
                         </div>
-                    </a>
+                    </div>
                     @endforeach
                 </div>
 
@@ -498,7 +498,7 @@
                     if (response.nhomThuoc.data.length > 0) {
                         $.each(response.nhomThuoc.data, function(index, nhom) {
                             html += `
-                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item ${selectedNhomId == nhom.nhom_id ? 'active' : ''}" data-id="${nhom.nhom_id}">
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item ${selectedNhomId == nhom.nhom_id ? 'active' : ''}" data-id="${nhom.nhom_id}" style="cursor: pointer;">
                             <div>
                                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
                                 ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
@@ -507,7 +507,7 @@
                                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-pencil"></i></button>
                                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
                             </div>
-                        </a>`;
+                        </div>`;
                         });
                     } else {
                         html = '<div class="list-group-item">Không có dữ liệu</div>';
@@ -521,6 +521,7 @@
                         const page = $(this).attr('href').split('page=')[1];
                         loadNhomThuoc(page);
                     });
+                    console.log('Nhom Thuoc loaded:', response.nhomThuoc);
 
                     bindNhomThuocEvents();
                     updateNhomThuocDropdowns();
@@ -560,7 +561,11 @@
         }
 
         function bindNhomThuocEvents() {
-            $('.nhom-thuoc-item').click(function(e) {
+            console.log('Binding events for Nhom Thuoc items');
+            $(document).off('click', '.nhom-thuoc-item').on('click', '.nhom-thuoc-item', function(e) {
+                if ($(e.target).closest('button').length) {
+                    return; // Không trigger logic chọn nhóm nếu click trên button
+                }
                 e.preventDefault();
                 const clickedId = $(this).data('id');
                 const isAlreadyActive = $(this).hasClass('active');
@@ -583,7 +588,7 @@
                 loadThuoc();
             });
 
-            $('.edit-nhom-btn').click(function(e) {
+            $(document).off('click', '.edit-nhom-btn').on('click', '.edit-nhom-btn', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (!hasEditPermission()) {
@@ -608,7 +613,7 @@
                 });
             });
 
-            $('.suspend-nhom-btn').click(function(e) {
+            $(document).off('click', '.suspend-nhom-btn').on('click', '.suspend-nhom-btn', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (!hasEditPermission()) {
@@ -858,7 +863,7 @@
         function prependNhomThuocItem(nhom) {
             if (!hasEditPermission()) return; // Không thêm nếu không phải admin
             const html = `
-        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item" data-id="${nhom.nhom_id}">
+        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item" data-id="${nhom.nhom_id}" style="cursor: pointer;">
             <div>
                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
                 ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
@@ -867,7 +872,7 @@
                 <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
                 <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
             </div>
-        </a>`;
+        </div>`;
 
             if ($('.nhom-thuoc-list').children().first().hasClass('list-group-item') &&
                 $('.nhom-thuoc-list').children().first().text().includes('Không có dữ liệu')) {

@@ -846,68 +846,63 @@
                         @php
                             use Illuminate\Support\Facades\DB;
                             use App\Models\LoThuoc;
+                            use App\Models\Thuoc;
 
                             $today = now()->toDateString();
-                            $next30days = now()->addDays(30)->toDateString();
+                            $next30days = now()->copy()->addDays(30)->toDateString();
 
-                            // Thuốc sắp hết hàng
-                            $lowStock = LoThuoc::with('thuoc')
-                                ->select(
-                                    'thuoc_id',
-                                    DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
-                                    DB::raw('MIN(han_su_dung) as earliest_expiry')
-                                )
-                                ->where('ton_kho_hien_tai', '>', 0)
-                                ->groupBy('thuoc_id')
-                                ->having('total_stock', '<=', 10)
-                                ->get()
-                                ->map(function ($item) {
-                                    $item->status = $item->total_stock <= 5 ? 'critical_stock' : 'low_stock';
-                                    return $item;
-                                });
-
-                            // Thuốc sắp hết hạn (≤ 30 ngày nữa)
-                            $nearlyExpired = LoThuoc::with('thuoc')
-                                ->select(
-                                    'thuoc_id',
-                                    DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
-                                    DB::raw('MIN(han_su_dung) as earliest_expiry')
-                                )
-                                ->where('ton_kho_hien_tai', '>', 0)
-                                ->whereBetween('han_su_dung', [$today, $next30days])
-                                ->groupBy('thuoc_id')
-                                ->get()
-                                ->map(function ($item) {
-                                    $item->status = 'nearly_expired';
-                                    return $item;
-                                });
-
-                            // Thuốc đã hết hạn
-                            $expired = LoThuoc::with('thuoc')
-                                ->select(
-                                    'thuoc_id',
-                                    DB::raw('SUM(ton_kho_hien_tai) as total_stock'),
-                                    DB::raw('MIN(han_su_dung) as earliest_expiry')
-                                )
-                                ->where('ton_kho_hien_tai', '>', 0)
+                            // Lấy các lô hết hạn
+                            $expired = LoThuoc::where('ton_kho_hien_tai', '>', 0)
                                 ->whereDate('han_su_dung', '<', $today)
-                                ->groupBy('thuoc_id')
                                 ->get()
                                 ->map(function ($item) {
                                     $item->status = 'expired';
                                     return $item;
                                 });
 
-                            // Gộp tất cả
-                            $alerts = $lowStock->merge($nearlyExpired)->merge($expired);
+                            // Lấy các lô sắp hết hạn
+                            $nearlyExpired = LoThuoc::where('ton_kho_hien_tai', '>', 0)
+                                ->whereBetween('han_su_dung', [$today, $next30days])
+                                ->get()
+                                ->map(function ($item) {
+                                    $item->status = 'nearly_expired';
+                                    return $item;
+                                });
+
+                            // Lấy các lô tồn kho thấp
+                            $lowStock = LoThuoc::where('ton_kho_hien_tai', '>', 0)
+                                ->havingRaw('ton_kho_hien_tai <= ?', [10])
+                                ->get()
+                                ->map(function ($item) {
+                                    $item->status = ($item->ton_kho_hien_tai <= 5) ? 'critical_stock' : 'low_stock';
+                                    return $item;
+                                });
+
+                            // Gộp lại
+                            $alerts = $expired
+                                ->concat($nearlyExpired)
+                                ->concat($lowStock)
+                                ->values();
+
+                            // Gắn thêm thông tin thuốc
+                            if ($alerts->isNotEmpty()) {
+                                $thuocIds = $alerts->pluck('thuoc_id')->unique()->all();
+                                $thuocMap = Thuoc::whereIn('thuoc_id', $thuocIds)->get()->keyBy('thuoc_id');
+
+                                $alerts = $alerts->map(function ($item) use ($thuocMap) {
+                                    $item->thuoc = $thuocMap->get($item->thuoc_id);
+                                    return $item;
+                                });
+                            }
                         @endphp
 
                         <table class="table table-sm">
                             <thead>
                                 <tr>
                                     <th>Tên sản phẩm</th>
-                                    <th>Tổng tồn kho</th>
-                                    <th>Hạn dùng gần nhất</th>
+                                    <th>Lô thuốc</th>
+                                    <th>Tồn kho</th>
+                                    <th>Hạn dùng</th>
                                     <th>Trạng thái</th>
                                 </tr>
                             </thead>
@@ -937,14 +932,14 @@
                                     @endphp
                                     <tr class="{{ $rowClass }}">
                                         <td>{{ $item->thuoc->ten_thuoc ?? 'Không rõ' }}</td>
-                                        <td>{{ $item->total_stock }} {{ $item->thuoc->don_vi_goc ?? '' }}</td>
-                                        <td>{{ $item->earliest_expiry ? date('d/m/Y', strtotime($item->earliest_expiry)) : '---' }}
-                                        </td>
+                                        <td>{{ $item->ma_lo ?? '---' }}</td>
+                                        <td>{{ $item->ton_kho_hien_tai }} {{ $item->thuoc->don_vi_goc ?? '' }}</td>
+                                        <td>{{ $item->han_su_dung ? date('d/m/Y', strtotime($item->han_su_dung)) : '---' }}</td>
                                         <td>{!! $badge !!}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center">Không có cảnh báo nào</td>
+                                        <td colspan="5" class="text-center">Không có cảnh báo nào</td>
                                     </tr>
                                 @endforelse
                             </tbody>

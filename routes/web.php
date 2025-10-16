@@ -128,4 +128,7 @@ Route::middleware('auth')->group(function () {
     Route::get('bao-cao/lo-thuoc', [BaoCaoLoThuocController::class, 'index'])->name('bao-cao.lo-thuoc.index');
     Route::get('bao-cao/thuoc', [BaoCaoThuocController::class, 'index'])->name('bao-cao.thuoc.index');
     Route::get('bao-cao/kho', [BaoCaoKhoController::class, 'index'])->name('bao-cao.kho.index');
+    
+    // API lấy tất cả nhóm thuốc cho dropdown JS
+    Route::get('/nhom-thuoc/all', [NhomThuocController::class, 'all']);
 });

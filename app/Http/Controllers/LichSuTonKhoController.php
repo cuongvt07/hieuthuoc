@@ -28,11 +28,11 @@ class LichSuTonKhoController extends Controller
 
         // Lọc theo thời gian
         if ($request->filled('tu_ngay')) {
-            $tuNgay = Carbon::createFromFormat('d/m/Y', $request->tu_ngay)->startOfDay();
+            $tuNgay = Carbon::createFromFormat('Y-m-d', $request->tu_ngay)->startOfDay();
             $query->where('created_at', '>=', $tuNgay);
         }
         if ($request->filled('den_ngay')) {
-            $denNgay = Carbon::createFromFormat('d/m/Y', $request->den_ngay)->endOfDay();
+            $denNgay = Carbon::createFromFormat('Y-m-d', $request->den_ngay)->endOfDay();
             $query->where('created_at', '<=', $denNgay);
         }
 

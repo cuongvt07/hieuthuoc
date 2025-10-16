@@ -66,6 +66,7 @@
             left: 0;
             top: 0;
             z-index: 100;
+            overflow-y: auto;
         }
 
         .content-wrapper {
@@ -180,30 +181,22 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Quản lý nhập bán -->
+                            <!-- Quản lý nhập thuốc -->
                             @if(Auth::user()->vai_tro === 'admin')
                                 <div class="accordion-item bg-transparent border-0">
-                                    <h2 class="accordion-header" id="headingKhoHang">
+                                    <h2 class="accordion-header" id="headingNhapThuoc">
                                         <button class="accordion-button collapsed bg-transparent text-white" type="button"
-                                            data-bs-toggle="collapse" data-bs-target="#collapseKhoHang"
-                                            aria-expanded="false" aria-controls="collapseKhoHang">
-                                            <i class="bi bi-box-seam me-2"></i> Quản lý nhập bán
+                                            data-bs-toggle="collapse" data-bs-target="#collapseNhapThuoc" aria-expanded="false"
+                                            aria-controls="collapseNhapThuoc">
+                                            <i class="bi bi-box-arrow-in-down me-2"></i> Quản lý nhập thuốc
                                         </button>
                                     </h2>
-                                    <div id="collapseKhoHang" class="accordion-collapse collapse"
-                                        aria-labelledby="headingKhoHang">
+                                    <div id="collapseNhapThuoc" class="accordion-collapse collapse"
+                                        aria-labelledby="headingNhapThuoc">
                                         <div class="accordion-body p-0">
-                                            <a href="{{ route('kho.index') }}"
-                                                class="menu-item {{ request()->routeIs('kho.*') ? 'active' : '' }}">
-                                                <i class="bi bi-building-gear"></i> Quản Lý Kho
-                                            </a>
                                             <a href="{{ route('phieu-nhap.index') }}"
                                                 class="menu-item {{ request()->routeIs('phieu-nhap.*') ? 'active' : '' }}">
                                                 <i class="bi bi-file-earmark-plus"></i> Quản Lý Phiếu Nhập
-                                            </a>
-                                            <a href="{{ route('don-ban-le.index') }}"
-                                                class="menu-item {{ request()->routeIs('don-ban-le.*') ? 'active' : '' }}">
-                                                <i class="bi bi-receipt"></i> Quản Lý Đơn Bán
                                             </a>
                                             <a href="{{ route('lo-thuoc.index') }}"
                                                 class="menu-item {{ request()->routeIs('lo-thuoc.*') ? 'active' : '' }}">
@@ -212,6 +205,48 @@
                                         </div>
                                     </div>
                                 </div>
+                            @endif
+                            <!-- Quản lý bán thuốc -->
+                            @if(Auth::user()->vai_tro === 'admin')
+                                <div class="accordion-item bg-transparent border-0">
+                                    <h2 class="accordion-header" id="headingBanThuoc">
+                                        <button class="accordion-button collapsed bg-transparent text-white" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseBanThuoc" aria-expanded="false"
+                                            aria-controls="collapseBanThuoc">
+                                            <i class="bi bi-receipt me-2"></i> Quản lý bán thuốc
+                                        </button>
+                                    </h2>
+                                    <div id="collapseBanThuoc" class="accordion-collapse collapse"
+                                        aria-labelledby="headingBanThuoc">
+                                        <div class="accordion-body p-0">
+                                            <a href="{{ route('don-ban-le.index') }}"
+                                                class="menu-item {{ request()->routeIs('don-ban-le.*') ? 'active' : '' }}">
+                                                <i class="bi bi-receipt"></i> Quản Lý Hóa Đơn
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            <!-- Quản lý tồn kho -->
+                            @if(Auth::user()->vai_tro === 'admin')
+                                <div class="accordion-item bg-transparent border-0">
+                                    <h2 class="accordion-header" id="headingTonKho">
+                                        <button class="accordion-button collapsed bg-transparent text-white" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#collapseTonKho" aria-expanded="false"
+                                            aria-controls="collapseTonKho">
+                                        <i class="bi bi-building-gear me-2"></i> Quản lý tồn kho
+                                    </button>
+                                </h2>
+                                <div id="collapseTonKho" class="accordion-collapse collapse"
+                                    aria-labelledby="headingTonKho">
+                                    <div class="accordion-body p-0">
+                                        <a href="{{ route('kho.index') }}"
+                                            class="menu-item {{ request()->routeIs('kho.*') ? 'active' : '' }}">
+                                            <i class="bi bi-building-gear"></i> Quản Lý Kho
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                             @endif
                             <!-- Quản lý báo cáo -->
                             @if(Auth::user()->vai_tro === 'admin')
