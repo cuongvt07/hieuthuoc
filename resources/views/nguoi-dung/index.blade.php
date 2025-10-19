@@ -49,8 +49,20 @@
 @endsection
 
 @section('content')
-<div class="row mb-4">
-    <div class="col-12 text-end">
+<!-- Khối tìm kiếm -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" id="search-input" class="form-control" placeholder="Tìm kiếm nhân sự...">
+            <button class="btn btn-primary" type="button" id="searchBtn">
+                <i class="bi bi-search"></i>
+            </button>
+            <button class="btn btn-outline-danger" type="button" id="resetSearchBtn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
             <i class="bi bi-plus-circle me-1"></i> Thêm Nhân Sự
         </button>
@@ -75,13 +87,13 @@
                         <table class="table table-striped" id="admin-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px;"></th>
-                                    <th>Tên Đăng Nhập</th>
-                                    <th>Họ Tên</th>
-                                    <th>Email</th>
-                                    <th>Số Điện Thoại</th>
-                                    <th>Trạng Thái</th>
-                                    <th style="width: 300px;">Thao Tác</th>
+                                    <th style="width: 50px;">Avatar</th>
+                                    <th style="width: 150px;">Tên Đăng Nhập</th>
+                                    <th style="width: 180px;">Họ Tên</th>
+                                    <th style="width: 220px;">Email</th>
+                                    <th style="width: 140px;">Số Điện Thoại</th>
+                                    <th style="width: 120px;">Trạng Thái</th>
+                                    <th style="width: 220px;">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -150,13 +162,13 @@
                         <table class="table table-striped" id="duoc-si-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px;"></th>
-                                    <th>Tên Đăng Nhập</th>
-                                    <th>Họ Tên</th>
-                                    <th>Email</th>
-                                    <th>Số Điện Thoại</th>
-                                    <th>Trạng Thái</th>
-                                    <th style="width: 250px;">Thao Tác</th>
+                                    <th style="width: 50px;">Avatar</th>
+                                    <th style="width: 150px;">Tên Đăng Nhập</th>
+                                    <th style="width: 180px;">Họ Tên</th>
+                                    <th style="width: 220px;">Email</th>
+                                    <th style="width: 140px;">Số Điện Thoại</th>
+                                    <th style="width: 120px;">Trạng Thái</th>
+                                    <th style="width: 220px;">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -414,27 +426,7 @@
     </div>
 </div>
 
-<!-- Khối tìm kiếm -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
-    <div class="collapse" id="searchCollapse">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="input-group">
-                    <input type="text" id="search-input" class="form-control" placeholder="Tìm kiếm nhân sự...">
-                    <button class="btn btn-primary" type="button" id="searchBtn">
-                        <i class="bi bi-search"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" type="button" id="resetSearchBtn">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <button class="btn btn-primary rounded-circle shadow" type="button" data-bs-toggle="collapse" data-bs-target="#searchCollapse" aria-expanded="false" aria-controls="searchCollapse" style="width: 50px; height: 50px;">
-        <i class="bi bi-search"></i>
-    </button>
-</div>
+<!-- ...existing code... -->
 @endsection
 
 @section('scripts')

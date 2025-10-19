@@ -568,7 +568,7 @@
                 chiTietList.forEach((item, index) => {
                     console.log('Chi Tiet Item:', item); // Debug log
                     const loThuoc = item.loThuoc || item.lo_thuoc;
-                    const hanDung = loThuoc?.han_dung ? new Date(loThuoc.han_dung).toLocaleDateString('vi-VN') : 'N/A';
+                    const hanDung = loThuoc?.han_su_dung ? new Date(loThuoc.han_su_dung).toLocaleDateString('vi-VN') : 'N/A';
                     const thuoc = loThuoc?.thuoc;
                     const tenThuoc = thuoc?.ten_thuoc || 'N/A';
                     const loId = loThuoc?.lo_id;
@@ -696,8 +696,9 @@
         
         // Helper function to format number
         function formatNumber(value) {
+            // Format as integer, no decimals, with thousands separator
             return new Intl.NumberFormat('vi-VN', {
-                maximumFractionDigits: 2
+                maximumFractionDigits: 0
             }).format(value || 0);
         }
 
@@ -736,14 +737,19 @@
 
                         if (response.additions && response.additions.length > 0) {
                             response.additions.forEach(item => {
+                                // Use item.ngay_nhap if available, fallback to item.created_at
+                                let thoiGian = item.ngay_nhap ? new Date(item.ngay_nhap).toLocaleString('vi-VN') : new Date(item.created_at).toLocaleString('vi-VN');
+                                // Format gia_nhap and thanh_tien as integer with thousands separator
+                                let giaNhap = formatNumber(item.gia_nhap);
+                                let thanhTien = formatNumber(item.thanh_tien);
                                 tbody.append(`
                                     <tr>
-                                        <td>${new Date(item.created_at).toLocaleString('vi-VN')}</td>
+                                        <td>${thoiGian}</td>
                                         <td>${item.ma_phieu}</td>
                                         <td>${item.so_luong}</td>
                                         <td>${item.don_vi}</td>
-                                        <td>${item.gia_nhap}</td>
-                                        <td>${item.thanh_tien}</td>
+                                        <td>${giaNhap}</td>
+                                        <td>${thanhTien}</td>
                                         <td>${item.nguoi_nhap}</td>
                                     </tr>
                                 `);

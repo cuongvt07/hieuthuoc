@@ -13,7 +13,8 @@ class NhaCungCapController extends Controller
      */
     public function index(Request $request)
     {
-        $query = NhaCungCap::query();
+
+        $query = NhaCungCap::withCount('phieuNhap')->with(['phieuNhap']);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -25,7 +26,16 @@ class NhaCungCapController extends Controller
             });
         }
 
-        $nhaCungCap = $query->orderBy('ten_ncc')->paginate(10);
+        // Allow sorting by purchase order count
+        $sort = $request->get('sort');
+        $direction = $request->get('direction', 'desc');
+        if ($sort === 'so_phieu_nhap') {
+            $query->orderBy('phieu_nhap_count', $direction);
+        } else {
+            $query->orderBy('ten_ncc');
+        }
+
+        $nhaCungCap = $query->paginate(10);
 
         if ($request->ajax()) {
             return response()->json([
@@ -42,7 +52,7 @@ class NhaCungCapController extends Controller
      */
     public function store(NhaCungCapRequest $request)
     {
-        $nhaCungCap = NhaCungCap::create($request->validated());
+    $nhaCungCap = NhaCungCap::create($request->all());
         
         if ($request->ajax()) {
             return response()->json([
@@ -78,7 +88,7 @@ class NhaCungCapController extends Controller
      */
     public function update(NhaCungCapRequest $request, NhaCungCap $nhaCungCap)
     {
-        $nhaCungCap->update($request->validated());
+        $nhaCungCap->update($request->all());
         
         if ($request->ajax()) {
             return response()->json([

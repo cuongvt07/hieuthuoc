@@ -465,6 +465,14 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
+        // Auto-select NCC if coming from NCC detail
+        const selectedSupplierId = sessionStorage.getItem('selected_supplier_id');
+        if (selectedSupplierId) {
+            $('#ncc_id').val(selectedSupplierId).trigger('change');
+            // Optionally clear after use
+            sessionStorage.removeItem('selected_supplier_id');
+            sessionStorage.removeItem('selected_supplier_name');
+        }
         console.log('Document ready initialized');
         // Biến toàn cục để lưu index của các chi tiết
         let rowIndex = 0;

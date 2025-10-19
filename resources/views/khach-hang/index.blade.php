@@ -39,9 +39,11 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Khách Hàng</h6>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addKhachHangModal">
-                    <i class="bi bi-plus-circle me-1"></i> Thêm Khách Hàng
-                </button>
+                    @if(auth()->user()->vai_tro === 'duoc_si')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addKhachHangModal">
+                        <i class="bi bi-plus-circle"></i> Thêm Khách Hàng
+                    </button>
+                    @endif
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -64,35 +66,43 @@
                             <tr>
                                 <th>Số Điện Thoại</th>
                                 <th>Họ Tên</th>
-                                <th>Số Đơn Hàng</th>
+                                <th>
+                                    Số Đơn Hàng
+                                    <button type="button" class="btn btn-link btn-sm p-0" id="sortDonHangBtn" title="Sắp xếp theo số đơn hàng">
+                                        <i class="bi bi-sort-numeric-down"></i>
+                                    </button>
+                                </th>
                                 <th>Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($khachHang as $item)
-                            <tr>
-                                <td>{{ $item->sdt }}</td>
-                                <td>{{ $item->ho_ten }}</td>
-                                <td class="text-center">{{ $item->donBanLe->count() }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $item->khach_hang_id }}">
-                                        <i class="bi bi-eye"></i> Xem
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->khach_hang_id }}">
-                                        <i class="bi bi-pencil"></i> Sửa
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-warning suspend-btn" 
-                                        data-id="{{ $item->khach_hang_id }}" 
-                                        data-ten="{{ $item->ho_ten }}" data-status="{{ $item->trang_thai }}">
-                                        <i class="bi bi-ban"></i> {{ $item->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
-                                    </button>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center">Không có dữ liệu</td>
-                            </tr>
-                            @endforelse
+                                @forelse ($khachHang as $item)
+                                <tr>
+                                    <td>{{ $item->sdt }}</td>
+                                    <td>{{ $item->ho_ten }}</td>
+                                    <td class="text-center">{{ $item->donBanLe->count() }}</td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $item->khach_hang_id }}">
+                                            <i class="bi bi-eye"></i> Xem
+                                        </button>
+                                        @if(auth()->user()->vai_tro === 'duoc_si')
+                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->khach_hang_id }}">
+                                            <i class="bi bi-pencil"></i> Sửa
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $item->khach_hang_id }}" data-ten="{{ $item->ho_ten }}">
+                                            <i class="bi bi-trash"></i> Xóa
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-secondary suspend-btn" data-id="{{ $item->khach_hang_id }}" data-status="{{ $item->trang_thai }}">
+                                            <i class="bi bi-ban"></i> {{ $item->trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
+                                        </button>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="text-center">Không có dữ liệu</td>
+                                </tr>
+                                @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -305,14 +315,7 @@
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.khach_hang_id}">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.khach_hang_id}">
-                                            <i class="bi bi-pencil"></i> Sửa
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-btn" 
-                                            data-id="${item.khach_hang_id}" 
-                                            data-ten="${item.ho_ten}">
-                                            <i class="bi bi-trash"></i> Xóa
-                                        </button>
+                                        <!-- Nút sửa, đình chỉ đã bị ẩn -->
                                     </td>
                                 </tr>
                             `;
@@ -644,6 +647,27 @@
         window.khachHangModule = {
             findByPhone: findCustomerByPhone
         };
+
+        // Ẩn hoàn toàn nút thêm mới, sửa, đình chỉ
+            if (window.Laravel && window.Laravel.user && window.Laravel.user.vai_tro !== 'duoc_si') {
+                $('#addKhachHangModal').remove();
+                $('.edit-btn, .delete-btn, .suspend-btn').remove();
+            }
+
+        // Sắp xếp theo số đơn hàng
+        let sortDirection = 'desc';
+        $('#sortDonHangBtn').click(function() {
+            const rows = $('#khach-hang-table tbody tr').get();
+            rows.sort(function(a, b) {
+                const aCount = parseInt($(a).find('td:eq(2)').text()) || 0;
+                const bCount = parseInt($(b).find('td:eq(2)').text()) || 0;
+                return sortDirection === 'desc' ? bCount - aCount : aCount - bCount;
+            });
+            $.each(rows, function(idx, row) {
+                $('#khach-hang-table tbody').append(row);
+            });
+            sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+        });
     });
 </script>
 @endsection

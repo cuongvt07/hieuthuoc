@@ -47,7 +47,7 @@
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary me-2">Lọc</button>
-                        <button type="button" id="resetFilterBtn" class="btn btn-secondary me-2">Reset lọc</button>
+                        <button type="button" id="resetFilterBtn" class="btn btn-secondary me-2">Reset</button>
                         <a href="{{ route('bao-cao.khach-hang.index', ['export' => 'excel'] + request()->all()) }}"
                            class="btn btn-success">
                             <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel

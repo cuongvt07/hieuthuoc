@@ -45,7 +45,7 @@
                         <i class="bi bi-search me-1"></i> Tìm kiếm
                     </button>
                     <button type="button" id="resetFilterBtn" class="btn btn-secondary">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset lọc
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
                     </button>
                 </div>
             </form>

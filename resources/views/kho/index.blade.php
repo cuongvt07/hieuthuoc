@@ -75,61 +75,43 @@
                     <tr>
                         <th>Tên Kho</th>
                         <th>Địa Chỉ</th>
-                        <th class="text-center">Số Loại Thuốc</th>
-                        <th class="text-center">Tổng SL Tồn</th>
-                        <th class="text-end">Thao Tác</th>
+                        <th>Ghi Chú</th>
+                        <th>Trạng Thái</th>
+                        <th>Số Loại Thuốc</th>
+                        <th>Số Lượng Tồn</th>
+                        <th>Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($khos as $kho)
                     <tr>
+                        <td>{{ $kho->ten_kho }}</td>
+                        <td>{{ $kho->dia_chi }}</td>
+                        <td>{{ $kho->ghi_chu }}</td>
                         <td>
-                            <strong>{{ $kho->ten_kho }}</strong>
-                            @if($kho->ghi_chu)
-                            <br><small class="text-muted">{{ $kho->ghi_chu }}</small>
+                            @if($kho->trang_thai == 1)
+                                <span class="badge bg-success">Hoạt động</span>
+                            @else
+                                <span class="badge bg-danger">Đình chỉ</span>
                             @endif
                         </td>
-                        <td>{{ $kho->dia_chi ?: 'Chưa cập nhật' }}</td>
-                        <td class="text-center">{{ number_format($kho->total_medicines) }}</td>
-                        <td class="text-center">{{ number_format($kho->total_items) }}</td>
-                        <td class="text-end">
-                            <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $kho->kho_id }}" title="Xem chi tiết">
-                                <i class="bi bi-eye"></i>
+                        <td class="text-center">{{ $kho->total_medicines ?? 0 }}</td>
+                        <td class="text-center">{{ $kho->total_items ?? 0 }}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-info btn-sm view-btn" data-id="{{ $kho->kho_id }}">
+                                <i class="bi bi-eye"></i> Xem
                             </button>
-                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $kho->kho_id }}" title="Sửa">
-                                <i class="bi bi-pencil"></i>
+                            <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="{{ $kho->kho_id }}">
+                                <i class="bi bi-pencil"></i> Sửa
                             </button>
-                            <button type="button" class="btn btn-sm btn-danger delete-btn" 
-                                data-id="{{ $kho->kho_id }}" 
-                                data-ten="{{ $kho->ten_kho }}" 
-                                title="Xóa">
-                                <i class="bi bi-trash"></i>
+                            <button type="button" class="btn btn-danger btn-sm suspend-btn" data-id="{{ $kho->kho_id }}" data-status="{{ $kho->trang_thai }}">
+                                <i class="bi bi-ban"></i> {{ $kho->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                             </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="5" class="p-0">
-                            <div class="collapse" id="lots-{{ $kho->kho_id }}">
-                                <table class="table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Số Lô</th>
-                                            <th class="text-center">Số Lượng Tồn</th>
-                                            <th>Ngày Sản Xuất</th>
-                                            <th>Hạn Sử Dụng</th>
-                                            <th>Trạng Thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="lot-details-{{ $kho->kho_id }}">
-                                        <!-- Nội dung sẽ được thêm bằng JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center">Chưa có kho nào được tạo</td>
+                        <td colspan="7" class="text-center">Không có dữ liệu</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -752,44 +734,33 @@
             const id = $(this).data('id');
             viewKhoDetails(id);
         });
-        
         $('.edit-btn').click(function() {
             const id = $(this).data('id');
             getKho(id);
         });
-        
-        $('.delete-btn').click(function() {
-            deleteId = $(this).data('id');
-            const tenKho = $(this).data('ten');
-            
-            $('#delete_ten_kho').text(tenKho);
-            $('#deleteKhoModal').modal('show');
-        });
-        
-        // Xác nhận xóa kho
-        $('#confirmDelete').click(function() {
-            if (!deleteId) return;
-            
+        $('.suspend-btn').click(function() {
+            const suspendId = $(this).data('id');
+            const status = $(this).data('status');
+            // Gọi ajax trực tiếp, không cần modal xác nhận
             $.ajax({
-                url: `/kho/${deleteId}`,
-                type: "DELETE",
+                url: `/kho/${suspendId}/suspend`,
+                type: "POST",
                 dataType: "json",
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
-                    $('#deleteKhoModal').modal('hide');
-                    showToast(response.message);
-                    // Reload trang để cập nhật danh sách kho
-                    location.reload();
+                    showToast(response.message, 'success');
+                    setTimeout(function() { location.reload(); }, 800);
                 },
                 error: function(xhr) {
-                    $('#deleteKhoModal').modal('hide');
-                    showToast(xhr.responseJSON.message, 'danger');
+                    let msg = 'Có lỗi xảy ra khi thay đổi trạng thái kho.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    showToast(msg, 'danger');
                 }
             });
         });
-
+        
         // Clear form khi đóng modal
         $('#addKhoModal').on('hidden.bs.modal', function() {
             $('#addKhoForm')[0].reset();
@@ -993,6 +964,34 @@
                 `);
             }
         });
+    }
+
+    // Hiển thị toast giống tab thuốc
+    function showToast(message, type = 'success') {
+        // Tránh gọi đệ quy vô hạn nếu window.showToast trỏ về chính hàm này
+        if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+            window.showToast(message, type);
+        } else {
+            // Fallback nếu chưa có hàm global hoặc chính là hàm này
+            const toast = `
+                <div class="toast align-items-center text-white bg-${type} border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            let toastContainer = $('#toast-container');
+            if (toastContainer.length === 0) {
+                $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+                toastContainer = $('#toast-container');
+            }
+            const toastElement = $(toast);
+            toastContainer.append(toastElement);
+            setTimeout(function() { toastElement.remove(); }, 3000);
+        }
     }
 </script>
 @endsection

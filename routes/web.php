@@ -94,6 +94,7 @@ Route::middleware('auth')->group(function () {
     
     // Kho routes
     Route::resource('kho', KhoController::class);
+    Route::post('kho/{id}/suspend', [KhoController::class, 'suspend'])->name('kho.suspend');
     
     // Phiếu nhập routes
     Route::resource('phieu-nhap', PhieuNhapController::class);
@@ -131,4 +132,14 @@ Route::middleware('auth')->group(function () {
     
     // API lấy tất cả nhóm thuốc cho dropdown JS
     Route::get('/nhom-thuoc/all', [NhomThuocController::class, 'all']);
+});
+
+// API lấy lịch sử giá thuốc
+Route::get('gia-thuoc-history/{thuoc_id}', function($thuoc_id, Request $request) {
+    $count = (int) $request->query('count', 4);
+    $history = \App\Models\GiaThuoc::where('thuoc_id', $thuoc_id)
+        ->orderBy('ngay_bat_dau', 'desc')
+        ->limit($count)
+        ->get(['gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc']);
+    return response()->json(['history' => $history]);
 });

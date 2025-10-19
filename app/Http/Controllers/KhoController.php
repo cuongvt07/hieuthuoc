@@ -63,8 +63,9 @@ class KhoController extends Controller
             'ten_kho.required' => 'Vui lòng nhập tên kho',
         ]);
 
+        $validatedData['trang_thai'] = 1; // Mặc định hoạt động
         $kho = Kho::create($validatedData);
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -72,9 +73,23 @@ class KhoController extends Controller
                 'message' => 'Kho đã được thêm thành công.'
             ]);
         }
-        
+
         return redirect()->route('kho.index')
             ->with('success', 'Kho đã được thêm thành công.');
+    }
+    /**
+     * Đình chỉ hoặc bỏ đình chỉ kho (AJAX)
+     */
+    public function suspend($id)
+    {
+        $kho = Kho::findOrFail($id);
+        $kho->trang_thai = $kho->trang_thai == 1 ? 0 : 1;
+        $kho->save();
+        return response()->json([
+            'success' => true,
+            'trang_thai' => $kho->trang_thai,
+            'message' => $kho->trang_thai == 1 ? 'Kho đã được bỏ đình chỉ.' : 'Kho đã bị đình chỉ.'
+        ]);
     }
 
     /**

@@ -252,58 +252,61 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-7">
-                        <div class="card mb-4 shadow-sm">
-                            <div class="card-header py-2 bg-light">
-                                <h6 class="m-0 font-weight-bold text-primary">
-                                    <i class="bi bi-info-circle me-1"></i> Thông Tin Nhà Cung Cấp
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <table class="table table-borderless supplier-info-table">
-                                    <tbody>
-                                        <tr>
-                                            <td><i class="bi bi-building me-1"></i> Tên NCC:</td>
-                                            <td id="view_ten_ncc" class="fw-bold"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-telephone me-1"></i> Số Điện Thoại:</td>
-                                            <td id="view_sdt"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-envelope me-1"></i> Email:</td>
-                                            <td id="view_email"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-credit-card me-1"></i> Mã Số Thuế:</td>
-                                            <td id="view_ma_so_thue"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-geo-alt me-1"></i> Địa Chỉ:</td>
-                                            <td id="view_dia_chi"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><i class="bi bi-sticky me-1"></i> Mô Tả:</td>
-                                            <td id="view_mo_ta"></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+<div class="col-12">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header py-2 bg-light">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-info-circle me-1"></i> Thông Tin Nhà Cung Cấp
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row gy-2 gx-3 align-items-center supplier-info-table">
+                <!-- Dòng 1 -->
+                <div class="col-md-4 col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted small me-1"><i class="bi bi-building me-1"></i> Tên NCC:</span>
+                        <strong id="view_ten_ncc"></strong>
                     </div>
-                    <div class="col-md-5">
-                        <div class="card mb-4 shadow-sm">
-                            <div class="card-header py-2 bg-light">
-                                <h6 class="m-0 font-weight-bold text-primary">
-                                    <i class="bi bi-clock-history me-1"></i> Thông Tin Hệ Thống
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <p><i class="bi bi-calendar-plus me-1"></i> <strong>Ngày tạo:</strong> <span id="view_created_at"></span></p>
-                                <p><i class="bi bi-calendar-check me-1"></i> <strong>Cập nhật:</strong> <span id="view_updated_at"></span></p>
-                            </div>
-                        </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted small me-1"><i class="bi bi-telephone me-1"></i> Số ĐT:</span>
+                        <span id="view_sdt"></span>
                     </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted small me-1"><i class="bi bi-credit-card me-1"></i> MST:</span>
+                        <span id="view_ma_so_thue"></span>
+                    </div>
+                </div>
+
+                <!-- Dòng 2 -->
+                <div class="col-md-6 col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted small me-1"><i class="bi bi-envelope me-1"></i> Email:</span>
+                        <span id="view_email"></span>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted small me-1"><i class="bi bi-geo-alt me-1"></i> Địa Chỉ:</span>
+                        <span id="view_dia_chi"></span>
+                    </div>
+                </div>
+
+                <!-- Dòng cuối -->
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <span class="text-muted small me-1"><i class="bi bi-sticky me-1"></i> Mô Tả:</span>
+                        <div id="view_mo_ta" class="flex-grow-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
                 </div>
                 
                 <div class="card shadow-sm">
@@ -584,6 +587,7 @@
                     $('#create-phieu-nhap-btn').click(function(e) {
                         sessionStorage.setItem('selected_supplier_id', nhaCungCap.ncc_id);
                         sessionStorage.setItem('selected_supplier_name', nhaCungCap.ten_ncc);
+                        window.location.href = $(this).attr('href');
                     });
                     
                     let phieuNhapHtml = '';
@@ -645,14 +649,13 @@
             }
             
             const id = $('#edit_ncc_id').val();
-            const formData = new FormData(this);
+            const data = $(this).serializeArray();
+            data.push({name: '_method', value: 'PUT'});
             $.ajax({
                 url: `/nha-cung-cap/${id}`,
-                type: "PUT",
-                data: formData,
-                dataType: "json",
-                processData: false,
-                contentType: false,
+                type: 'POST',
+                data: $.param(data),
+                dataType: 'json',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
@@ -679,13 +682,13 @@
         
         function bindButtons() {
             // Nút xem chi tiết nhà cung cấp
-            $('.view-btn').click(function() {
+            $(document).off('click', '.view-btn').on('click', '.view-btn', function() {
                 const id = $(this).data('id');
                 viewNhaCungCap(id);
             });
-            
+
             // Nút sửa nhà cung cấp
-            $('.edit-btn').click(function() {
+            $(document).off('click', '.edit-btn').on('click', '.edit-btn', function() {
                 if (!hasEditPermission()) {
                     showToast('Bạn không có quyền sửa nhà cung cấp', 'warning');
                     return;
@@ -693,9 +696,9 @@
                 const id = $(this).data('id');
                 getNhaCungCap(id);
             });
-            
+
             // Nút xóa nhà cung cấp
-            $('.delete-btn').click(function() {
+            $(document).off('click', '.delete-btn').on('click', '.delete-btn', function() {
                 if (!hasEditPermission()) {
                     showToast('Bạn không có quyền xóa nhà cung cấp', 'warning');
                     return;
@@ -704,6 +707,35 @@
                 const tenNcc = $(this).data('ten');
                 $('#delete_ten_ncc').text(tenNcc);
                 $('#deleteNhaCungCapModal').modal('show');
+            });
+
+            // Nút đình chỉ/bỏ đình chỉ nhà cung cấp (delegated)
+            $(document).off('click', '.suspend-btn').on('click', '.suspend-btn', function() {
+                if (!hasEditPermission()) {
+                    showToast('Bạn không có quyền đình chỉ nhà cung cấp', 'warning');
+                    return;
+                }
+                var id = $(this).data('id');
+                var status = $(this).data('status');
+                var btn = $(this);
+                $.ajax({
+                    url: '/nha-cung-cap/' + id + '/suspend',
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if(res.success) {
+                            btn.data('status', res.trang_thai);
+                            btn.html('<i class="bi bi-ban"></i> ' + (res.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'));
+                            showToast(res.message, 'info');
+                            loadNhaCungCap();
+                        }
+                    },
+                    error: function() {
+                        showToast('Có lỗi xảy ra khi thực hiện thao tác', 'danger');
+                    }
+                });
             });
         }
         

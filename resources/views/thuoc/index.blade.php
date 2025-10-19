@@ -206,41 +206,6 @@
         </div>
     </div>
 
-    <!-- Modal sửa nhóm thuốc -->
-    <div class="modal fade" id="editNhomThuocModal" tabindex="-1" aria-labelledby="editNhomThuocModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="editNhomForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editNhomThuocModalLabel">Chỉnh Sửa Nhóm Thuốc</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="edit_nhom_id" name="nhom_id">
-                        <div class="mb-3">
-                            <label for="edit_ma_nhom" class="form-label">Mã Nhóm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ma_nhom" name="ma_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
-                            <div class="invalid-feedback" id="edit_ma_nhom_error"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_ten_nhom" class="form-label">Tên Nhóm <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_ten_nhom" name="ten_nhom" requiredmsg="Trường này yêu cầu bắt buộc">
-                            <div class="invalid-feedback" id="edit_ten_nhom_error"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_mo_ta" class="form-label">Mô Tả</label>
-                            <textarea class="form-control" id="edit_mo_ta" name="mo_ta" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal xác nhận xóa nhóm thuốc -->
     <div class="modal fade" id="deleteNhomThuocModal" tabindex="-1" aria-labelledby="deleteNhomThuocModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -362,6 +327,16 @@
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback" id="edit_nhom_id_error"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_kho_id" class="form-label">Kho <span class="text-danger">*</span></label>
+                                <select class="form-select" id="edit_kho_id" name="kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
+                                    <option value="">-- Chọn kho --</option>
+                                    @foreach ($kho as $k)
+                                    <option value="{{ $k->kho_id }}">{{ $k->ten_kho }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback" id="edit_kho_id_error"></div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -758,13 +733,18 @@
                     const thuoc = response.thuoc;
                     $('#edit_thuoc_id').val(thuoc.thuoc_id);
                     $('#edit_ma_thuoc').val(thuoc.ma_thuoc);
-                    $('#edit_nhom_id').val(thuoc.nhom_id);
-                    $('#edit_kho_id').val(thuoc.kho_id);
                     $('#edit_ten_thuoc').val(thuoc.ten_thuoc);
                     $('#edit_don_vi_goc').val(thuoc.don_vi_goc);
                     $('#edit_don_vi_ban').val(thuoc.don_vi_ban);
                     $('#edit_ti_le_quy_doi').val(thuoc.ti_le_quy_doi);
                     $('#edit_mo_ta_thuoc').val(thuoc.mo_ta);
+
+                    // Nếu dropdown nhóm thuốc được cập nhật lại động, set lại giá trị sau khi options đã render
+                    setTimeout(function() {
+                        $('#edit_nhom_id').val(thuoc.nhom_id);
+                        $('#edit_kho_id').val(thuoc.kho_id);
+                    }, 200);
+
                     $('#editThuocModal').modal('show');
                 },
                 error: function() {

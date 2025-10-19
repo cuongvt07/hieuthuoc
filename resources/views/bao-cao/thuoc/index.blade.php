@@ -36,7 +36,7 @@
                                 <i class="bi bi-file-excel"></i> Xuất Excel
                             </a>
                             <button type="button" class="btn btn-secondary" id="resetFilter">
-                                <i class="bi bi-x-circle"></i> Reset lọc
+                                <i class="bi bi-x-circle"></i> Reset
                             </button>
                         </div>
                     </div>

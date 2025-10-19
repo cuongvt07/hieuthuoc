@@ -14,6 +14,7 @@ class Kho extends Model
         'ten_kho',
         'dia_chi',
         'ghi_chu',
+        'trang_thai',
     ];
 
     /**

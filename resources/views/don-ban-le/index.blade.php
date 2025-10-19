@@ -99,22 +99,21 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">Quản lý đơn bán lẻ</h1>
+        @if(Auth::user() && Auth::user()->vai_tro === 'duoc_si')
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createOrderModal">
             <i class="fas fa-plus"></i> Tạo đơn mới
         </button>
+        @endif
     </div>
 
     <!-- Filter Card -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Bộ lọc</h6>
-            <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
-                <i class="fas fa-undo"></i> Đặt lại
-            </button>
         </div>
         <div class="card-body">
             <form id="filter-form" method="GET">
-                <div class="row">
+                <div class="row align-items-end">
                     <div class="col-md-3 mb-3">
                         <label for="keyword">Tìm kiếm:</label>
                         <input type="text" class="form-control" id="keyword" name="keyword" 
@@ -156,10 +155,15 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-1 mb-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-search"></i> Lọc
-                        </button>
+                    <div class="col-md-2 mb-3 d-flex align-items-end">
+                        <div class="btn-group w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Lọc
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearFilters">
+                                <i class="bi bi-x-circle"></i> Reset
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -321,33 +325,33 @@
                                                 <i class="fas fa-eye text-info me-2"></i> Xem chi tiết
                                             </a>
                                         </li>
-
-                                        @if($don->trang_thai == 'cho_xu_ly')
-                                            <!-- Hoàn tất đơn - chỉ hiển thị khi chờ xử lý -->
-                                            <li>
-                                                <a class="dropdown-item complete-order-btn" href="javascript:void(0)" 
-                                                   data-id="{{ $don->don_id }}" data-ma-don="{{ $don->ma_don }}">
-                                                    <i class="fas fa-check-circle text-success me-2"></i> Hoàn tất đơn
-                                                </a>
-                                            </li>
-                                            <!-- Hủy đơn - chỉ hiển thị khi chờ xử lý -->
-                                            <li>
-                                                <a class="dropdown-item cancel-order-btn" href="javascript:void(0)" 
-                                                   data-id="{{ $don->don_id }}" data-ma-don="{{ $don->ma_don }}">
-                                                    <i class="fas fa-ban text-danger me-2"></i> Hủy đơn
-                                                </a>
-                                            </li>
-                                        @endif
-
-                                        @if(in_array($don->trang_thai, ['hoan_tat', 'hoan_thanh']))
-                                            <!-- In hóa đơn - chỉ hiển thị khi đã hoàn tất -->
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <a class="dropdown-item" href="{{ route('don-ban-le.print', $don->don_id) }}" 
-                                                   target="_blank">
-                                                    <i class="fas fa-print text-primary me-2"></i> In hóa đơn
-                                                </a>
-                                            </li>
+                                        @if(Auth::user() && Auth::user()->vai_tro === 'duoc_si')
+                                            @if($don->trang_thai == 'cho_xu_ly')
+                                                <!-- Hoàn tất đơn - chỉ hiển thị khi chờ xử lý -->
+                                                <li>
+                                                    <a class="dropdown-item complete-order-btn" href="javascript:void(0)" 
+                                                       data-id="{{ $don->don_id }}" data-ma-don="{{ $don->ma_don }}">
+                                                        <i class="fas fa-check-circle text-success me-2"></i> Hoàn tất đơn
+                                                    </a>
+                                                </li>
+                                                <!-- Hủy đơn - chỉ hiển thị khi chờ xử lý -->
+                                                <li>
+                                                    <a class="dropdown-item cancel-order-btn" href="javascript:void(0)" 
+                                                       data-id="{{ $don->don_id }}" data-ma-don="{{ $don->ma_don }}">
+                                                        <i class="fas fa-ban text-danger me-2"></i> Hủy đơn
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            @if(in_array($don->trang_thai, ['hoan_tat', 'hoan_thanh']))
+                                                <!-- In hóa đơn - chỉ hiển thị khi đã hoàn tất -->
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('don-ban-le.print', $don->don_id) }}" 
+                                                       target="_blank">
+                                                        <i class="fas fa-print text-primary me-2"></i> In hóa đơn
+                                                    </a>
+                                                </li>
+                                            @endif
                                         @endif
                                     </ul>
                                 </div>
@@ -403,9 +407,7 @@
         
         // Clear filters
         $('#clearFilters').on('click', function() {
-            $('#keyword, #from_date, #to_date').val('');
-            $('#status, #staff').val('');
-            $('#filter-form').submit();
+            window.location.href = '{{ route("don-ban-le.index") }}';
         });
         
         // Initialize order details modal handler
@@ -474,6 +476,8 @@
                 if (response.summaries) {
                     updateSummaries(response.summaries);
                 }
+                    // Khởi tạo lại dropdown, modal, và bind lại các event sau khi load AJAX
+                    reinitBootstrapComponents();
             },
             error: function(xhr) {
                 console.error('Error loading orders:', xhr.responseText);
@@ -617,8 +621,9 @@
         // Cập nhật liên kết in đơn hàng
         $('#detail-print-btn').attr('href', `/don-ban-le/${donBanLe.don_id}/print`);
         
-        // Quản lý nút Hủy đơn - Hiển thị nút chỉ khi đơn có trạng thái hoàn tất hoặc chờ xử lý
-        if (donBanLe.trang_thai === 'hoan_thanh' || donBanLe.trang_thai === 'hoan_tat' || donBanLe.trang_thai === 'cho_xu_ly') {
+        // Chỉ dược sĩ mới được thao tác hủy đơn
+        var isDuocSi = {{ Auth::user() && Auth::user()->vai_tro === 'duoc_si' ? 'true' : 'false' }};
+        if (isDuocSi && (donBanLe.trang_thai === 'hoan_thanh' || donBanLe.trang_thai === 'hoan_tat' || donBanLe.trang_thai === 'cho_xu_ly')) {
             $('#detail-cancel-btn').show().data('id', donBanLe.don_id);
         } else {
             $('#detail-cancel-btn').hide();
@@ -640,5 +645,33 @@
             currency: 'VND'
         }).replace(/\s₫$/, ' đ');
     }
+
+        // Hàm khởi tạo lại các component Bootstrap và bind lại event sau khi load AJAX
+        function reinitBootstrapComponents() {
+            // Nếu dùng Bootstrap 5, dropdown/modal sẽ tự động hoạt động nếu HTML đúng
+            // Bind lại các event click cho các nút thao tác trong bảng
+            $(document).off('click', '.view-order-btn').on('click', '.view-order-btn', function() {
+                const orderId = $(this).data('id');
+                viewOrderDetails(orderId);
+            });
+
+            // Bind lại event cho pagination
+            $(document).off('click', '.pagination a').on('click', '.pagination a', function(e) {
+                e.preventDefault();
+                const url = $(this).attr('href');
+                loadOrders(url);
+                window.history.pushState({}, '', url);
+            });
+
+            // Bind lại event cho nút hoàn tất đơn
+            $(document).off('click', '.complete-order-btn').on('click', '.complete-order-btn', function() {
+                // ...nếu có logic hoàn tất đơn, bind lại ở đây...
+            });
+
+            // Bind lại event cho nút hủy đơn
+            $(document).off('click', '.cancel-order-btn').on('click', '.cancel-order-btn', function() {
+                // ...nếu có logic hủy đơn, bind lại ở đây...
+            });
+        }
 </script>
 @endsection

@@ -133,7 +133,7 @@
                                 <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
                             </a>
                                 <button type="button" class="btn btn-secondary" id="resetFilter">
-                                    <i class="bi bi-x-circle"></i> Reset lọc
+                                    <i class="bi bi-x-circle"></i> Reset
                                 </button>
                             <button type="button" id="btnPrint" class="btn btn-sm btn-info text-white">
                                 <i class="bi bi-printer me-1"></i> In báo cáo

@@ -156,8 +156,9 @@ class ThuocController extends Controller
      */
     public function show(Thuoc $thuoc)
     {
-        $thuoc->load('nhomThuoc', 'giaThuoc');
+        $thuoc->load('nhomThuoc', 'giaThuoc', 'kho');
         return response()->json([
+            'success' => true,
             'thuoc' => $thuoc
         ]);
     }

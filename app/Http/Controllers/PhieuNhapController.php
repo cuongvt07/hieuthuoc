@@ -479,7 +479,7 @@ class PhieuNhapController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'created_at' => $item->phieuNhap->created_at,
+                    'ngay_nhap' => $item->phieuNhap->ngay_nhap,
                     'ma_phieu' => $item->phieuNhap->ma_phieu,
                     'so_luong' => $item->so_luong,
                     'don_vi' => $item->don_vi,

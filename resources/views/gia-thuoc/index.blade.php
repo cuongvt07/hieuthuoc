@@ -113,14 +113,24 @@
                         </thead>
                         <tbody>
                             @forelse($giaThuoc as $gia)
-                                <tr>
+                                @php
+                                    $isActive = isset($activeGiaByThuoc[$gia->thuoc_id]) &&
+                                                $activeGiaByThuoc[$gia->thuoc_id]->gia_id == $gia->gia_id;
+
+                                    $isFuture = isset($futureGiaByThuoc[$gia->thuoc_id]) &&
+                                                $futureGiaByThuoc[$gia->thuoc_id]->gia_id == $gia->gia_id;
+
+                                    // Use Bootstrap table row classes so background shows correctly
+                                    $rowClass = $isActive ? 'table-success' : ($isFuture ? 'table-warning' : 'table-danger');
+                                @endphp
+                                <tr class="{{ $rowClass }}">
                                     <td>{{ $gia->thuoc->ma_thuoc }}</td>
                                     <td>{{ $gia->thuoc->ten_thuoc }}</td>
                                     <td>{{ number_format($gia->gia_ban) }} đ</td>
                                     <td>{{ $gia->ngay_bat_dau ? date('d/m/Y', strtotime($gia->ngay_bat_dau)) : '' }}</td>
                                     <td>{{ $gia->ngay_ket_thuc ? date('d/m/Y', strtotime($gia->ngay_ket_thuc)) : 'Hiện tại' }}</td>
                                     <td class="text-center">
-                                        <button class="btn btn-sm btn-primary edit-btn me-1" data-id="{{ $gia->gia_id }}">
+                                        <button class="btn btn-sm btn-primary edit-btn me-1" data-id="{{ $gia->gia_id }}" {{ $isActive ? '' : 'disabled' }}>
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button class="btn btn-sm btn-danger delete-btn" 
@@ -235,6 +245,10 @@
                         <label for="edit_ngay_ket_thuc" class="form-label">Ngày kết thúc</label>
                         <input type="date" class="form-control" id="edit_ngay_ket_thuc" name="ngay_ket_thuc">
                         <div class="invalid-feedback" id="edit_ngay_ket_thuc_error"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lịch sử đổi giá</label>
+                        <div id="gia-history" style="max-height:200px;overflow-y:auto;"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -488,7 +502,7 @@
             });
         });
 
-        // Lấy thông tin giá thuốc để sửa
+        // Lấy thông tin giá thuốc để sửa và lịch sử giá
         function getGiaThuoc(id) {
             $.ajax({
                 url: `/gia-thuoc/${id}`,
@@ -500,20 +514,47 @@
                     $('#edit_thuoc_id').val(giaThuoc.thuoc_id);
                     $('#edit_thuoc_name').val(giaThuoc.thuoc.ten_thuoc);
                     $('#edit_gia_ban').val(parseInt(giaThuoc.gia_ban).toLocaleString('vi-VN'));
-                    
+
                     // Format ngày
                     if (giaThuoc.ngay_bat_dau) {
                         const ngayBatDau = giaThuoc.ngay_bat_dau.split('T')[0];
                         $('#edit_ngay_bat_dau').val(ngayBatDau);
                     }
-                    
+
                     if (giaThuoc.ngay_ket_thuc) {
                         const ngayKetThuc = giaThuoc.ngay_ket_thuc.split('T')[0];
                         $('#edit_ngay_ket_thuc').val(ngayKetThuc);
                     } else {
                         $('#edit_ngay_ket_thuc').val('');
                     }
-                    
+
+                    // Lấy lịch sử giá của thuốc
+                    $.ajax({
+                        url: `/gia-thuoc-history/${giaThuoc.thuoc_id}`,
+                        type: "GET",
+                        dataType: "json",
+                        success: function(res) {
+                            const history = res.history || [];
+                            let html = '';
+                            if (history.length > 0) {
+                                html += '<ul class="list-group">';
+                                history.forEach(function(item) {
+                                    html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>${item.gia_ban.toLocaleString('vi-VN')} đ</span>
+                                        <span>${formatDate(item.ngay_bat_dau)} - ${item.ngay_ket_thuc ? formatDate(item.ngay_ket_thuc) : 'Hiện tại'}</span>
+                                    </li>`;
+                                });
+                                html += '</ul>';
+                            } else {
+                                html = '<div class="text-muted">Không có lịch sử giá</div>';
+                            }
+                            $('#gia-history').html(html);
+                        },
+                        error: function() {
+                            $('#gia-history').html('<div class="text-danger">Không thể tải lịch sử giá</div>');
+                        }
+                    });
+
                     $('#editGiaThuocModal').modal('show');
                 },
                 error: function(xhr) {

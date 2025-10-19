@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Request;
 
 class NhaCungCapRequest extends FormRequest
 {
@@ -21,13 +22,15 @@ class NhaCungCapRequest extends FormRequest
      */
     public function rules(): array
     {
+        $ncc = $this->route('nha_cung_cap');
+        $nccId = is_object($ncc) ? $ncc->ncc_id : $ncc;
         return [
-            'ten_ncc' => ['required', 'string', 'max:255'],
-            'dia_chi' => ['nullable', 'string', 'max:255'],
-            'ma_so_thue' => ['nullable', 'string', 'max:50'],
-            'sdt' => ['nullable', 'string', 'max:20'],
-            'email' => ['nullable', 'email', 'max:100'],
-            'mo_ta' => ['nullable', 'string'],
+            'ma_so_thue' => [
+                'nullable',
+                'string',
+                'max:50',
+                \Illuminate\Validation\Rule::unique('nha_cung_cap', 'ma_so_thue')->ignore($nccId, 'ncc_id'),
+            ],
         ];
     }
 
@@ -37,8 +40,7 @@ class NhaCungCapRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'ten_ncc.required' => 'Vui lòng nhập tên nhà cung cấp.',
-            'email.email' => 'Email không hợp lệ.',
+            'ma_so_thue.unique' => 'Mã số thuế đã tồn tại.',
         ];
     }
 }
