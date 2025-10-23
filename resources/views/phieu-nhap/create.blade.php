@@ -323,20 +323,19 @@
                         <select class="form-select" id="modal_thuoc_id" name="modal_thuoc_id">
                             <option value="">-- Chọn thuốc --</option>
                             @foreach($thuocs as $thuoc)
-                            <option value="{{ $thuoc->thuoc_id }}" 
+                            <option value="{{ $thuoc->thuoc_id }}"
                                 data-don-vi-goc="{{ $thuoc->don_vi_goc }}"
-                                data-ten-thuoc="{{ $thuoc->ten_thuoc }}">{{ $thuoc->ten_thuoc }}</option>
+                                data-ten-thuoc="{{ $thuoc->ten_thuoc }}"
+                                data-kho-id="{{ $thuoc->kho_id ?? '' }}"
+                                data-kho-name="{{ optional($thuoc->kho)->ten_kho ?? '' }}"
+                            >{{ $thuoc->ten_thuoc }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="modal_kho_id" class="form-label required-field">Chọn kho</label>
-                        <select class="form-select" id="modal_kho_id" name="modal_kho_id">
-                            <option value="">-- Chọn kho --</option>
-                            @foreach($khos as $kho)
-                            <option value="{{ $kho->kho_id }}">{{ $kho->ten_kho }}</option>
-                            @endforeach
-                        </select>
+                        <input type="hidden" id="modal_kho_id" name="modal_kho_id">
+                        <label class="form-label">Kho</label>
+                        <input type="text" class="form-control bg-light" id="modal_kho_name" readonly>
                     </div>
                 </div>
 
@@ -572,30 +571,45 @@
             });
         }
 
-        // Tính tổng tiền
+        // Tính tổng tiền - robust: compute from per-row inputs (so works for multiple row shapes)
         function calculateTotals() {
-            let tongTien = 0;
-            let tongVAT = 0;
+            let subtotal = 0; // tiền hàng (chưa gồm VAT)
+            let totalVat = 0;
 
             $('.detail-row').each(function() {
-                const thanhTien = parseFloat($(this).find('.thanh-tien-value').val()) || 0;
-                const tienThue = parseFloat($(this).find('.tien-thue-value').val()) || 0;
+                const $row = $(this);
 
-                tongTien += thanhTien - tienThue;
-                tongVAT += tienThue;
+                // try to read quantity
+                const qty = parseFloat($row.find('input[name="so_luong[]"]').val() || $row.find('.so-luong-input').val() || 0) || 0;
+                // price
+                const price = parseFloat($row.find('input[name="gia_nhap[]"]').val() || $row.data('gia-nhap') || 0) || 0;
+                // vat
+                const vat = parseFloat($row.find('input[name="thue_suat[]"]').val() || $row.data('thue-suat') || 0) || 0;
+
+                const tienHang = qty * price;
+                const tienThue = tienHang * (vat / 100);
+                const thanhTien = tienHang + tienThue;
+
+                subtotal += tienHang;
+                totalVat += tienThue;
+
+                // ensure per-row hidden thanh_tien is set (some rows use different hidden input names)
+                const hiddenThanhTien = $row.find('input[name="thanh_tien[]"]');
+                if (hiddenThanhTien.length) hiddenThanhTien.val(thanhTien.toFixed(0));
+                // also consistent classes
+                const hiddenThue = $row.find('input[name="tien_thue[]"]');
+                if (hiddenThue.length) hiddenThue.val(tienThue.toFixed(0));
             });
 
-            const tongCong = tongTien + tongVAT;
+            const total = subtotal + totalVat;
 
-            // Cập nhật hiển thị
-            $('#summary-subtotal').text(formatCurrency(tongTien));
-            $('#summary-vat').text(formatCurrency(tongVAT));
-            $('#summary-total').text(formatCurrency(tongCong));
+            $('#summary-subtotal').text(formatCurrency(subtotal));
+            $('#summary-vat').text(formatCurrency(totalVat));
+            $('#summary-total').text(formatCurrency(total));
 
-            // Cập nhật giá trị form
-            $('#tong_tien').val(tongTien);
-            $('#vat').val(tongVAT);
-            $('#tong_cong').val(tongCong);
+            $('#tong_tien').val(subtotal);
+            $('#vat').val(totalVat);
+            $('#tong_cong').val(total);
         }
 
         // Hàm xử lý khi chọn thuốc
@@ -633,9 +647,10 @@
                             if (existingKho.length === 1) {
                                 const kho = existingKho[0];
                                 options += `<option value="${kho.kho_id}" selected>${kho.ten_kho} (Đã có lô)</option>`;
-                                // Chọn luôn kho này
+                                // Chọn luôn kho này and set readonly name
                                 setTimeout(() => {
                                     $('#modal_kho_id').val(kho.kho_id).trigger('change');
+                                    $('#modal_kho_name').val(kho.ten_kho);
                                 }, 100);
                             } else {
                                 existingKho.forEach(kho => {
@@ -838,6 +853,14 @@
             }
             
             // Tự động kiểm tra tồn kho
+            // Khi chọn thuốc, tải danh sách lô hiện có chỉ chứa lô của thuốc đó
+            if (thuocId) {
+                loadExistingLots(thuocId, $('#modal_kho_id').val());
+            } else {
+                // nếu bỏ chọn thuốc, tải lại tất cả lô
+                loadExistingLots();
+            }
+
             checkInventory();
         });
 
@@ -847,13 +870,17 @@
             console.log('Tải lô hiện có cho thuốc:', thuocId, 'và kho:', khoId);
             $('#modal_existing_lot_id').html('<option value="">Đang tải...</option>');
 
+            // Build request data: prefer filtering by thuoc_id (and kho_id if provided)
+            const requestData = {};
+            if (thuocId) requestData.thuoc_id = thuocId;
+            if (khoId) requestData.kho_id = khoId;
+            if (!thuocId && !khoId) requestData.all_lots = true;
+
             // Gọi API để lấy thông tin lô hiện có
             $.ajax({
                 url: "{{ route('phieu-nhap.get-ton-kho') }}",
                 type: "GET",
-                data: {
-                    all_lots: true // Lấy tất cả các lô, không lọc theo thuốc và kho
-                },
+                data: requestData,
                 success: function(response) {
                     const lots = response.tonKho;
                     console.log('Lô hiện có:', lots);
@@ -862,10 +889,10 @@
                     if (lots && lots.length > 0) {
                         $.each(lots, function(index, lot) {
                             // Format ngày hết hạn
-                            const expDate = new Date(lot.han_su_dung).toLocaleDateString('vi-VN');
-                            const thuocTen = lot.thuoc ? lot.thuoc.ten_thuoc : 'Không xác định';
-                            const khoTen = lot.kho ? lot.kho.ten_kho : 'Không xác định';
-                            const donVi = lot.thuoc ? lot.thuoc.don_vi_goc : '';
+                            const expDate = lot.han_su_dung ? new Date(lot.han_su_dung).toLocaleDateString('vi-VN') : '';
+                            const thuocTen = lot.thuoc ? lot.thuoc.ten_thuoc : (lot.ten_thuoc || 'Không xác định');
+                            const khoTen = lot.kho ? lot.kho.ten_kho : (lot.ten_kho || 'Không xác định');
+                            const donVi = (lot.thuoc && lot.thuoc.don_vi_goc) || lot.don_vi || '';
                             const lotLabel = `${thuocTen} - ${lot.ma_lo || 'Không có mã lô'} - ${khoTen} - HSD: ${expDate}`;
 
                             options += `<option value="${lot.lo_id}" 
@@ -875,12 +902,12 @@
                                 data-han-sd="${lot.han_su_dung || ''}"
                                 data-ghi-chu="${lot.ghi_chu || ''}"
                                 data-ton-kho="${lot.ton_kho_hien_tai}"
-                                data-gia-nhap="${lot.gia_nhap_tb}"
+                                data-gia-nhap="${lot.gia_nhap_tb || lot.gia_nhap || ''}"
                                 data-kho-id="${lot.kho_id}"
                                 data-kho-ten="${khoTen}"
                                 data-thuoc-id="${lot.thuoc_id}"
                                 data-thuoc-ten="${thuocTen}"
-                                data-don-vi-goc="${lot.thuoc ? lot.thuoc.don_vi_goc : donVi}">
+                                data-don-vi-goc="${donVi}">
                                 ${lotLabel}
                             </option>`;
                         });
@@ -928,6 +955,8 @@
                 // *** QUAN TRỌNG: Điền thông tin từ lô đã chọn vào form ***
                 $('#modal_thuoc_id').val(thuocId);
                 $('#modal_kho_id').val(khoId);
+                // ensure readonly name shows the kho
+                $('#modal_kho_name').val(khoTen || $('#modal_kho_name').val());
                 // Lấy đơn vị gốc từ option đã chọn hoặc từ lô hiện tại
                 const donViGoc = selectedOption.data('don-vi-goc') || donVi;
                 // Đảm bảo đơn vị luôn được điền
@@ -1189,7 +1218,10 @@
             // Event handler already set in document.ready
 
             // Tải danh sách lô hiện có (để sẵn sàng khi người dùng chọn tab lô hiện có)
-            loadExistingLots();
+            // Nếu đã chọn thuốc, tải lô của thuốc đó
+            const currentModalThuoc = $('#modal_thuoc_id').val();
+            const currentModalKho = $('#modal_kho_id').val();
+            loadExistingLots(currentModalThuoc, currentModalKho);
 
             // Hiển thị modal
             $('#addItemModal').modal('show');
@@ -1285,201 +1317,176 @@
             });
         });
 
-        // Thêm thuốc vào danh sách
+        // Thêm thuốc vào danh sách (merge nếu trùng key fields)
         $('#addToListBtn').click(function() {
-            // Xác định loại lô (mới hay hiện có)
             const isNewLot = $('#new_lot').prop('checked');
 
-            // Validate và lấy thông tin dựa vào loại lô
-            let thuocId, thuocText, khoId, khoText, soLuong, donVi, giaNhap, thueSuat;
-            let loId, soLo, soLoNSX, ngaySX, hanSD, ghiChu;
+            // Lấy giá trị chung
+            const thuocId = $('#modal_thuoc_id').val();
+            const selectedThuocOption = $('#modal_thuoc_id option:selected');
+            const thuocText = selectedThuocOption.text();
+            let khoId = $('#modal_kho_id').val();
+            let khoText = $('#modal_kho_name').val() || ($('#modal_kho_id option:selected').text() || '');
+            const donVi = selectedThuocOption.data('don-vi-goc') || $('#modal_don_vi').val() || '';
+            const soLuong = parseFloat($('#modal_so_luong').val() || '0');
+            const giaNhap = parseFloat($('#modal_gia_nhap').val() || '0');
+            const thueSuat = parseFloat($('#modal_thue_suat').val() || '0');
+            const ghiChu = $('#modal_ghi_chu').val() || '';
 
-            // Luôn lấy số lượng từ người dùng nhập vào
-            soLuong = $('#modal_so_luong').val();
+            let loId = '';
+            let soLo = '';
+            let soLoNSX = '';
+            let ngaySX = '';
+            let hanSD = '';
 
             if (isNewLot) {
-                // Lô mới - lấy thông tin từ các trường nhập
-                thuocId = $('#modal_thuoc_id').val();
-                const selectedThuocOption = $('#modal_thuoc_id option:selected');
-                thuocText = selectedThuocOption.text();
-                khoId = $('#modal_kho_id').val();
-                khoText = $('#modal_kho_id option:selected').text();
-                // Lấy đơn vị gốc từ data attribute của option đã chọn
-                donVi = selectedThuocOption.data('don-vi-goc') || $('#modal_don_vi').val();
-                giaNhap = $('#modal_gia_nhap').val();
-                thueSuat = $('#modal_thue_suat').val() || '0';
-
-                loId = '';
-                soLo = $('#modal_so_lo').val();
-                soLoNSX = $('#modal_so_lo_nha_san_xuat').val();
-                ngaySX = $('#modal_ngay_san_xuat').val();
-                hanSD = $('#modal_han_su_dung').val();
-                ghiChu = $('#modal_ghi_chu').val();
-
-                // Validate thuốc, kho và hạn sử dụng cho lô mới
-                if (!thuocId || !khoId) {
-                    showToast('Vui lòng chọn thuốc và kho cho lô mới', 'warning');
-                    return;
-                }
-
-                if (!hanSD) {
-                    showToast('Vui lòng nhập hạn sử dụng cho lô mới', 'warning');
-                    return;
-                }
+                soLo = $('#modal_so_lo').val() || '';
+                soLoNSX = $('#modal_so_lo_nha_san_xuat').val() || '';
+                ngaySX = $('#modal_ngay_san_xuat').val() || '';
+                hanSD = $('#modal_han_su_dung').val() || '';
             } else {
-                // Lô hiện có - lấy thông tin từ lô đã chọn
-                const selectedLot = $('#modal_existing_lot_id').val();
+                loId = $('#modal_existing_lot_id').val() || '';
+                soLo = $('#modal_existing_lot_ma_lo').val() || '';
+                soLoNSX = $('#modal_existing_lot_so_lo_nsx').val() || '';
+                ngaySX = $('#modal_existing_lot_ngay_sx').val() || '';
+                hanSD = $('#modal_existing_lot_han_sd').val() || '';
+            }
 
-                if (!selectedLot) {
-                    showToast('Vui lòng chọn lô hiện có', 'warning');
-                    return;
-                }
-
-                console.log('Selected existing lot:', selectedLot);
-
-                loId = selectedLot;
-                thuocId = $('#modal_existing_lot_thuoc_id').val();
-                thuocText = $('#modal_existing_lot_thuoc_text').val();
-                khoId = $('#modal_existing_lot_kho_id').val();
-                khoText = $('#modal_existing_lot_kho_text').val();
-                // Lấy đơn vị gốc từ thuốc đã chọn
-                donVi = $('#modal_thuoc_id option:selected').data('don-vi-goc') || '';
-                soLo = $('#modal_existing_lot_ma_lo').val();
-                soLoNSX = $('#modal_existing_lot_so_lo_nsx').val();
-                ngaySX = $('#modal_existing_lot_ngay_sx').val();
-                hanSD = $('#modal_existing_lot_han_sd').val();
-                ghiChu = $('#modal_existing_lot_ghi_chu').val();
-
-                // *** QUAN TRỌNG: Lấy giá nhập và thuế suất từ form modal ***
-                // Đối với lô hiện có, cho phép người dùng thay đổi giá nhập và thuế suất
-                giaNhap = $('#modal_gia_nhap').val();
-                thueSuat = $('#modal_thue_suat').val() || '0';
-
-                console.log('Existing lot values:', {
-                    giaNhap,
-                    thueSuat,
-                    donVi,
-                    soLuong
-                });
-
-                // Nếu không có giá nhập được nhập, báo lỗi
-                if (!giaNhap) {
-                    showToast('Vui lòng nhập giá nhập cho lô hiện có', 'warning');
-                    return;
+            // If kho not set (hidden input empty), try to fall back to the selected thuoc option's data attributes
+            if ((!khoId || khoId === '') && selectedThuocOption && selectedThuocOption.length) {
+                const optKhoId = selectedThuocOption.attr('data-kho-id') || selectedThuocOption.data('kho-id') || '';
+                const optKhoName = selectedThuocOption.attr('data-kho-name') || selectedThuocOption.data('kho-name') || '';
+                if (optKhoId) {
+                    $('#modal_kho_id').val(optKhoId);
+                    $('#modal_kho_name').val(optKhoName);
+                    khoId = optKhoId;
+                    khoText = optKhoName || khoText;
                 }
             }
 
-            // Đảm bảo lấy đơn vị gốc từ thuốc đã chọn cho cả 2 trường hợp
-            const selectedThuocOption = $('#modal_thuoc_id option:selected');
-            donVi = selectedThuocOption.data('don-vi-goc');
-            
-            // Validate các trường bắt buộc chung
-            console.log('Validating required fields:', {
-                thuocId,
-                khoId,
-                soLuong,
-                donVi,
-                giaNhap,
-                isNewLot
+            // Validations
+            if (!thuocId) { showToast('Vui lòng chọn thuốc', 'warning'); return; }
+            if (!khoId) { showToast('Vui lòng chọn kho', 'warning'); return; }
+            if (!soLuong || soLuong <= 0) { showToast('Vui lòng nhập số lượng hợp lệ', 'warning'); return; }
+            if (!giaNhap || giaNhap <= 0) { showToast('Vui lòng nhập giá nhập hợp lệ', 'warning'); return; }
+            if (!donVi) { showToast('Không lấy được đơn vị gốc của thuốc. Vui lòng chọn lại thuốc', 'warning'); return; }
+            if (!hanSD) { showToast('Hạn sử dụng là thông tin bắt buộc', 'warning'); return; }
+
+            const thanhTien = soLuong * giaNhap * (1 + thueSuat / 100);
+
+            // Create normalized key
+            const key = {
+                thuocId: String(thuocId),
+                khoId: String(khoId),
+                soLo: String(soLo || ''),
+                hanSD: String(hanSD || ''),
+                giaNhap: Number(giaNhap).toFixed(2),
+                thueSuat: Number(thueSuat).toFixed(2)
+            };
+
+            // Try find existing matching row
+            let matchedRow = null;
+            $('#detailsTable tbody tr.detail-row').each(function() {
+                const r = $(this);
+                const rkey = {
+                    thuocId: String(r.data('thuoc-id')),
+                    khoId: String(r.data('kho-id')),
+                    soLo: String(r.data('so-lo') || ''),
+                    hanSD: String(r.data('han-su-dung') || ''),
+                    giaNhap: Number(r.data('gia-nhap') || 0).toFixed(2),
+                    thueSuat: Number(r.data('thue-suat') || 0).toFixed(2)
+                };
+                if (rkey.thuocId === key.thuocId && rkey.khoId === key.khoId && rkey.soLo === key.soLo && rkey.hanSD === key.hanSD && rkey.giaNhap === key.giaNhap && rkey.thueSuat === key.thueSuat) {
+                    matchedRow = r;
+                    return false; // break
+                }
             });
 
-            if (!thuocId) {
-                showToast('Vui lòng chọn thuốc', 'warning');
-                return;
+                if (matchedRow) {
+                // accumulate quantity
+                const qtyInput = matchedRow.find('.so-luong-input');
+                const currentQty = parseFloat(qtyInput.val() || '0');
+                const newQty = currentQty + soLuong;
+                qtyInput.val(newQty);
+                matchedRow.find('input[name="so_luong[]"]').val(newQty);
+                    const newTienHang = newQty * giaNhap;
+                    const newTienThue = newTienHang * (thueSuat / 100);
+                    const newThanh = newTienHang + newTienThue;
+                    matchedRow.find('.thanh-tien-cell').text(formatCurrency(newThanh));
+                    matchedRow.find('input[name="thanh_tien[]"]').val(newThanh.toFixed(2));
+                    // update tien_thue hidden input if present
+                    if (matchedRow.find('input[name="tien_thue[]"]').length) {
+                        matchedRow.find('input[name="tien_thue[]"]').val(newTienThue.toFixed(0));
+                    } else {
+                        matchedRow.append(`<input type="hidden" name="tien_thue[]" value="${newTienThue.toFixed(0)}">`);
+                    }
+            } else {
+                // append new row
+                const $row = $(
+                    `<tr class="detail-row" data-thuoc-id="${thuocId}" data-kho-id="${khoId}" data-so-lo="${soLo}" data-han-su-dung="${hanSD}" data-gia-nhap="${parseFloat(giaNhap).toFixed(2)}" data-thue-suat="${parseFloat(thueSuat).toFixed(2)}">
+                        <td>
+                            <div><strong>${thuocText}</strong></div>
+                            <div class="small text-muted">${isNewLot ? 'Lô mới: ' + (soLo || 'Tự tạo') : 'Lô hiện có: ' + soLo} ${soLoNSX ? '/ NSX: ' + soLoNSX : ''}</div>
+                            <div class="small text-muted">${ngaySX ? 'NSX: ' + formatDate(ngaySX) : ''} | HSD: ${formatDate(hanSD)}</div>
+                            <input type="hidden" name="thuoc_id[]" value="${thuocId}">
+                            <input type="hidden" name="lo_id[]" value="${loId}">
+                            <input type="hidden" name="is_new_lot[]" value="${isNewLot ? '1' : '0'}">
+                            <input type="hidden" name="so_lo[]" value="${soLo}">
+                            <input type="hidden" name="so_lo_nha_san_xuat[]" value="${soLoNSX}">
+                            <input type="hidden" name="ngay_san_xuat[]" value="${ngaySX}">
+                            <input type="hidden" name="han_su_dung[]" value="${hanSD}">
+                            <input type="hidden" name="ghi_chu_lo[]" value="${ghiChu}">
+                        </td>
+                        <td>
+                            ${khoText}
+                            <input type="hidden" name="kho_id[]" value="${khoId}">
+                        </td>
+                        <td>
+                            <input class="form-control so-luong-input" name="so_luong[]" value="${soLuong}">
+                            <input type="hidden" name="don_vi[]" value="${donVi}">
+                        </td>
+                        <td>
+                            ${formatCurrency(giaNhap)}
+                            <input type="hidden" name="gia_nhap[]" value="${parseFloat(giaNhap).toFixed(2)}">
+                        </td>
+                        <td>
+                            ${parseFloat(thueSuat).toFixed(2)}%<input type="hidden" name="thue_suat[]" value="${parseFloat(thueSuat).toFixed(2)}">
+                        </td>
+                        <td class="thanh-tien-cell">${formatCurrency(thanhTien)}<input type="hidden" name="thanh_tien[]" value="${thanhTien.toFixed(2)}"><input type="hidden" name="tien_thue[]" value="${(soLuong * giaNhap * (thueSuat/100)).toFixed(0)}"></td>
+                        <td><button type="button" class="btn btn-sm btn-danger remove-detail">Xóa</button></td>
+                    </tr>`);
+
+                // attach inline handlers
+                $row.find('.so-luong-input').on('change', function() {
+                    const val = parseFloat($(this).val() || '0');
+                    $(this).closest('tr').find('input[name="so_luong[]"]').val(val);
+                    const row = $(this).closest('tr');
+                    const g = parseFloat(row.data('gia-nhap') || 0);
+                    const t = parseFloat(row.data('thue-suat') || 0);
+                    const tienHang = val * g;
+                    const tienThue = tienHang * (t / 100);
+                    const newThanh = tienHang + tienThue;
+                    row.find('.thanh-tien-cell').text(formatCurrency(newThanh));
+                    row.find('input[name="thanh_tien[]"]').val(newThanh.toFixed(2));
+                    if (row.find('input[name="tien_thue[]"]').length) {
+                        row.find('input[name="tien_thue[]"]').val(tienThue.toFixed(0));
+                    } else {
+                        row.append(`<input type="hidden" name="tien_thue[]" value="${tienThue.toFixed(0)}">`);
+                    }
+                    calculateTotals();
+                });
+
+                $row.find('.remove-detail').on('click', function() {
+                    $(this).closest('tr').remove();
+                    calculateTotals();
+                });
+
+                $('#empty-row').remove();
+                $('#detailsTable tbody').append($row);
             }
-            if (!khoId) {
-                showToast('Vui lòng chọn kho', 'warning');
-                return;
-            }
-            if (!soLuong || soLuong <= 0) {
-                showToast('Vui lòng nhập số lượng hợp lệ', 'warning');
-                return;
-            }
-            if (!giaNhap || giaNhap <= 0) {
-                showToast('Vui lòng nhập giá nhập hợp lệ', 'warning');
-                return;
-            }
-            if (!donVi) {
-                showToast('Không lấy được đơn vị gốc của thuốc. Vui lòng chọn lại thuốc', 'warning');
-                return;
-            }
 
-            // *** QUAN TRỌNG: Validate hạn sử dụng cho cả hai trường hợp ***
-            if (!hanSD) {
-                showToast('Hạn sử dụng là thông tin bắt buộc', 'warning');
-                return;
-            }
-
-            // Tính tiền
-            const tienHang = parseFloat(soLuong) * parseFloat(giaNhap);
-            const tienThue = tienHang * (parseFloat(thueSuat) / 100);
-            const thanhTien = tienHang + tienThue;
-
-            // Thêm hàng mới vào bảng
-            const newRow = `
-            <tr class="detail-row">
-                <td>
-                    <div><strong>${thuocText}</strong></div>
-                    <div class="small text-muted">
-                        ${isNewLot ? 'Lô mới: ' + (soLo || 'Tạo tự động') : 'Lô hiện có: ' + soLo} ${soLoNSX ? '/ NSX: ' + soLoNSX : ''}
-                    </div>
-                    <div class="small text-muted">
-                        ${ngaySX ? 'NSX: ' + formatDate(ngaySX) : ''} | HSD: ${formatDate(hanSD)}
-                    </div>
-                    <input type="hidden" name="thuoc_id[]" value="${thuocId}">
-                    <input type="hidden" name="lo_id[]" value="${loId}">
-                    <input type="hidden" name="is_new_lot[]" value="${isNewLot ? '1' : '0'}">
-                    <input type="hidden" name="so_lo[]" value="${soLo}">
-                    <input type="hidden" name="so_lo_nha_san_xuat[]" value="${soLoNSX}">
-                    <input type="hidden" name="ngay_san_xuat[]" value="${ngaySX}">
-                    <input type="hidden" name="han_su_dung[]" value="${hanSD}">
-                    <input type="hidden" name="ghi_chu_lo[]" value="${ghiChu}">
-                </td>
-                <td>
-                    ${khoText}
-                    <input type="hidden" name="kho_id[]" value="${khoId}">
-                </td>
-                <td>
-                    ${soLuong} ${donVi}
-                    <input type="hidden" name="so_luong[]" value="${soLuong}">
-                    <input type="hidden" name="don_vi[]" value="${donVi}">
-                </td>
-                <td>
-                    ${formatCurrency(giaNhap)}
-                    <input type="hidden" name="gia_nhap[]" value="${giaNhap}">
-                </td>
-                <td>
-                    ${thueSuat}%
-                    <input type="hidden" name="thue_suat[]" value="${thueSuat}">
-                    <input type="hidden" name="tien_thue[]" class="tien-thue-value" value="${tienThue.toFixed(0)}">
-                </td>
-                <td>
-                    ${formatCurrency(thanhTien.toFixed(0))}
-                    <input type="hidden" name="thanh_tien[]" class="thanh-tien-value" value="${thanhTien.toFixed(0)}">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger btn-remove">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-
-            // Xóa hàng trống nếu có
-            $('#empty-row').remove();
-
-            // Thêm hàng mới vào bảng
-            $('#detailsTable tbody').append(newRow);
-
-            // Tăng index
-            rowIndex++;
-
-            // Tính lại tổng tiền
             calculateTotals();
-
-            // Đóng modal
             $('#addItemModal').modal('hide');
-
             showToast(`Đã thêm ${thuocText} vào phiếu nhập`, 'success');
         });
 

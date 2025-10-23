@@ -353,6 +353,12 @@
 
 @section('scripts')
 <script>
+        // Format date từ yyyy-mm-dd thành dd/mm/yyyy
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN');
+    }
     // Hiển thị loading spinner
     function showLoading() {
         return `
@@ -461,13 +467,6 @@
                     showToast('Có lỗi xảy ra khi tải dữ liệu', 'danger');
                 }
             });
-        }
-        
-        // Format date từ yyyy-mm-dd thành dd/mm/yyyy
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('vi-VN');
         }
         
         // Tính số ngày còn lại đến hạn sử dụng
@@ -652,16 +651,34 @@
                         response.thuocs.data.forEach(function(thuoc) {
                             const lotInfo = thuoc.lo_thuoc && thuoc.lo_thuoc.length > 0 
                                 ? thuoc.lo_thuoc[0] : null;
-                            
                             // Tính trạng thái hạn sử dụng
                             let statusHtml = '';
                             if (lotInfo) {
                                 const expiryDate = new Date(lotInfo.han_su_dung);
                                 const today = new Date();
                                 const daysToExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-                                
                                 if (daysToExpiry <= 0) {
-                                    statusHtml = `<span class="badge bg-danger">Hết hạn</span>`;
+                                    // Kiểm tra đã có điều chỉnh hủy chưa
+                                    let isHuy = false;
+                                       let ngayHuy = null;
+                                    if (lotInfo.lich_su_ton_kho && Array.isArray(lotInfo.lich_su_ton_kho)) {
+                                           lotInfo.lich_su_ton_kho.forEach(function(ls) {
+                                               if (ls.loai_thay_doi === 'dieu_chinh') {
+                                                   isHuy = true;
+                                                   if (ls.created_at) {
+                                                       ngayHuy = ls.created_at;
+                                                   }
+                                               }
+                                           });
+                                    }
+                                       if (isHuy) {
+                                           statusHtml = `<span class=\"badge bg-secondary\">Hết hạn (đã hủy)</span>`;
+                                           if (ngayHuy) {
+                                               statusHtml += `<br><span class=\"text-muted small\">Ngày hủy: ${formatDate(ngayHuy)}</span>`;
+                                           }
+                                       } else {
+                                           statusHtml = `<span class=\"badge bg-danger\">Hết hạn (chưa hủy)</span>`;
+                                       }
                                 } else if (daysToExpiry <= 30) {
                                     statusHtml = `<span class="badge bg-warning">Sắp hết hạn (${daysToExpiry} ngày)</span>`;
                                 } else {
@@ -845,7 +862,26 @@
 
                         let statusBadge = '';
                         if (daysToExpiry <= 0) {
-                            statusBadge = '<span class="badge bg-danger">Hết hạn</span>';
+                            let isHuy = false;
+                            let ngayHuy = null;
+                            if (lot.lich_su_ton_kho && Array.isArray(lot.lich_su_ton_kho)) {
+                                lot.lich_su_ton_kho.forEach(function(ls) {
+                                    if (ls.loai_thay_doi === 'dieu_chinh') {
+                                        isHuy = true;
+                                        if (ls.created_at) {
+                                            ngayHuy = ls.created_at;
+                                        }
+                                    }
+                                });
+                            }
+                            if (isHuy) {
+                                statusBadge = '<span class="badge bg-secondary">Hết hạn (đã hủy)</span>';
+                                if (ngayHuy) {
+                                    statusBadge += `<br><span class=\"text-muted small\">Ngày hủy: ${formatDate(ngayHuy)}</span>`;
+                                }
+                            } else {
+                                statusBadge = '<span class="badge bg-danger">Hết hạn (chưa hủy)</span>';
+                            }
                         } else if (daysToExpiry <= 30) {
                             statusBadge = `<span class="badge bg-warning">Sắp hết hạn (còn ${daysToExpiry} ngày)</span>`;
                         } else {

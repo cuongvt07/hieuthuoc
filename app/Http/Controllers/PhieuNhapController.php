@@ -86,7 +86,7 @@ class PhieuNhapController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+    $request->validate([
             'ma_phieu' => 'required|string|max:20|unique:phieu_nhap,ma_phieu',
             'ncc_id' => 'required|exists:nha_cung_cap,ncc_id',
             'ngay_nhap' => 'required|date',
@@ -390,40 +390,66 @@ class PhieuNhapController extends Controller
                 'tonKho' => $tonKho
             ]);
         } else {
-            // Lấy lô theo thuốc và kho cụ thể
+            // Lấy lô theo thuốc và/hoặc kho cụ thể
             $thuocId = $request->thuoc_id;
             $khoId = $request->kho_id;
-            
-            if (!$thuocId || !$khoId) {
+
+            // If neither provided, return error
+            if (!$thuocId && !$khoId) {
                 return response()->json([
                     'error' => 'Thiếu thông tin thuốc hoặc kho'
                 ], 400);
             }
-            
-            $thuoc = Thuoc::find($thuocId);
-            
-            if (!$thuoc) {
+
+            // If thuocId provided but not khoId -> return lots for that thuoc across all kho
+            if ($thuocId && !$khoId) {
+                $thuoc = Thuoc::find($thuocId);
+                if (!$thuoc) {
+                    return response()->json([
+                        'error' => 'Không tìm thấy thuốc'
+                    ], 404);
+                }
+
+                $tonKho = LoThuoc::with('kho')
+                    ->where('thuoc_id', $thuocId)
+                    ->where('ton_kho_hien_tai', '>', 0)
+                    ->where('han_su_dung', '>', now())
+                    ->orderBy('han_su_dung', 'asc')
+                    ->get();
+
+                $tongTonKho = $tonKho->sum('ton_kho_hien_tai');
+
                 return response()->json([
-                    'error' => 'Không tìm thấy thuốc'
-                ], 404);
+                    'tonKho' => $tonKho,
+                    'thuoc' => $thuoc,
+                    'tongTonKho' => $tongTonKho
+                ]);
             }
 
-            // Lấy tất cả các lô có tồn kho > 0 của thuốc trong kho này
-            $tonKho = LoThuoc::where('thuoc_id', $thuocId)
-                ->where('kho_id', $khoId)
-                ->where('ton_kho_hien_tai', '>', 0)
-                ->where('han_su_dung', '>', now())
-                ->orderBy('han_su_dung', 'asc')
-                ->get();
+            // If both thuocId and khoId provided -> filter by both
+            if ($thuocId && $khoId) {
+                $thuoc = Thuoc::find($thuocId);
+                if (!$thuoc) {
+                    return response()->json([
+                        'error' => 'Không tìm thấy thuốc'
+                    ], 404);
+                }
 
-            // Tính tổng tồn kho của tất cả các lô
-            $tongTonKho = $tonKho->sum('ton_kho_hien_tai');
-            
-            return response()->json([
-                'tonKho' => $tonKho,
-                'thuoc' => $thuoc,
-                'tongTonKho' => $tongTonKho
-            ]);
+                $tonKho = LoThuoc::where('thuoc_id', $thuocId)
+                    ->where('kho_id', $khoId)
+                    ->where('ton_kho_hien_tai', '>', 0)
+                    ->where('han_su_dung', '>', now())
+                    ->orderBy('han_su_dung', 'asc')
+                    ->get();
+
+                $tongTonKho = $tonKho->sum('ton_kho_hien_tai');
+
+                return response()->json([
+                    'tonKho' => $tonKho,
+                    'thuoc' => $thuoc,
+                    'tongTonKho' => $tongTonKho
+                ]);
+            }
         }
     }
     

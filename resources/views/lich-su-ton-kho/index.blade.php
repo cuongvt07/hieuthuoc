@@ -28,7 +28,7 @@
                         <option value="">-- Tất cả --</option>
                         <option value="nhap" {{ request('loai_thay_doi') == 'nhap' ? 'selected' : '' }}>Nhập hàng</option>
                         <option value="ban" {{ request('loai_thay_doi') == 'ban' ? 'selected' : '' }}>Bán hàng</option>
-                        <option value="dieu_chinh" {{ request('loai_thay_doi') == 'dieu_chinh' ? 'selected' : '' }}>Điều chỉnh/Hủy tồn</option>
+                        <option value="dieu_chinh" {{ request('loai_thay_doi') == 'dieu_chinh' ? 'selected' : '' }}>Hủy tồn</option>
                         <option value="hoan_tra" {{ request('loai_thay_doi') == 'hoan_tra' ? 'selected' : '' }}>Hoàn trả</option>
                     </select>
                 </div>

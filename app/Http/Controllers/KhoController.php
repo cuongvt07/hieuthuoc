@@ -18,7 +18,7 @@ class KhoController extends Controller
 
         // Tính tổng số lượng tồn kho từ relationship loThuoc
         $query->withSum(['loThuoc as total_items' => function($query) {
-            $query->where('ton_kho_hien_tai', '>', 0);
+            $query->where('ton_kho_hien_tai', '>=', 0);
         }], 'ton_kho_hien_tai');
 
         // Đếm số lượng thuốc thông qua subquery
@@ -100,13 +100,13 @@ class KhoController extends Controller
         if ($request->has('thuoc_id')) {
             // Xem tồn kho của một thuốc trong tất cả các kho
             $thuoc = Thuoc::with(['loThuoc' => function($query) {
-                $query->where('ton_kho_hien_tai', '>', 0)
+                $query->where('ton_kho_hien_tai', '>=', 0)
                       ->with('kho');
             }])->findOrFail($request->thuoc_id);
 
             // Tính tổng tồn kho theo từng kho
             $tonKhoTheoKho = LoThuoc::where('thuoc_id', $request->thuoc_id)
-                ->where('ton_kho_hien_tai', '>', 0)
+                ->where('ton_kho_hien_tai', '>=', 0)
                 ->select('kho_id')
                 ->selectRaw('SUM(ton_kho_hien_tai) as tong_ton_kho')
                 ->with('kho:kho_id,ten_kho')
@@ -122,18 +122,21 @@ class KhoController extends Controller
             // Xem danh sách thuốc trong kho
             $thuocs = Thuoc::with(['loThuoc' => function($query) use ($kho) {
                 $query->where('kho_id', $kho->kho_id)
-                      ->where('ton_kho_hien_tai', '>', 0)
+                      ->where('ton_kho_hien_tai', '>=', 0)
+                      ->with(['lichSuTonKho' => function($q) {
+                          $q->select('lo_id', 'loai_thay_doi', 'created_at');
+                      }])
                       ->select('lo_id', 'thuoc_id', 'kho_id', 'ton_kho_hien_tai', 'ngay_san_xuat', 'han_su_dung');
             }])
             ->whereHas('loThuoc', function($query) use ($kho) {
                 $query->where('kho_id', $kho->kho_id)
-                      ->where('ton_kho_hien_tai', '>', 0);
+                      ->where('ton_kho_hien_tai', '>=', 0);
             })
             ->select('thuoc_id', 'ma_thuoc', 'ten_thuoc', 'don_vi_goc', 'nhom_id')
             ->with('nhomThuoc:nhom_id,ten_nhom')
             ->withSum(['loThuoc' => function($query) use ($kho) {
                 $query->where('kho_id', $kho->kho_id)
-                      ->where('ton_kho_hien_tai', '>', 0);
+                      ->where('ton_kho_hien_tai', '>=', 0);
             }], 'ton_kho_hien_tai')
             ->paginate(10);
             

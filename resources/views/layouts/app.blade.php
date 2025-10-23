@@ -61,16 +61,24 @@
         .sidebar {
             width: 280px;
             min-height: 100vh;
+            height: 100vh;
             background-color: #198754;
             position: fixed;
             left: 0;
             top: 0;
             z-index: 100;
+            overflow-x: auto;
             overflow-y: auto;
         }
 
         .content-wrapper {
             margin-left: 280px;
+            min-width: 0;
+            min-height: 100vh;
+            max-width: 100vw;
+            overflow-x: auto;
+            overflow-y: auto;
+            box-sizing: border-box;
         }
 
         .menu-item {
