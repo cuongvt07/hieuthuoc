@@ -97,11 +97,15 @@
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" id="sap_het_han" name="sap_het_han" value="1" @if(request('sap_het_han')) checked @endif>
-                                <label class="form-check-label small" for="sap_het_han">Sắp hết hạn (30 ngày)</label>
+                                <label class="form-check-label small" for="sap_het_han">Sắp hết hạn (&le; 30 ngày)</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="het_han" name="het_han" value="1" @if(request('het_han')) checked @endif>
-                                <label class="form-check-label small" for="het_han">Đã hết hạn</label>
+                                <input class="form-check-input" type="checkbox" id="het_han_chua_huy" name="het_han_chua_huy" value="1" @if(request('het_han_chua_huy')) checked @endif>
+                                <label class="form-check-label small" for="het_han_chua_huy">Hết hạn (chưa hủy)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="het_han_da_huy" name="het_han_da_huy" value="1" @if(request('het_han_da_huy')) checked @endif>
+                                <label class="form-check-label small" for="het_han_da_huy">Hết hạn (đã hủy)</label>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -175,34 +179,37 @@
                                     $today = \Carbon\Carbon::today();
                                     $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
                                     $diffDays = $today->diffInDays($expiry, false);
-                                    
-                                    if ($lo->ton_kho_hien_tai <= 0) {
-                                        $status = 'out-of-stock';
-                                        $statusText = 'Hết hàng';
+                                    // Xác định đã hủy tồn hay chưa
+                                    $daHuyTon = ($lo->ton_kho_hien_tai <= 0 && $expiry < $today);
+                                    if ($lo->ton_kho_hien_tai <= 0 && $expiry < $today) {
+                                        $status = 'out-of-stock expired';
+                                        $statusText = 'Hết hạn (đã hủy)';
                                     } elseif ($diffDays < 0) {
                                         $status = 'expired';
-                                        $statusText = 'Hết hạn';
+                                        $statusText = 'Hết hạn (chưa hủy)';
                                     } elseif ($diffDays <= 30) {
                                         $status = 'near-expiry';
-                                        $statusText = 'Sắp hết hạn';
+                                        $statusText = 'Sắp hết hạn (còn ' . max(0, $diffDays) . ' ngày)';
+                                    } elseif ($lo->ton_kho_hien_tai <= 0) {
+                                        $status = 'out-of-stock';
+                                        $statusText = 'Hết hàng';
                                     } else {
                                         $status = 'normal';
                                         $statusText = 'Bình thường';
                                     }
                                 @endphp
                                 <span class="badge status-badge {{ $status }}">{{ $statusText }}</span>
-                                @if($diffDays > 0 && $diffDays <= 30)
-                                    <div class="small text-muted">Còn {{ $diffDays }} ngày</div>
-                                @endif
                             </td>
                             <td class="text-center">
-                                <div class="btn-group btn-group-sm">
+                                <div class="btn-group" role="group">
                                     <a href="{{ route('lo-thuoc.show', $lo->lo_id) }}" class="btn btn-info">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('lo-thuoc.edit', $lo->lo_id) }}" class="btn btn-warning">
-                                        <i class="bi bi-pencil"></i>
+                                    @if($lo->ton_kho_hien_tai > 0 && $diffDays < 0)
+                                    <a href="{{ route('lo-thuoc.dispose', $lo->lo_id) }}" class="btn btn-danger">
+                                        <i class="bi bi-trash"></i>
                                     </a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -303,9 +310,11 @@
                             <a href="{{ route('lo-thuoc.show', $lo->lo_id) }}" class="btn btn-sm btn-info">
                                 <i class="bi bi-eye me-1"></i> Chi tiết
                             </a>
-                            <a href="{{ route('lo-thuoc.edit', $lo->lo_id) }}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-pencil me-1"></i> Sửa
+                            @if($lo->ton_kho_hien_tai > 0 && $diffDays < 0)
+                            <a href="{{ route('lo-thuoc.dispose', $lo->lo_id) }}" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash me-1"></i> Hủy tồn
                             </a>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -334,7 +343,7 @@
             $('#filterForm').submit();
         });
         
-        $('#con_ton_kho, #sap_het_han, #het_han').change(function() {
+        $('#con_ton_kho, #sap_het_han, #het_han, #het_han_chua_huy, #het_han_da_huy').change(function() {
             $('#filterForm').submit();
         });
         

@@ -28,6 +28,8 @@
                         <option value="">-- Tất cả --</option>
                         <option value="nhap" {{ request('loai_thay_doi') == 'nhap' ? 'selected' : '' }}>Nhập hàng</option>
                         <option value="ban" {{ request('loai_thay_doi') == 'ban' ? 'selected' : '' }}>Bán hàng</option>
+                        <option value="dieu_chinh" {{ request('loai_thay_doi') == 'dieu_chinh' ? 'selected' : '' }}>Điều chỉnh/Hủy tồn</option>
+                        <option value="hoan_tra" {{ request('loai_thay_doi') == 'hoan_tra' ? 'selected' : '' }}>Hoàn trả</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
@@ -78,8 +80,14 @@
                                 <td>
                                     @if($ls->loai_thay_doi == 'nhap')
                                         <span class="badge bg-success">Nhập hàng</span>
-                                    @else
+                                    @elseif($ls->loai_thay_doi == 'ban')
                                         <span class="badge bg-info">Bán hàng</span>
+                                    @elseif($ls->loai_thay_doi == 'dieu_chinh')
+                                        <span class="badge bg-warning">Điều chỉnh</span>
+                                    @elseif($ls->loai_thay_doi == 'hoan_tra')
+                                        <span class="badge bg-secondary">Hoàn trả</span>
+                                    @else
+                                        <span class="badge bg-dark">{{ $ls->loai_thay_doi }}</span>
                                     @endif
                                 </td>
                                 <td class="text-end">

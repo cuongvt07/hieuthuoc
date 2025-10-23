@@ -35,13 +35,35 @@ class LoThuocController extends Controller
             $query->where('ton_kho_hien_tai', '>', 0);
         }
 
-        // Lọc theo hạn sử dụng
+
+        // Lọc theo sắp hết hạn (<= 30 ngày)
         if ($request->has('sap_het_han') && $request->sap_het_han == '1') {
             $today = date('Y-m-d');
             $thirtyDaysLater = date('Y-m-d', strtotime('+30 days'));
             $query->whereBetween('han_su_dung', [$today, $thirtyDaysLater]);
         }
 
+        // Lọc hết hạn (chưa hủy):
+        // - Lô hết hạn (han_su_dung < hôm nay)
+        // - Còn tồn kho (ton_kho_hien_tai > 0)
+        // - Trong lịch sử tồn kho CHƯA TỪNG có bất kỳ bản ghi nào của lô đó có loai_thay_doi = 'dieu_chinh'
+        if ($request->has('het_han_chua_huy') && $request->het_han_chua_huy == '1') {
+            $today = date('Y-m-d');
+            $query->where('han_su_dung', '<', $today)
+                  ->where('ton_kho_hien_tai', '>', 0)
+                  ->whereDoesntHave('lichSuTonKho', function($q) {
+                      $q->where('loai_thay_doi', 'dieu_chinh');
+                  });
+        }
+
+        // Lọc hết hạn (đã hủy): hết hạn và tồn kho = 0
+        if ($request->has('het_han_da_huy') && $request->het_han_da_huy == '1') {
+            $today = date('Y-m-d');
+            $query->where('han_su_dung', '<', $today)
+                  ->where('ton_kho_hien_tai', '<=', 0);
+        }
+
+        // Lọc hết hạn (tổng hợp, nếu vẫn còn dùng filter cũ)
         if ($request->has('het_han') && $request->het_han == '1') {
             $today = date('Y-m-d');
             $query->where('han_su_dung', '<', $today);
@@ -156,59 +178,72 @@ class LoThuocController extends Controller
     }
 
     /**
-     * Hiển thị form chỉnh sửa lô thuốc
+     * Hiển thị form hủy tồn hết hạn
      */
-    public function edit(LoThuoc $loThuoc)
+    public function dispose(LoThuoc $loThuoc)
     {
-        $khos = Kho::orderBy('ten_kho')->get();
-        return view('lo-thuoc.edit', compact('loThuoc', 'khos'));
+        // Kiểm tra xem lô có tồn kho không
+        if ($loThuoc->ton_kho_hien_tai <= 0) {
+            return redirect()->route('lo-thuoc.show', $loThuoc->lo_id)
+                ->with('error', 'Lô thuốc này không còn tồn kho để hủy.');
+        }
+
+        return view('lo-thuoc.edit', compact('loThuoc'));
     }
 
     /**
-     * Cập nhật thông tin lô thuốc
+     * Xử lý hủy tồn hết hạn
      */
-    public function update(Request $request, LoThuoc $loThuoc)
+    public function processDispose(Request $request, LoThuoc $loThuoc)
     {
         $request->validate([
-            'ma_lo' => 'required|string|max:50',
-            'so_lo_nha_san_xuat' => 'nullable|string|max:50',
-            'ngay_san_xuat' => 'nullable|date|before:han_su_dung',
-            'han_su_dung' => 'required|date',
-            'ghi_chu' => 'nullable|string',
-            'kho_id' => 'required|exists:kho,kho_id',
+            'ngay_huy' => 'required|date|before_or_equal:today',
+            'ly_do_huy' => 'required|string|max:500',
         ], [
-            'ma_lo.required' => 'Vui lòng nhập mã lô',
-            'han_su_dung.required' => 'Vui lòng nhập hạn sử dụng',
-            'ngay_san_xuat.before' => 'Ngày sản xuất phải trước hạn sử dụng',
+            'ngay_huy.required' => 'Vui lòng nhập ngày hủy',
+            'ngay_huy.before_or_equal' => 'Ngày hủy không thể là ngày trong tương lai',
+            'ly_do_huy.required' => 'Vui lòng nhập lý do hủy',
         ]);
 
-        // Kiểm tra xem có thay đổi kho không
-        $khoChanged = $loThuoc->kho_id != $request->kho_id;
-
-        // Nếu thay đổi kho, cần kiểm tra lô có được sử dụng ở đâu không
-        if ($khoChanged) {
-            // Kiểm tra xem lô có được sử dụng trong đơn bán hoặc các phiếu khác không
-            $usedInSales = $loThuoc->chiTietDonBanLe()->exists();
-            
-            if ($usedInSales) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'Không thể thay đổi kho của lô này vì lô đã được sử dụng trong đơn bán.');
-            }
+        // Kiểm tra xem lô có tồn kho không
+        if ($loThuoc->ton_kho_hien_tai <= 0) {
+            return redirect()->route('lo-thuoc.show', $loThuoc->lo_id)
+                ->with('error', 'Lô thuốc này không còn tồn kho để hủy.');
         }
 
-        // Cập nhật thông tin lô
-        $loThuoc->ma_lo = $request->ma_lo;
-        $loThuoc->so_lo_nha_san_xuat = $request->so_lo_nha_san_xuat;
-        $loThuoc->ngay_san_xuat = $request->ngay_san_xuat;
-        $loThuoc->han_su_dung = $request->han_su_dung;
-        $loThuoc->ghi_chu = $request->ghi_chu;
-        $loThuoc->kho_id = $request->kho_id;
+        DB::beginTransaction();
 
-        $loThuoc->save();
+        try {
+            $soLuongHuy = $loThuoc->ton_kho_hien_tai;
+            
+            // Tạo lịch sử tồn kho với loại_thay_doi = 'dieu_chinh'
+            \App\Models\LichSuTonKho::create([
+                'lo_id' => $loThuoc->lo_id,
+                'thuoc_id' => $loThuoc->thuoc_id,
+                'so_luong_thay_doi' => -$soLuongHuy,
+                'ton_kho_moi' => 0,
+                'nguoi_dung_id' => auth()->id(),
+                'loai_thay_doi' => 'dieu_chinh',
+                'mo_ta' => 'Hủy tồn hết hạn - ' . $request->ly_do_huy . ' (Ngày hủy: ' . \Carbon\Carbon::parse($request->ngay_huy)->format('d/m/Y') . ')',
+            ]);
 
-        return redirect()->route('lo-thuoc.show', $loThuoc->lo_id)
-            ->with('success', 'Cập nhật thông tin lô thuốc thành công.');
+            // Cập nhật tồn kho về 0
+            $loThuoc->ton_kho_hien_tai = 0;
+            $loThuoc->ghi_chu = ($loThuoc->ghi_chu ? $loThuoc->ghi_chu . "\n" : '') . 
+                                '[' . now()->format('d/m/Y H:i') . '] Đã hủy tồn: ' . $request->ly_do_huy;
+            $loThuoc->save();
+
+            DB::commit();
+
+            return redirect()->route('lo-thuoc.show', $loThuoc->lo_id)
+                ->with('success', 'Đã hủy tồn thành công ' . number_format($soLuongHuy, 2) . ' ' . $loThuoc->thuoc->don_vi_goc . ' của lô ' . $loThuoc->ma_lo);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Có lỗi xảy ra: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**

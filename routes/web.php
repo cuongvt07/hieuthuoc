@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('lo-thuoc', LoThuocController::class);
     Route::post('lo-thuoc/{loThuoc}/adjust-stock', [LoThuocController::class, 'adjustStock'])->name('lo-thuoc.adjust-stock');
     Route::post('lo-thuoc/{loThuoc}/transfer', [LoThuocController::class, 'transfer'])->name('lo-thuoc.transfer');
+    Route::get('lo-thuoc/{loThuoc}/dispose', [LoThuocController::class, 'dispose'])->name('lo-thuoc.dispose');
+    Route::post('lo-thuoc/{loThuoc}/dispose', [LoThuocController::class, 'processDispose'])->name('lo-thuoc.processDispose');
     
     // Đơn bán lẻ routes
     Route::resource('don-ban-le', DonBanLeController::class);

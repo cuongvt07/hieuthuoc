@@ -100,9 +100,16 @@
         <a href="{{ route('lo-thuoc.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i> Quay Lại
         </a>
-        <a href="{{ route('lo-thuoc.edit', $loThuoc->lo_id) }}" class="btn btn-warning ms-2">
-            <i class="bi bi-pencil me-1"></i> Sửa Thông Tin
+        @php
+            $today = \Carbon\Carbon::today();
+            $expiry = \Carbon\Carbon::parse($loThuoc->han_su_dung);
+            $diffDays = $today->diffInDays($expiry, false);
+        @endphp
+        @if($loThuoc->ton_kho_hien_tai > 0 && $diffDays < 0)
+        <a href="{{ route('lo-thuoc.dispose', $loThuoc->lo_id) }}" class="btn btn-danger ms-2">
+            <i class="bi bi-trash me-1"></i> Hủy Tồn Hết Hạn
         </a>
+        @endif
     </div>
 </div>
 
