@@ -242,19 +242,25 @@
                                         <button class="accordion-button collapsed bg-transparent text-white" type="button"
                                             data-bs-toggle="collapse" data-bs-target="#collapseTonKho" aria-expanded="false"
                                             aria-controls="collapseTonKho">
-                                        <i class="bi bi-building-gear me-2"></i> Quản lý tồn kho
-                                    </button>
-                                </h2>
-                                <div id="collapseTonKho" class="accordion-collapse collapse"
-                                    aria-labelledby="headingTonKho">
-                                    <div class="accordion-body p-0">
-                                        <a href="{{ route('kho.index') }}"
-                                            class="menu-item {{ request()->routeIs('kho.*') ? 'active' : '' }}">
-                                            <i class="bi bi-building-gear"></i> Quản Lý Kho
-                                        </a>
+                                            <i class="bi bi-building-gear me-2"></i> Quản lý tồn kho
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTonKho" class="accordion-collapse collapse" aria-labelledby="headingTonKho">
+                                        <div class="accordion-body p-0">
+                                            <a href="{{ route('kho.index') }}"
+                                                class="menu-item {{ request()->routeIs('kho.*') ? 'active' : '' }}">
+                                                <i class="bi bi-building-gear"></i> Quản Lý Kho
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+                            {{-- Nếu là dược sĩ --}}
+                            @elseif(Auth::user()->vai_tro === 'duoc_si')
+                                <a href="{{ route('kho.index') }}"
+                                    class="menu-item {{ request()->routeIs('kho.*') ? 'active' : '' }}">
+                                    <i class="bi bi-building-gear"></i> Quản Lý Kho
+                                </a>
                             @endif
                             <!-- Quản lý báo cáo -->
                             @if(Auth::user()->vai_tro === 'admin')

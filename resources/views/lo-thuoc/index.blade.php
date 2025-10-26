@@ -153,6 +153,7 @@
                             <th>Tồn kho</th>
                             <th>NSX</th>
                             <th>HSD</th>
+                            <th>Ngày hủy</th>
                             <th>Trạng thái</th>
                             <th class="text-center">Thao tác</th>
                         </tr>
@@ -176,15 +177,27 @@
                             <td>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</td>
                             <td>
                                 @php
+                                    // find latest 'dieu_chinh' history record (if any) eager loaded in controller
+                                    $huyRecord = ($lo->lichSuTonKho && count($lo->lichSuTonKho) > 0) ? $lo->lichSuTonKho->first() : null;
+                                    $huyDate = $huyRecord ? \Carbon\Carbon::parse($huyRecord->created_at)->format('d/m/Y') : null;
+                                @endphp
+                                @if($huyDate)
+                                    <div class="small text-muted">{{ $huyDate }}</div>
+                                @else
+                                    <div class="small text-muted">-</div>
+                                @endif
+                            </td>
+                            <td>
+                                @php
                                     $today = \Carbon\Carbon::today();
                                     $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
                                     $diffDays = $today->diffInDays($expiry, false);
-                                    // Xác định đã hủy tồn hay chưa
-                                    $daHuyTon = ($lo->ton_kho_hien_tai <= 0 && $expiry < $today);
-                                    if ($lo->ton_kho_hien_tai <= 0 && $expiry < $today) {
+                                    // Determine hủy status by presence of 'dieu_chinh' or ton_kho == 0
+                                    $hasHuyRecord = $huyRecord ? true : false;
+                                    if ($hasHuyRecord) {
                                         $status = 'out-of-stock expired';
                                         $statusText = 'Hết hạn (đã hủy)';
-                                    } elseif ($diffDays < 0) {
+                                    } elseif ($diffDays < 0 && $lo->ton_kho_hien_tai > 0) {
                                         $status = 'expired';
                                         $statusText = 'Hết hạn (chưa hủy)';
                                     } elseif ($diffDays <= 30) {
@@ -297,6 +310,14 @@
                         <div class="lot-info">
                             <span class="fw-bold">HSD:</span>
                             <span>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</span>
+                        </div>
+                        @php
+                            $huyRecord = ($lo->lichSuTonKho && count($lo->lichSuTonKho) > 0) ? $lo->lichSuTonKho->first() : null;
+                            $huyDate = $huyRecord ? \Carbon\Carbon::parse($huyRecord->created_at)->format('d/m/Y') : null;
+                        @endphp
+                        <div class="lot-info">
+                            <span class="fw-bold">Ngày hủy:</span>
+                            <span>{{ $huyDate ? $huyDate : '-' }}</span>
                         </div>
                         @if($lo->ghi_chu)
                         <div class="mt-2">

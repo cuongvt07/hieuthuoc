@@ -49,14 +49,32 @@ class BaoCaoLoThuocController extends Controller
 
         if ($request->filled('trang_thai')) {
             $now = Carbon::now();
-            
+
             switch($request->trang_thai) {
                 case 'con_han':
-                    $query->where('han_su_dung', '>', $now->copy()->addMonths(6));
+                    $query->where('han_su_dung', '>', $now->copy()->addMonths(6))
+                          ->whereDoesntHave('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
+                          });
                     break;
                 case 'sap_het_han':
                     $query->where('han_su_dung', '<=', $now->copy()->addMonths(6))
-                          ->where('han_su_dung', '>', $now);
+                          ->where('han_su_dung', '>', $now)
+                          ->whereDoesntHave('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
+                          });
+                    break;
+                case 'het_han_chua_huy':
+                    $query->where('han_su_dung', '<=', $now)
+                          ->whereDoesntHave('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
+                          });
+                    break;
+                case 'het_han_da_huy':
+                    $query->where('han_su_dung', '<=', $now)
+                          ->whereHas('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
+                          });
                     break;
                 case 'het_han':
                     $query->where('han_su_dung', '<=', $now);
@@ -101,26 +119,28 @@ class BaoCaoLoThuocController extends Controller
             switch($request->trang_thai) {
                 case 'con_han':
                     $query->where('han_su_dung', '>', $now->copy()->addMonths(1))
-                          ->where(function($q) {
-                              $q->where('da_huy', false)->orWhereNull('da_huy');
+                          ->whereDoesntHave('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
                           });
                     break;
                 case 'sap_het_han':
                     $query->where('han_su_dung', '<=', $now->copy()->addMonths(1))
                           ->where('han_su_dung', '>', $now)
-                          ->where(function($q) {
-                              $q->where('da_huy', false)->orWhereNull('da_huy');
+                          ->whereDoesntHave('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
                           });
                     break;
                 case 'het_han_chua_huy':
                     $query->where('han_su_dung', '<=', $now)
-                          ->where(function($q) {
-                              $q->where('da_huy', false)->orWhereNull('da_huy');
+                          ->whereDoesntHave('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
                           });
                     break;
                 case 'het_han_da_huy':
                     $query->where('han_su_dung', '<=', $now)
-                          ->where('da_huy', true);
+                          ->whereHas('lichSuTonKho', function($q) {
+                              $q->where('loai_thay_doi', 'dieu_chinh');
+                          });
                     break;
             }
         }

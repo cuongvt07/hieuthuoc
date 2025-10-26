@@ -18,7 +18,14 @@ class LoThuocController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LoThuoc::with(['thuoc', 'kho']);
+        // Eager load related thuoc, kho and any 'dieu_chinh' history (hủy tồn) ordered by newest
+        $query = LoThuoc::with([
+            'thuoc', 
+            'kho', 
+            'lichSuTonKho' => function($q) {
+                $q->where('loai_thay_doi', 'dieu_chinh')->orderBy('created_at', 'desc');
+            }
+        ]);
 
         // Lọc theo thuốc
         if ($request->has('thuoc_id') && $request->thuoc_id != '') {
