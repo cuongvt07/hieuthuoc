@@ -871,7 +871,7 @@
 
                             // Lấy các lô tồn kho thấp
                             $lowStock = LoThuoc::where('ton_kho_hien_tai', '>', 0)
-                                ->havingRaw('ton_kho_hien_tai <= ?', [10])
+                                ->where('ton_kho_hien_tai', '<=', 10)
                                 ->get()
                                 ->map(function ($item) {
                                     $item->status = ($item->ton_kho_hien_tai <= 5) ? 'critical_stock' : 'low_stock';
