@@ -40,12 +40,13 @@ class BaoCaoThuocController extends Controller
                 'thuoc.don_vi_ban',
                 'thuoc.ti_le_quy_doi',
                 'thuoc.trang_thai',
-                'thuoc.ngay_tao',
+                'thuoc.created_at',
                 'thuoc.nhom_id',
                 'thuoc.kho_id'
             )
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
+                ->selectRaw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as tong_so_luong_quy_doi')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as doanh_so')
                 ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
                 ->leftJoin('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
@@ -62,12 +63,17 @@ class BaoCaoThuocController extends Controller
                     'thuoc.don_vi_ban',
                     'thuoc.ti_le_quy_doi',
                     'thuoc.trang_thai',
-                    'thuoc.ngay_tao',
+                    'thuoc.created_at',
                     'thuoc.nhom_id',
                     'thuoc.kho_id'
                 )
                 ->orderBy('doanh_so', 'desc')
                 ->limit($limit);
+
+            // If a specific thuốc is selected, filter to it
+            if ($request->filled('thuoc_id')) {
+                $query->where('thuoc.thuoc_id', $request->thuoc_id);
+            }
 
             // Nếu có thêm bộ lọc theo trạng thái, áp dụng vào query
             if ($request->filled('trang_thai')) {
@@ -158,12 +164,13 @@ class BaoCaoThuocController extends Controller
                 'thuoc.don_vi_ban',
                 'thuoc.ti_le_quy_doi',
                 'thuoc.trang_thai',
-                'thuoc.ngay_tao',
+                'thuoc.created_at',
                 'thuoc.nhom_id',
                 'thuoc.kho_id'
             )
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
+                ->selectRaw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as tong_so_luong_quy_doi')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as doanh_so')
                 ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
                 ->leftJoin('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
@@ -180,7 +187,7 @@ class BaoCaoThuocController extends Controller
                     'thuoc.don_vi_ban',
                     'thuoc.ti_le_quy_doi',
                     'thuoc.trang_thai',
-                    'thuoc.ngay_tao',
+                    'thuoc.created_at',
                     'thuoc.nhom_id',
                     'thuoc.kho_id'
                 )
@@ -189,24 +196,46 @@ class BaoCaoThuocController extends Controller
 
             $row = 8;
             $tongDoanhSo = 0;
-            
+            $tongSoDon = 0;
+            $tongSoLuongQuyDoi = 0;
+
             foreach ($thuocs as $index => $thuoc) {
                 $sheet->setCellValue('A' . $row, $index + 1);
                 $sheet->setCellValue('B' . $row, $thuoc->ten_thuoc);
                 $sheet->setCellValue('C' . $row, $thuoc->so_don ?: 0);
-                $sheet->setCellValue('D' . $row, $thuoc->tong_so_luong ?: 0);
-                $sheet->setCellValue('E' . $row, number_format($thuoc->doanh_so ?: 0, 0, ',', '.') . ' VNĐ');
-                
+                // show converted total quantity (in base unit)
+                $val = $thuoc->tong_so_luong_quy_doi ?: 0;
+                // write integer if whole, otherwise write float with up to 2 decimals
+                if (floor($val) == $val) {
+                    $sheet->setCellValue('D' . $row, (int) $val);
+                    $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode('#,##0');
+                } else {
+                    $sheet->setCellValue('D' . $row, (float) $val);
+                    $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode('#,##0.##');
+                }
+                // write numeric doanh_so and format as currency-like with VNĐ suffix
+                $sheet->setCellValue('E' . $row, $thuoc->doanh_so ?: 0);
+                $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0" VNĐ"');
+
                 $tongDoanhSo += $thuoc->doanh_so ?: 0;
+                $tongSoDon += $thuoc->so_don ?: 0;
+                $tongSoLuongQuyDoi += $thuoc->tong_so_luong_quy_doi ?: 0;
                 $row++;
             }
-
-            // Thêm dòng tổng cộng
+            // Thêm dòng tổng cộng (Số đơn hàng và tổng số lượng (quy đổi))
             $sheet->setCellValue('A' . $row, '');
             $sheet->setCellValue('B' . $row, 'TỔNG CỘNG');
-            $sheet->setCellValue('C' . $row, '');
-            $sheet->setCellValue('D' . $row, '');
-            $sheet->setCellValue('E' . $row, number_format($tongDoanhSo, 0, ',', '.') . ' VNĐ');
+            $sheet->setCellValue('C' . $row, $tongSoDon);
+            // total: integer format if whole, otherwise up to 2 decimals
+            if (floor($tongSoLuongQuyDoi) == $tongSoLuongQuyDoi) {
+                $sheet->setCellValue('D' . $row, (int) $tongSoLuongQuyDoi);
+                $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            } else {
+                $sheet->setCellValue('D' . $row, (float) $tongSoLuongQuyDoi);
+                $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode('#,##0.##');
+            }
+            $sheet->setCellValue('E' . $row, $tongDoanhSo);
+            $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0" VNĐ"');
             
             // Định dạng dòng tổng cộng
             $totalRange = 'A' . $row . ':E' . $row;

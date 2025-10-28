@@ -83,15 +83,18 @@
                                 @php
                                     $now = \Carbon\Carbon::now();
                                     $hsd = \Carbon\Carbon::parse($lo->han_su_dung);
-                                    $daysDiff = $now->diffInDays($hsd, false);
-                                    $monthsDiff = $now->diffInMonths($hsd, false);
+                                    // compute fractional days difference (can be negative if expired)
+                                    $secondsDiff = $hsd->getTimestamp() - $now->getTimestamp();
+                                    $daysFloat = $secondsDiff / 86400; // days as float
+                                    // compute months roughly for conditional checks
+                                    $monthsDiff = $daysFloat / 30;
                                 @endphp
                                 @if($lo->da_huy)
                                     <span class="badge bg-dark">Hết hạn (đã hủy)</span>
                                 @elseif($now > $hsd)
                                     <span class="badge bg-danger">Hết hạn (chưa hủy)</span>
-                                @elseif($monthsDiff < 1 && $daysDiff >= 0)
-                                    <span class="badge bg-warning">Sắp hết hạn (còn {{ $daysDiff }} ngày)</span>
+                                @elseif($monthsDiff < 1 && $daysFloat >= 0)
+                                    <span class="badge bg-warning">Sắp hết hạn (còn {{ number_format($daysFloat, 2) }} ngày)</span>
                                 @else
                                     <span class="badge bg-success">Còn hạn</span>
                                 @endif

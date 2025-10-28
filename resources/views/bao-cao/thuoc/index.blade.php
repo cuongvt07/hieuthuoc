@@ -10,16 +10,16 @@
         <div class="card">
             <div class="card-body">
                 <form id="filterForm" method="GET" class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Từ ngày</label>
+                    <div class="col-md-2">
+                        <label class="form-label">Từ</label>
                         <input type="text" name="tu_ngay" class="form-control datepicker" value="{{ request('tu_ngay') }}" autocomplete="off" placeholder="dd/mm/yyyy">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Đến ngày</label>
+                    <div class="col-md-2">
+                        <label class="form-label">Đến</label>
                         <input type="text" name="den_ngay" class="form-control datepicker" value="{{ request('den_ngay') }}" autocomplete="off" placeholder="dd/mm/yyyy">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Chọn thuốc</label>
+                        <label class="form-label">Thuốc</label>
                         <select name="thuoc_id" class="form-select select2">
                             <option value="">-- Tất cả --</option>
                             @foreach(App\Models\Thuoc::orderBy('ten_thuoc')->get() as $thuoc)
@@ -27,7 +27,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-12">
+                    <div class="col-md-4 d-flex align-items-end justify-content-end">
                         <div class="btn-group">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-filter"></i> Lọc

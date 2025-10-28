@@ -150,6 +150,7 @@
                     <th>STT</th>
                     <th>Tên thuốc</th>
                     <th>Số lô</th>
+                        <th>NSX</th>
                     <th>HSD</th>
                     <th>SL</th>
                     <th>Đơn giá (VNĐ)</th>
@@ -167,8 +168,14 @@
                         @endif
                     </td>
                     <td>{{ $chiTiet->loThuoc->ma_lo ?? $chiTiet->loThuoc->so_lo_nha_san_xuat ?? 'N/A' }}</td>
+                        <td>
+                            @php
+                                $nsx = $chiTiet->ngay_san_xuat ?? $chiTiet->loThuoc->ngay_san_xuat ?? null;
+                            @endphp
+                            {{ $nsx ? \Carbon\Carbon::parse($nsx)->format('d/m/Y') : 'N/A' }}
+                        </td>
                     <td>{{ \Carbon\Carbon::parse($chiTiet->han_su_dung)->format('d/m/Y') }}</td>
-                    <td>{{ number_format(10, 2) }}</td>
+                    <td>{{ number_format($chiTiet->so_luong, 2) }}</td>
                     <td class="text-end">{{ number_format($chiTiet->gia_nhap) }}</td>
                     <td class="text-end">{{ number_format($chiTiet->thanh_tien) }}</td>
                 </tr>

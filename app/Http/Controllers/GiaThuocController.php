@@ -19,7 +19,7 @@ class GiaThuocController extends Controller
         $query = GiaThuoc::with(['thuoc' => function ($q) {
             $q->select('thuoc_id', 'ten_thuoc', 'ma_thuoc');
         }])
-            ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'ngay_tao']);
+            ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'created_at']);
 
         if ($request->has('thuoc_id') && $request->thuoc_id) {
             $query->where('thuoc_id', $request->thuoc_id);
@@ -64,6 +64,16 @@ class GiaThuocController extends Controller
             });
 
         $thuoc = \App\Models\Thuoc::orderBy('ten_thuoc')->get();
+
+        // If request is AJAX, return data as JSON for client-side filtering
+        if ($request->ajax()) {
+            return response()->json([
+                'giaThuoc' => $giaThuoc,
+                'links' => (string) $giaThuoc->links(),
+                'activeGiaByThuoc' => $activeGiaByThuoc,
+                'futureGiaByThuoc' => $futureGiaByThuoc,      
+            ]);
+        }
 
         return view('gia-thuoc.index', compact('giaThuoc', 'thuoc', 'activeGiaByThuoc', 'futureGiaByThuoc'));
     }

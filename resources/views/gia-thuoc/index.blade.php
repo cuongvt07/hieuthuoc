@@ -279,13 +279,16 @@
         </div>
     </div>
 </div>
-@endsection
+        @endsection
 
-@section('scripts')
+        <!-- Hidden container for page-level data to avoid Blade-to-JS interpolation issues -->
+        <div id="page-data" data-user-role="{{ Auth::user()->vai_tro ?? '' }}" style="display:none"></div>
+
+        @section('scripts')
 <script>
     $(document).ready(function() {
-        // Lấy vai trò của người dùng từ PHP
-        const userRole = '{{ Auth::user()->vai_tro ?? '' }}';
+    // Lấy vai trò của người dùng từ DOM data attribute (safer than Blade-to-JS interpolation)
+    const userRole = $('#page-data').data('user-role') || '';
 
         // Nếu là dược sĩ thì ẩn/vô hiệu hóa các nút thao tác
         function disableDuocSiActions() {
@@ -359,12 +362,35 @@
         $('#searchBtn').click(function() {
             loadGiaThuoc();
         });
-        
+
+        // Helper: enable/disable the search button based on filter inputs
+        function updateFilterButtonState() {
+            const thuocId = $('#filter-thuoc').val();
+            const fromDate = $('#filter-from-date').val();
+            const toDate = $('#filter-to-date').val();
+
+            // If both dates provided and invalid range -> disable
+            if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+                $('#searchBtn').prop('disabled', true).addClass('disabled');
+                return;
+            }
+
+            // Enable search only if any filter value is present
+            if ((thuocId && thuocId !== '') || (fromDate && fromDate !== '') || (toDate && toDate !== '')) {
+                $('#searchBtn').prop('disabled', false).removeClass('disabled');
+            } else {
+                // initial state: disabled until user changes any filter
+                $('#searchBtn').prop('disabled', true).addClass('disabled');
+            }
+        }
+
         // Reset filter
         $('#resetFilterBtn').click(function() {
             $('#filter-thuoc').val('');
             $('#filter-from-date').val('');
             $('#filter-to-date').val('');
+            updateFilterButtonState();
+            // Reload list to default (empty filters)
             loadGiaThuoc();
         });
         
@@ -389,27 +415,46 @@
                 dataType: "json",
                 success: function(response) {
                     let html = '';
-                    
+
                     if (response.giaThuoc.data.length > 0) {
                         $.each(response.giaThuoc.data, function(index, item) {
                             const giaBan = parseInt(item.gia_ban).toLocaleString('vi-VN');
                             const ngayBatDau = formatDate(item.ngay_bat_dau);
                             const ngayKetThuc = item.ngay_ket_thuc ? formatDate(item.ngay_ket_thuc) : 'Hiện tại';
+
+                            const activeGia = response.activeGiaByThuoc?.[item.thuoc_id];
+                            const futureGia = response.futureGiaByThuoc?.[item.thuoc_id];
+
+                            let rowClass = 'table-danger';
+                            let disabledEdit = 'disabled';
+                            let disabledDelete = '';
+
+                            if (activeGia && activeGia.gia_id === item.gia_id) {
+                                rowClass = 'table-success'; // đang hiệu lực
+                                disabledEdit = ''; // cho phép sửa
+                            } else if (futureGia && futureGia.gia_id === item.gia_id) {
+                                rowClass = 'table-warning'; // sắp hiệu lực
+                                disabledEdit = 'disabled'; // chưa hiệu lực -> chưa sửa
+                            } else {
+                                rowClass = 'table-danger'; // đã hết hạn
+                                disabledEdit = 'disabled'; // không sửa giá cũ
+                            }
+
                             html += `
-                                <tr>
+                                <tr class="${rowClass}">
                                     <td>${item.thuoc.ma_thuoc}</td>
                                     <td>${item.thuoc.ten_thuoc}</td>
                                     <td class="text-end">${giaBan} đ</td>
                                     <td>${ngayBatDau}</td>
                                     <td>${ngayKetThuc}</td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-info edit-btn" data-id="${item.gia_id}">
+                                        <button type="button" class="btn btn-sm btn-primary edit-btn me-1" data-id="${item.gia_id}" ${disabledEdit}>
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-danger delete-btn" 
                                             data-id="${item.gia_id}" 
                                             data-thuoc="${item.thuoc.ten_thuoc}" 
-                                            data-date="${ngayBatDau}">
+                                            data-date="${ngayBatDau}" ${disabledDelete}>
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </td>
@@ -419,20 +464,19 @@
                     } else {
                         html = '<tr><td colspan="6" class="text-center">Không có dữ liệu</td></tr>';
                     }
-                    
+
                     $('#gia-thuoc-table tbody').html(html);
                     $('#pagination').html(response.links);
 
-                    // Rebind pagination links
+                    // Gắn lại sự kiện click
                     $('#pagination').on('click', '.pagination a', function(e) {
                         e.preventDefault();
                         const page = $(this).attr('href').split('page=')[1];
                         loadGiaThuoc(page);
                     });
 
-                    // Rebind edit và delete buttons
                     bindButtons();
-                    disableDuocSiActions();
+                    disableDuocSiActions(); // vẫn áp dụng logic ẩn cho dược sĩ
                 },
                 error: function() {
                     tableBody.html('<tr><td colspan="4" class="text-center text-danger">Đã xảy ra lỗi khi tải dữ liệu</td></tr>');
@@ -656,14 +700,19 @@
             });
         });
 
-        // Theo dõi thay đổi khi chọn thuốc để tìm kiếm
+        // Theo dõi thay đổi khi chọn thuốc/ngày để cập nhật trạng thái nút Lọc
         $('#filter-thuoc').change(function() {
-            loadGiaThuoc();
+            updateFilterButtonState();
+        });
+        $('#filter-from-date, #filter-to-date').on('input change', function() {
+            updateFilterButtonState();
         });
         
-        // Khởi tạo
-        bindButtons();
-        disableDuocSiActions();
+    // Khởi tạo
+    bindButtons();
+    disableDuocSiActions();
+    // Ensure search button initial state matches fresh page (disabled until filters set)
+    updateFilterButtonState();
 
         // Clear form khi đóng modal
         $('#addGiaThuocModal').on('hidden.bs.modal', function() {

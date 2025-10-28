@@ -264,9 +264,11 @@
             return date.toLocaleDateString('vi-VN');
         }
         
-        // Format giá tiền
+        // Format giá tiền (defensive: handle undefined/NaN)
         function formatMoney(amount) {
-            return parseInt(amount).toLocaleString('vi-VN') + ' đ';
+            const n = Number(amount);
+            if (!isFinite(n) || isNaN(n)) return '0 đ';
+            return n.toLocaleString('vi-VN') + ' đ';
         }
         
         // Tìm kiếm khách hàng
@@ -443,15 +445,38 @@
                                         <ul class="order-products">
                             `;
                             
-                            // Render chi tiết đơn
-                            if (item.chi_tiet_don_ban_le && item.chi_tiet_don_ban_le.length > 0) {
-                                $.each(item.chi_tiet_don_ban_le, function(i, chiTiet) {
+                            // Render chi tiết đơn (defensive access: support different JSON shapes)
+                            const details = item.chi_tiet_don_ban_le || item.chiTietDonBanLe || item.chi_tiet || [];
+                            if (details && details.length > 0) {
+                                $.each(details, function(i, chiTiet) {
+                                    // loThuoc may be under different keys depending on serialization
+                                    const loThuoc = chiTiet.lo_thuoc || chiTiet.loThuoc || {};
+                                    const thuoc = loThuoc.thuoc || loThuoc.thuoc || chiTiet.thuoc || {};
+
+                                    const tenThuoc = (thuoc && (thuoc.ten_thuoc || thuoc.tenThuoc)) || chiTiet.ten_thuoc || chiTiet.tenThuoc || '—';
+                                    const soLuong = chiTiet.so_luong ?? chiTiet.soLuong ?? 0;
+
+                                    // Determine unit: business rule -> 0 = use thuốc.don_vi_goc, 1 = use thuốc.don_vi_ban
+                                    let donVi = '';
+                                    const unitFlag = chiTiet.don_vi ?? chiTiet.donVi ?? null;
+                                    const thuocDonViGoc = (thuoc && (thuoc.don_vi_goc || thuoc.donViGoc)) || '';
+                                    const thuocDonViBan = (thuoc && (thuoc.don_vi_ban || thuoc.donVi)) || '';
+                                    if (unitFlag !== null && (unitFlag === 0 || unitFlag === '0' || unitFlag === 1 || unitFlag === '1')) {
+                                        donVi = (Number(unitFlag) === 0) ? thuocDonViGoc || chiTiet.don_vi_tinh || '' : thuocDonViBan || chiTiet.don_vi_tinh || '';
+                                    } else {
+                                        // use nullish coalescing first, then fall back to ORs wrapped in parentheses
+                                        donVi = (chiTiet.don_vi_tinh ?? chiTiet.donVi ?? (thuocDonViGoc || thuocDonViBan || ''));
+                                    }
+
+                                    const donGia = Number(chiTiet.gia_ban ?? chiTiet.don_gia ?? chiTiet.giaBan ?? 0) || 0;
+                                    const thanhTien = Number(chiTiet.thanh_tien ?? chiTiet.thanhTien ?? (soLuong * donGia)) || 0;
+
                                     donHangHtml += `
                                         <li>
-                                            ${chiTiet.lo_thuoc.thuoc.ten_thuoc} - 
-                                            ${chiTiet.so_luong} ${chiTiet.don_vi_tinh} x 
-                                            ${formatMoney(chiTiet.don_gia)} = 
-                                            ${formatMoney(chiTiet.thanh_tien)}
+                                            ${tenThuoc} - 
+                                            ${soLuong} ${donVi} x 
+                                            ${formatMoney(donGia)} = 
+                                            ${formatMoney(thanhTien)}
                                         </li>
                                     `;
                                 });

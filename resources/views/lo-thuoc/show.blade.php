@@ -247,7 +247,16 @@
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <p class="mb-1"><strong>Nhà cung cấp:</strong> {{ $phieuNhap->nhaCungCap->ten_ncc }}</p>
-                                                <p class="mb-1"><strong>Số lượng:</strong> {{ number_format($chiTiet->so_luong, 2) }} {{ $chiTiet->don_vi }}</p>
+                                                @php
+                                                    // Map unit flag to actual unit text: 1 => don_vi_ban, 0 => don_vi_goc
+                                                    $importUnit = '';
+                                                    if (isset($chiTiet->don_vi)) {
+                                                        $importUnit = ($chiTiet->don_vi == 1 || $chiTiet->don_vi === '1')
+                                                            ? ($loThuoc->thuoc->don_vi_ban ?? '')
+                                                            : ($loThuoc->thuoc->don_vi_goc ?? '');
+                                                    }
+                                                @endphp
+                                                <p class="mb-1"><strong>Số lượng:</strong> {{ number_format($chiTiet->so_luong, 2) }} {{ $importUnit }}</p>
                                                 <p class="mb-1"><strong>Giá nhập:</strong> {{ number_format($chiTiet->gia_nhap) }} VNĐ</p>
                                             </div>
                                             <div class="col-md-6">
@@ -310,20 +319,21 @@
                                                     @if($lichSu->donBanLe->khachHang)
                                                     <p class="mb-1"><strong>Khách hàng:</strong> {{ $lichSu->donBanLe->khachHang->ho_ten }}</p>
                                                     @endif
-                                                    <p class="mb-1"><strong>Đơn vị bán:</strong> {{ $lichSu->chiTietDonBanLe->don_vi }}</p>
+                                                    @php
+                                                        $sellUnit = '';
+                                                        if (isset($lichSu->chiTietDonBanLe->don_vi)) {
+                                                            $sellUnit = ($lichSu->chiTietDonBanLe->don_vi == 1 || $lichSu->chiTietDonBanLe->don_vi === '1')
+                                                                ? ($loThuoc->thuoc->don_vi_ban ?? '')
+                                                                : ($loThuoc->thuoc->don_vi_goc ?? '');
+                                                        }
+                                                    @endphp
+                                                    <p class="mb-1"><strong>Đơn vị bán:</strong> {{ $sellUnit }}</p>
                                                     <p class="mb-1"><strong>Giá bán:</strong> {{ number_format($lichSu->chiTietDonBanLe->gia_ban) }} VNĐ</p>
                                                 @endif
                                                 <p class="mb-1"><strong>Ghi chú:</strong> {{ $lichSu->mo_ta }}</p>
                                             </div>
                                         </div>
                                     </div>
-                                    @if($lichSu->donBanLe)
-                                    <div class="text-end mt-2">
-                                        <a href="{{ route('don-ban-le.show', $lichSu->don_ban_le_id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye me-1"></i> Xem đơn hàng
-                                        </a>
-                                    </div>
-                                    @endif
                                 </div>
                             @endforeach
                         @else
@@ -477,6 +487,8 @@
         </div>
     </div>
 </div>
+<!-- Page data container to safely expose PHP values to JS -->
+<div id="page-data-lo" data-max-amount="{{ $loThuoc->ton_kho_hien_tai }}" style="display:none"></div>
 @endsection
 
 @section('scripts')
@@ -497,7 +509,7 @@
         $('#adjustment_type, #adjustment_amount').on('change input', function() {
             var type = $('#adjustment_type').val();
             var amount = parseFloat($('#adjustment_amount').val()) || 0;
-            var maxAmount = {{ $loThuoc->ton_kho_hien_tai }};
+            var maxAmount = parseFloat($('#page-data-lo').data('max-amount')) || 0;
             
             if (type === 'decrease' && amount > maxAmount) {
                 $('#adjustment_amount').val(maxAmount);
@@ -507,7 +519,7 @@
         // Kiểm tra số lượng chuyển kho
         $('#transfer_amount').on('input', function() {
             var amount = parseFloat($(this).val()) || 0;
-            var maxAmount = {{ $loThuoc->ton_kho_hien_tai }};
+            var maxAmount = parseFloat($('#page-data-lo').data('max-amount')) || 0;
             
             if (amount > maxAmount) {
                 $(this).val(maxAmount);
