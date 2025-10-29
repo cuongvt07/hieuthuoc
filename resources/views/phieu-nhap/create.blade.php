@@ -674,6 +674,23 @@
                         }
                         
                         $('#modal_kho_id').prop('disabled', false).html(options);
+
+                        // Nếu thẻ <option> thuốc có data-kho-id (kho mặc định của thuốc), tự động chọn kho đó
+                        try {
+                            const defaultKhoId = selectedOption.data('kho-id') || selectedOption.attr('data-kho-id') || '';
+                            const defaultKhoName = selectedOption.data('kho-name') || selectedOption.attr('data-kho-name') || '';
+                            if (defaultKhoId) {
+                                // chỉ set nếu option đó có trong danh sách kho vừa load
+                                if ($(`#modal_kho_id option[value="${defaultKhoId}"]`).length) {
+                                    $('#modal_kho_id').val(defaultKhoId);
+                                    $('#modal_kho_name').val(defaultKhoName || $('#modal_kho_name').val());
+                                    // Trigger change to load inventory if needed
+                                    $('#modal_kho_id').trigger('change');
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Không thể tự động chọn kho mặc định từ option thuốc:', e);
+                        }
                     } else {
                         $('#modal_kho_id').prop('disabled', true)
                             .html('<option value="">-- Lỗi tải dữ liệu --</option>');

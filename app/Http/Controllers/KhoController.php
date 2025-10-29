@@ -23,11 +23,9 @@ class KhoController extends Controller
 
         // Đếm số lượng thuốc thông qua subquery
         $query->addSelect(['total_medicines' => function($query) {
-            $query->selectRaw('COUNT(DISTINCT t.thuoc_id)')
-                  ->from('lo_thuoc as lt')
-                  ->join('thuoc as t', 't.thuoc_id', '=', 'lt.thuoc_id')
-                  ->whereColumn('lt.kho_id', 'kho.kho_id')
-                  ->where('t.trang_thai', 1);
+            $query->selectRaw('COUNT(*)')
+                ->from('thuoc as t')
+                ->whereColumn('t.kho_id', 'kho.kho_id');
         }]);
 
         if ($request->has('search')) {

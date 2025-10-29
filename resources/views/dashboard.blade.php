@@ -126,6 +126,7 @@
                         $cStartDate = now()->setDate($cYear, $cMonth, 1)->startOfMonth()->format('Y-m-d');
                         $cEndDate = now()->setDate($cYear, $cMonth, 1)->endOfMonth()->format('Y-m-d');
                         $topCustomers = \App\Models\DonBanLe::select('khach_hang_id', \DB::raw('SUM(tong_tien) as total_spent'))
+                            ->where('trang_thai', 'hoan_tat')
                             ->whereDate('ngay_ban', '>=', $cStartDate)
                             ->whereDate('ngay_ban', '<=', $cEndDate)
                             ->groupBy('khach_hang_id')
@@ -170,7 +171,7 @@
                                 <label for="purchase_from" class="form-label mb-0">Từ ngày</label>
                                 <input type="date" class="form-control form-control-sm" name="purchase_from"
                                     id="purchase_from"
-                                    value="{{ request('purchase_from', now()->startOfMonth()->format('Y-m-d')) }}">
+                                    value="{{ request('purchase_from') }}">
                             </div>
                             <div class="col-auto">
                                 <label for="purchase_to" class="form-label mb-0">Đến ngày</label>
@@ -183,11 +184,18 @@
                         </div>
                     </form>
                     @php
-                        $purchaseFrom = request('purchase_from', now()->startOfMonth()->format('Y-m-d'));
+                        $purchaseFrom = request('purchase_from');
                         $purchaseTo = request('purchase_to', now()->format('Y-m-d'));
-                        $totalPurchase = \App\Models\PhieuNhap::whereDate('ngay_nhap', '>=', $purchaseFrom)
-                            ->whereDate('ngay_nhap', '<=', $purchaseTo)
-                            ->sum('tong_tien');
+
+                        $query = \App\Models\PhieuNhap::where('trang_thai', 'hoan_tat');
+
+                        if ($purchaseFrom) {
+                            $query->whereDate('ngay_nhap', '>=', $purchaseFrom);
+                        }
+
+                        $query->whereDate('ngay_nhap', '<=', $purchaseTo);
+
+                        $totalPurchase = $query->sum('tong_tien');
                     @endphp
                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalPurchase, 0, ',', '.') }} VNĐ
                     </div>
@@ -759,26 +767,36 @@
                         $startDate = now()->setDate($year, $month, 1)->startOfMonth()->toDateString();
                         $endDate = now()->setDate($year, $month, 1)->endOfMonth()->toDateString();
 
-                        // Top bán chạy
-                        $topSelling = \App\Models\ChiTietDonBanLe::select('lo_thuoc.thuoc_id', \DB::raw('SUM(so_luong) as total_sold'))
+                        // Top bán chạy (tính về đơn vị gốc)
+                        $topSelling = \App\Models\ChiTietDonBanLe::select(
+                                'lo_thuoc.thuoc_id',
+                                \DB::raw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as total_sold_converted')
+                            )
                             ->whereHas('donBanLe', function ($q) use ($startDate, $endDate) {
-                                $q->whereBetween('ngay_ban', [$startDate, $endDate]);
+                                $q->whereBetween('ngay_ban', [$startDate, $endDate])
+                                  ->where('trang_thai', 'hoan_tat');
                             })
                             ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
+                            ->join('thuoc', 'lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
                             ->groupBy('lo_thuoc.thuoc_id')
-                            ->orderByDesc('total_sold')
+                            ->orderByDesc('total_sold_converted')
                             ->take($top)
                             ->with('loThuoc.thuoc') // eager load để lấy thông tin thuốc
                             ->get();
 
-                        // Top bán ế
-                        $leastSelling = \App\Models\ChiTietDonBanLe::select('lo_thuoc.thuoc_id', \DB::raw('SUM(so_luong) as total_sold'))
+                        // Top bán ế (tính về đơn vị gốc)
+                        $leastSelling = \App\Models\ChiTietDonBanLe::select(
+                                'lo_thuoc.thuoc_id',
+                                \DB::raw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as total_sold_converted')
+                            )
                             ->whereHas('donBanLe', function ($q) use ($startDate, $endDate) {
-                                $q->whereBetween('ngay_ban', [$startDate, $endDate]);
+                                $q->whereBetween('ngay_ban', [$startDate, $endDate])
+                                  ->where('trang_thai', 'hoan_tat');
                             })
                             ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
+                            ->join('thuoc', 'lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
                             ->groupBy('lo_thuoc.thuoc_id')
-                            ->orderBy('total_sold', 'asc')
+                            ->orderBy('total_sold_converted', 'asc')
                             ->take($top)
                             ->with('loThuoc.thuoc')
                             ->get();
@@ -798,7 +816,8 @@
                                     @forelse($topSelling as $item)
                                         <tr>
                                             <td>{{ optional(\App\Models\Thuoc::find($item->thuoc_id))->ten_thuoc }}</td>
-                                            <td>{{ $item->total_sold }}</td>
+                                            @php $val = $item->total_sold_converted ?? 0; @endphp
+                                            <td>{{ floor($val) == $val ? number_format($val, 0, ',', '.') : number_format($val, 2, ',', '.') }}</td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -821,7 +840,8 @@
                                     @forelse($leastSelling as $item)
                                         <tr>
                                             <td>{{ optional(\App\Models\Thuoc::find($item->thuoc_id))->ten_thuoc }}</td>
-                                            <td>{{ $item->total_sold }}</td>
+                                            @php $val = $item->total_sold_converted ?? 0; @endphp
+                                            <td>{{ floor($val) == $val ? number_format($val, 0, ',', '.') : number_format($val, 2, ',', '.') }}</td>
                                         </tr>
                                     @empty
                                         <tr>

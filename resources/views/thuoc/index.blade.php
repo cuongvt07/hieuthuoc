@@ -795,7 +795,8 @@
                     $('#edit_don_vi_ban').val(thuoc.don_vi_ban);
                     $('#edit_ti_le_quy_doi').val(thuoc.ti_le_quy_doi);
                     $('#edit_mo_ta_thuoc').val(thuoc.mo_ta ?? '');
-                    $('#edit_kho_id').val(thuoc.kho_id).prop('disabled', true);
+                    // Delay setting kho select until modal is shown (so option lists are populated)
+                    $('#edit_kho_id').data('selected-kho', thuoc.kho_id);
 
                     // Hiển thị modal
                     const modal = $('#editThuocModal');
@@ -816,6 +817,20 @@
 
                         // Set giá trị selected
                         nhomSelect.val(nhomVal);
+
+                        // Set kho select similarly (ensure option exists and set value)
+                        const khoSelect = modal.find('#edit_kho_id');
+                        const selectedKho = String(khoSelect.data('selected-kho') ?? thuoc.kho_id ?? '');
+                        if (selectedKho !== '') {
+                            if (khoSelect.find(`option[value="${selectedKho}"]`).length === 0) {
+                                const khoText = thuoc?.kho?.ten_kho ?? `Kho ${selectedKho}`;
+                                khoSelect.append(`<option value="${selectedKho}">${khoText}</option>`);
+                            }
+                            khoSelect.val(selectedKho);
+                        }
+
+                        // keep kho disabled for editing (business decision); ensure it's readable
+                        khoSelect.prop('disabled', true);
 
                         // Trigger update cho Select2 hoặc select thường
                         if (nhomSelect.hasClass('select2-hidden-accessible')) {

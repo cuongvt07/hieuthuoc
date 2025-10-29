@@ -142,7 +142,14 @@
                 @php
                     $line_total = $chiTiet->so_luong * $chiTiet->gia_ban;
                     $subtotal += $line_total;
-                    $don_vi = $chiTiet->don_vi == 0 ? $chiTiet->loThuoc->thuoc->don_vi_goc : $chiTiet->loThuoc->thuoc->don_vi_le;
+                    $thuoc = $chiTiet->loThuoc->thuoc ?? null;
+                    if ($thuoc) {
+                        $don_vi = $chiTiet->don_vi == 0
+                            ? ($thuoc->don_vi_goc ?? '')
+                            : ($thuoc->don_vi_ban ?? '');
+                    } else {
+                        $don_vi = '';
+                    }
                 @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>

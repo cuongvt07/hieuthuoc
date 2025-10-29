@@ -23,7 +23,12 @@ class KhachHangController extends Controller
             });
         }
 
-        $khachHang = $query->orderBy('ho_ten')->paginate(10);
+        // include order count (only completed orders) to keep counts consistent for AJAX and blade rendering
+        $khachHang = $query->withCount([
+            'donBanLe as don_ban_le_count' => function ($q) {
+                $q->where('trang_thai', 'hoan_tat');
+            }
+        ])->orderBy('ho_ten')->paginate(10);
 
         if ($request->ajax()) {
             return response()->json([

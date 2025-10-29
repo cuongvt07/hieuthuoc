@@ -80,7 +80,7 @@
                                 <tr>
                                     <td>{{ $item->sdt }}</td>
                                     <td>{{ $item->ho_ten }}</td>
-                                    <td class="text-center">{{ $item->donBanLe->count() }}</td>
+                                    <td class="text-center">{{ $item->don_ban_le_count ?? $item->donBanLe->count() }}</td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $item->khach_hang_id }}">
                                             <i class="bi bi-eye"></i> Xem

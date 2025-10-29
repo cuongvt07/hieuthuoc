@@ -135,6 +135,7 @@ class ThuocController extends Controller
     {
         $validated = $request->validated();
         $validated['kho_id'] = $request->input('kho_id'); // Include kho_id
+        $validated['trang_thai'] = 1; // Mặc định trạng thái là hoạt động
 
         $thuoc = Thuoc::create($validated);
         $thuoc->load('nhomThuoc', 'kho');
