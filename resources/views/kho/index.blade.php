@@ -61,11 +61,13 @@
 
 @section('content')
 <div class="card shadow">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold">Danh Sách Kho</h6>
+        @if(!(Auth::user() && Auth::user()->vai_tro === 'duoc_si'))
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addKhoModal">
             <i class="bi bi-plus-circle me-1"></i> Thêm Kho
         </button>
+        @endif
     </div>
     <div class="card-body">
 
@@ -101,12 +103,14 @@
                             <button type="button" class="btn btn-info btn-sm view-btn" data-id="{{ $kho->kho_id }}">
                                 <i class="bi bi-eye"></i> Xem
                             </button>
+                            @if(!(Auth::user() && Auth::user()->vai_tro === 'duoc_si'))
                             <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="{{ $kho->kho_id }}">
                                 <i class="bi bi-pencil"></i> Sửa
                             </button>
                             <button type="button" class="btn btn-danger btn-sm suspend-btn" data-id="{{ $kho->kho_id }}" data-status="{{ $kho->trang_thai }}">
                                 <i class="bi bi-ban"></i> {{ $kho->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                             </button>
+                            @endif
                         </td>
                     </tr>
                     @empty

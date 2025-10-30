@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Quản lý đơn bán lẻ')
+@section('title', 'Quản lý hóa đơn')
 
 @section('styles')
 <style>
@@ -98,7 +98,7 @@
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Quản lý đơn bán lẻ</h1>
+        <h1 class="h3 mb-0 text-gray-800">Quản lý hóa đơn</h1>
         @if(Auth::user() && Auth::user()->vai_tro === 'duoc_si')
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createOrderModal">
             <i class="fas fa-plus"></i> Tạo đơn mới
@@ -256,7 +256,7 @@
     <!-- Orders Table Card -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Danh sách đơn bán lẻ</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách hóa đơn</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive" id="orders-table-container">

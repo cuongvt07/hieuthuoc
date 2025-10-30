@@ -18,7 +18,7 @@ use Exception;
 class DonBanLeController extends Controller
 {
     /**
-     * Hiển thị danh sách đơn bán lẻ
+     * Hiển thị danh sách hóa đơn
      */
     public function index(Request $request)
     {
@@ -286,7 +286,7 @@ class DonBanLeController extends Controller
     }
     
     /**
-     * Tạo đơn bán lẻ mới
+     * Tạo Hóa đơnmới
      */
     public function store(Request $request)
     {
@@ -317,7 +317,7 @@ class DonBanLeController extends Controller
                 $khachHangId = $khachHang->khach_hang_id;
             }
 
-            // Tạo mã đơn bán lẻ
+            // Tạo mã hóa đơn
             $today = Carbon::now()->format('Ymd');
             $latestDon = DonBanLe::where('ma_don', 'like', "DBL{$today}%")
                 ->orderBy('ma_don', 'desc')
@@ -341,7 +341,7 @@ class DonBanLeController extends Controller
                 $tongVat += $thanhTien * ($item['thue_suat'] ?? 0) / 100;
             }
 
-            // Tạo đơn bán lẻ với trạng thái CHỜ XỬ LÝ
+            // Tạo Hóa đơnvới trạng thái CHỜ XỬ LÝ
             $donBanLe = DonBanLe::create([
                 'ma_don' => $maDon,
                 'nguoi_dung_id' => Auth::id(),
@@ -353,7 +353,7 @@ class DonBanLeController extends Controller
                 'tong_cong' => $tongTienHang + $tongVat,
             ]);
 
-            // Chỉ thêm chi tiết đơn bán lẻ, KHÔNG cập nhật tồn kho và lịch sử
+            // Chỉ thêm chi tiết hóa đơn, KHÔNG cập nhật tồn kho và lịch sử
             foreach ($request->items as $item) {
                 $thuocId = $item['thuoc_id'];
                 $soLuongCanBan = $item['so_luong'];
@@ -563,7 +563,7 @@ class DonBanLeController extends Controller
     }
     
     /**
-     * Hủy đơn bán lẻ
+     * Hủy hóa đơn
      */
     public function cancel($donBanLe)
     {
@@ -644,7 +644,7 @@ class DonBanLeController extends Controller
     }
     
     /**
-     * In đơn bán lẻ
+     * In hóa đơn
      */
     public function print($donBanLe)
     {

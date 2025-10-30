@@ -40,7 +40,7 @@ class LoThuoc extends Model
     }
 
     /**
-     * Get the chi tiết đơn bán lẻ for this lô
+     * Get the chi tiết Hóa đơnfor this lô
      */
     public function chiTietDonBanLe()
     {

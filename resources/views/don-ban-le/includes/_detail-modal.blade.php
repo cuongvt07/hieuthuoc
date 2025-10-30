@@ -1,9 +1,9 @@
-<!-- Modal chi tiết đơn bán lẻ -->
+<!-- Modal chi tiết Hóa đơn-->
 <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="orderDetailModalLabel">Chi tiết đơn bán lẻ</h5>
+                <h5 class="modal-title" id="orderDetailModalLabel">Chi tiết hóa đơn</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -66,9 +66,11 @@
                 <a href="#" class="btn btn-info" id="detail-print-btn" target="_blank">
                     <i class="fas fa-print"></i> In đơn hàng
                 </a>
+                @if(!(Auth::user() && Auth::user()->vai_tro === 'admin'))
                 <button type="button" class="btn btn-danger" id="detail-cancel-btn">
                     <i class="fas fa-ban"></i> Hủy đơn
                 </button>
+                @endif
             </div>
         </div>
     </div>

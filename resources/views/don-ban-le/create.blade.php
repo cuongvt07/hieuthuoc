@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tạo đơn bán lẻ')
+@section('title', 'Tạo hóa đơn')
 
 @section('styles')
 <style>
@@ -107,7 +107,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Tạo đơn bán lẻ mới</h3>
+            <h3 class="card-title">Tạo Hóa đơnmới</h3>
         </div>
         <!-- /.card-header -->
         <div class="card-body">
@@ -282,7 +282,7 @@
                 <div class="row">
                     <div class="col-md-12 text-right">
                         <button type="submit" class="btn btn-primary btn-lg" id="btnSubmit">
-                            <i class="bi bi-save"></i> Lưu đơn bán lẻ
+                            <i class="bi bi-save"></i> Lưu hóa đơn
                         </button>
                     </div>
                 </div>

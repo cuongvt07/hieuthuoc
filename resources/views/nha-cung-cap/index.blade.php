@@ -67,11 +67,13 @@
 <div class="row">
     <div class="col-md-12">
         <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Nhà Cung Cấp</h6>
+                @if(!(Auth::user() && Auth::user()->vai_tro === 'duoc_si'))
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNhaCungCapModal">
                     <i class="bi bi-plus-circle me-1"></i> Thêm Nhà Cung Cấp
                 </button>
+                @endif
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -112,6 +114,7 @@
                                     <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $item->ncc_id }}">
                                         <i class="bi bi-eye"></i> Xem
                                     </button>
+                                    @if(!(Auth::user() && Auth::user()->vai_tro === 'duoc_si'))
                                     <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->ncc_id }}">
                                         <i class="bi bi-pencil"></i> Sửa
                                     </button>
@@ -120,6 +123,7 @@
                                         data-ten="{{ $item->ten_ncc }}" data-status="{{ $item->trang_thai }}">
                                         <i class="bi bi-ban"></i> {{ $item->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                                     </button>
+                                    @endif
                                 </td>
                             </tr>
                             @empty
@@ -324,9 +328,11 @@
                 </div>
             </div>
             <div class="modal-footer">
+                @if(!(Auth::user() && Auth::user()->vai_tro === 'duoc_si'))
                 <a href="{{ route('phieu-nhap.create') }}" class="btn btn-primary" id="create-phieu-nhap-btn">
                     <i class="bi bi-plus-circle me-1"></i> Tạo Phiếu Nhập Mới
                 </a>
+                @endif
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i> Đóng
                 </button>
@@ -403,8 +409,11 @@
 
         // Vô hiệu hóa các nút thao tác nếu không phải admin
         if (!hasEditPermission()) {
-            // Ẩn hoặc vô hiệu hóa nút "Thêm Nhà Cung Cấp"
-            $('#addNhaCungCapModal').parent().find('.btn-primary').prop('disabled', true).addClass('disabled');
+            // Disable only the button that opens the "Thêm Nhà Cung Cấp" modal (don't touch other primary buttons like search)
+            $('button[data-bs-target="#addNhaCungCapModal"]').prop('disabled', true).addClass('disabled');
+
+            // Make sure the search button stays enabled for all roles
+            $('#searchBtn').prop('disabled', false).removeClass('disabled');
 
             // Vô hiệu hóa các nút chỉnh sửa, xóa, đình chỉ trong bảng
             $('.edit-btn, .delete-btn, .suspend-btn').prop('disabled', true).addClass('disabled');
@@ -447,6 +456,26 @@
                     
                     if (response.nhaCungCap.data.length > 0) {
                         $.each(response.nhaCungCap.data, function(index, item) {
+                            // Build action buttons: View always visible; hide Edit/Suspend for duoc_si role
+                            const viewBtn = `
+                                        <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.ncc_id}">
+                                            <i class="bi bi-eye"></i> Xem
+                                        </button>`;
+
+                            const editBtn = `
+                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.ncc_id}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                            <i class="bi bi-pencil"></i> Sửa
+                                        </button>`;
+
+                            const suspendBtn = `
+                                        <button type="button" class="btn btn-sm btn-warning suspend-btn" 
+                                            data-id="${item.ncc_id}" 
+                                            data-ten="${item.ten_ncc}" data-status="${item.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                            <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
+                                        </button>`;
+
+                            const actionButtons = userRole !== 'duoc_si' ? (viewBtn + editBtn + suspendBtn) : viewBtn;
+
                             html += `
                                 <tr>
                                     <td>${item.ten_ncc}</td>
@@ -455,17 +484,7 @@
                                     <td>${item.email || ''}</td>
                                     <td class="text-center">${item.phieu_nhap_count || 0}</td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.ncc_id}">
-                                            <i class="bi bi-eye"></i> Xem
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.ncc_id}" ${!hasEditPermission() ? 'disabled' : ''}>
-                                            <i class="bi bi-pencil"></i> Sửa
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-warning suspend-btn" 
-                                            data-id="${item.ncc_id}" 
-                                            data-ten="${item.ten_ncc}" data-status="${item.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}>
-                                            <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
-                                        </button>
+                                        ${actionButtons}
                                     </td>
                                 </tr>
                             `;

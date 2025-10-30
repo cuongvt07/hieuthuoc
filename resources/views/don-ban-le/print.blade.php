@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>In đơn bán lẻ - {{ $donBanLe->ma_don }}</title>
+    <title>In Hóa đơn- {{ $donBanLe->ma_don }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;

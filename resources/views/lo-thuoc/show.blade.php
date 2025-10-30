@@ -97,15 +97,17 @@
 @section('content')
 <div class="row mb-3">
     <div class="col-12">
-        <a href="{{ route('lo-thuoc.index') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Quay Lại
-        </a>
+        @if(Auth::user() && Auth::user()->vai_tro === 'admin')
+            <button class="btn btn-secondary" onclick="window.history.back();">
+                <i class="bi bi-arrow-left me-1"></i> Quay Lại
+            </button>
+        @endif
         @php
             $today = \Carbon\Carbon::today();
             $expiry = \Carbon\Carbon::parse($loThuoc->han_su_dung);
             $diffDays = $today->diffInDays($expiry, false);
         @endphp
-        @if($loThuoc->ton_kho_hien_tai > 0 && $diffDays < 0)
+        @if(!(Auth::user() && Auth::user()->vai_tro === 'duoc_si') && $loThuoc->ton_kho_hien_tai > 0 && $diffDays < 0)
         <a href="{{ route('lo-thuoc.dispose', $loThuoc->lo_id) }}" class="btn btn-danger ms-2">
             <i class="bi bi-trash me-1"></i> Hủy Tồn Hết Hạn
         </a>
@@ -298,7 +300,7 @@
                                     <div class="history-header">
                                         <div class="history-action">
                                             @if($lichSu->donBanLe)
-                                                Đơn bán lẻ #{{ $lichSu->donBanLe->ma_don }}
+                                                Hóa đơn#{{ $lichSu->donBanLe->ma_don }}
                                             @else
                                                 Xuất kho
                                             @endif
@@ -352,65 +354,71 @@
                         <h6 class="mb-0">Điều Chỉnh Tồn Kho</h6>
                     </div>
                     <div class="card-body">
-                        @if($loThuoc->ton_kho_hien_tai > 0)
-                        <div class="stock-action-panel">
-                            <h6 class="mb-3">Thực Hiện Điều Chỉnh</h6>
-                            <form action="{{ route('lo-thuoc.adjust-stock', $loThuoc->lo_id) }}" method="POST" id="adjustmentForm">
-                                @csrf
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="adjustment_type" class="form-label">Loại điều chỉnh</label>
-                                        <select class="form-select @error('adjustment_type') is-invalid @enderror" id="adjustment_type" name="adjustment_type" requiredmsg="Trường này yêu cầu bắt buộc">
-                                            <option value="increase">Tăng</option>
-                                            <option value="decrease">Giảm</option>
-                                        </select>
-                                        @error('adjustment_type')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="adjustment_amount" class="form-label">Số lượng</label>
-                                        <div class="input-group">
-                                            <input type="number" step="0.01" min="0.01" class="form-control @error('adjustment_amount') is-invalid @enderror" id="adjustment_amount" name="adjustment_amount" requiredmsg="Trường này yêu cầu bắt buộc">
-                                            <span class="input-group-text">{{ $loThuoc->thuoc->don_vi_goc }}</span>
-                                            @error('adjustment_amount')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
+                                @if($loThuoc->ton_kho_hien_tai > 0)
+                                    @if(Auth::user() && Auth::user()->vai_tro === 'duoc_si')
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i> Bạn không có quyền điều chỉnh tồn kho (chỉ admin có quyền này).
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="reason" class="form-label">Lý do</label>
-                                        <input type="text" class="form-control @error('reason') is-invalid @enderror" id="reason" name="reason" requiredmsg="Trường này yêu cầu bắt buộc">
-                                        @error('reason')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                
-                                <div class="alert alert-info small mb-3">
-                                    <i class="bi bi-info-circle me-2"></i> Khi giảm số lượng, số lượng giảm không được lớn hơn tồn kho hiện tại.
-                                    <br>Tồn kho hiện tại: <strong>{{ number_format($loThuoc->ton_kho_hien_tai, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</strong>
-                                </div>
-                                
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-primary">Thực hiện điều chỉnh</button>
-                                </div>
-                            </form>
-                        </div>
+                                    @else
+                                        <div class="stock-action-panel">
+                                            <h6 class="mb-3">Thực Hiện Điều Chỉnh</h6>
+                                            <form action="{{ route('lo-thuoc.adjust-stock', $loThuoc->lo_id) }}" method="POST" id="adjustmentForm">
+                                                @csrf
+                                                <div class="row mb-3">
+                                                    <div class="col-md-4">
+                                                        <label for="adjustment_type" class="form-label">Loại điều chỉnh</label>
+                                                        <select class="form-select @error('adjustment_type') is-invalid @enderror" id="adjustment_type" name="adjustment_type" requiredmsg="Trường này yêu cầu bắt buộc">
+                                                            <option value="increase">Tăng</option>
+                                                            <option value="decrease">Giảm</option>
+                                                        </select>
+                                                        @error('adjustment_type')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="adjustment_amount" class="form-label">Số lượng</label>
+                                                        <div class="input-group">
+                                                            <input type="number" step="0.01" min="0.01" class="form-control @error('adjustment_amount') is-invalid @enderror" id="adjustment_amount" name="adjustment_amount" requiredmsg="Trường này yêu cầu bắt buộc">
+                                                            <span class="input-group-text">{{ $loThuoc->thuoc->don_vi_goc }}</span>
+                                                            @error('adjustment_amount')
+                                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                            @enderror
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label for="reason" class="form-label">Lý do</label>
+                                                        <input type="text" class="form-control @error('reason') is-invalid @enderror" id="reason" name="reason" requiredmsg="Trường này yêu cầu bắt buộc">
+                                                        @error('reason')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                        
+                                                <div class="alert alert-info small mb-3">
+                                                    <i class="bi bi-info-circle me-2"></i> Khi giảm số lượng, số lượng giảm không được lớn hơn tồn kho hiện tại.
+                                                    <br>Tồn kho hiện tại: <strong>{{ number_format($loThuoc->ton_kho_hien_tai, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</strong>
+                                                </div>
+                                        
+                                                <div class="text-end">
+                                                    <button type="submit" class="btn btn-primary">Thực hiện điều chỉnh</button>
+                                                </div>
+                                            </form>
+                                        </div>
 
-                        <div class="history-list">
-                            <h6 class="mb-3">Lịch Sử Điều Chỉnh</h6>
-                            
-                            <!-- Hiển thị lịch sử điều chỉnh nếu có dữ liệu -->
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i> Không có lịch sử điều chỉnh tồn kho.
-                            </div>
-                        </div>
-                        @else
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle me-2"></i> Không thể điều chỉnh do lô thuốc này không còn tồn kho.
-                            </div>
-                        @endif
+                                        <div class="history-list">
+                                            <h6 class="mb-3">Lịch Sử Điều Chỉnh</h6>
+                                    
+                                            <!-- Hiển thị lịch sử điều chỉnh nếu có dữ liệu -->
+                                            <div class="alert alert-info">
+                                                <i class="bi bi-info-circle me-2"></i> Không có lịch sử điều chỉnh tồn kho.
+                                            </div>
+                                        </div>
+                                    @endif
+                                @else
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle me-2"></i> Không thể điều chỉnh do lô thuốc này không còn tồn kho.
+                                    </div>
+                                @endif
                     </div>
                 </div>
             </div>
@@ -423,59 +431,65 @@
                     </div>
                     <div class="card-body">
                         @if($loThuoc->ton_kho_hien_tai > 0)
-                        <div class="stock-action-panel">
-                            <h6 class="mb-3">Thực Hiện Chuyển Kho</h6>
-                            <form action="{{ route('lo-thuoc.transfer', $loThuoc->lo_id) }}" method="POST" id="transferForm">
-                                @csrf
-                                <input type="hidden" name="source_kho_id" value="{{ $loThuoc->kho_id }}">
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="target_kho_id" class="form-label">Kho đích</label>
-                                        <select class="form-select @error('target_kho_id') is-invalid @enderror" id="target_kho_id" name="target_kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
-                                            <option value="">-- Chọn kho đích --</option>
-                                            @foreach($khos as $kho)
-                                                @if($kho->kho_id != $loThuoc->kho_id)
-                                                    <option value="{{ $kho->kho_id }}">{{ $kho->ten_kho }}</option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                        @error('target_kho_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="transfer_amount" class="form-label">Số lượng chuyển</label>
-                                        <div class="input-group">
-                                            <input type="number" step="0.01" min="0.01" max="{{ $loThuoc->ton_kho_hien_tai }}" class="form-control @error('transfer_amount') is-invalid @enderror" id="transfer_amount" name="transfer_amount" requiredmsg="Trường này yêu cầu bắt buộc">
-                                            <span class="input-group-text">{{ $loThuoc->thuoc->don_vi_goc }}</span>
-                                            @error('transfer_amount')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
+                            @if(Auth::user() && Auth::user()->vai_tro === 'duoc_si')
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i> Bạn không có quyền chuyển kho (chỉ admin có quyền này).
+                                </div>
+                            @else
+                                <div class="stock-action-panel">
+                                    <h6 class="mb-3">Thực Hiện Chuyển Kho</h6>
+                                    <form action="{{ route('lo-thuoc.transfer', $loThuoc->lo_id) }}" method="POST" id="transferForm">
+                                        @csrf
+                                        <input type="hidden" name="source_kho_id" value="{{ $loThuoc->kho_id }}">
+                                        
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="target_kho_id" class="form-label">Kho đích</label>
+                                                <select class="form-select @error('target_kho_id') is-invalid @enderror" id="target_kho_id" name="target_kho_id" requiredmsg="Trường này yêu cầu bắt buộc">
+                                                    <option value="">-- Chọn kho đích --</option>
+                                                    @foreach($khos as $kho)
+                                                        @if($kho->kho_id != $loThuoc->kho_id)
+                                                            <option value="{{ $kho->kho_id }}">{{ $kho->ten_kho }}</option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                                @error('target_kho_id')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="transfer_amount" class="form-label">Số lượng chuyển</label>
+                                                <div class="input-group">
+                                                    <input type="number" step="0.01" min="0.01" max="{{ $loThuoc->ton_kho_hien_tai }}" class="form-control @error('transfer_amount') is-invalid @enderror" id="transfer_amount" name="transfer_amount" requiredmsg="Trường này yêu cầu bắt buộc">
+                                                    <span class="input-group-text">{{ $loThuoc->thuoc->don_vi_goc }}</span>
+                                                    @error('transfer_amount')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <div class="form-text">Tồn kho hiện tại: {{ number_format($loThuoc->ton_kho_hien_tai, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</div>
+                                            </div>
                                         </div>
-                                        <div class="form-text">Tồn kho hiện tại: {{ number_format($loThuoc->ton_kho_hien_tai, 2) }} {{ $loThuoc->thuoc->don_vi_goc }}</div>
+                                        
+                                        <div class="alert alert-info small mb-3">
+                                            <i class="bi bi-info-circle me-2"></i> Khi chuyển toàn bộ số lượng tồn kho, lô sẽ được chuyển hoàn toàn sang kho mới.
+                                            <br>Khi chuyển một phần, hệ thống sẽ tạo/cập nhật lô tương ứng ở kho đích.
+                                        </div>
+                                        
+                                        <div class="text-end">
+                                            <button type="submit" class="btn btn-primary">Thực hiện chuyển kho</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div class="history-list">
+                                    <h6 class="mb-3">Lịch Sử Chuyển Kho</h6>
+                                    
+                                    <!-- Hiển thị lịch sử chuyển kho nếu có dữ liệu -->
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i> Không có lịch sử chuyển kho.
                                     </div>
                                 </div>
-                                
-                                <div class="alert alert-info small mb-3">
-                                    <i class="bi bi-info-circle me-2"></i> Khi chuyển toàn bộ số lượng tồn kho, lô sẽ được chuyển hoàn toàn sang kho mới.
-                                    <br>Khi chuyển một phần, hệ thống sẽ tạo/cập nhật lô tương ứng ở kho đích.
-                                </div>
-                                
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-primary">Thực hiện chuyển kho</button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <div class="history-list">
-                            <h6 class="mb-3">Lịch Sử Chuyển Kho</h6>
-                            
-                            <!-- Hiển thị lịch sử chuyển kho nếu có dữ liệu -->
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i> Không có lịch sử chuyển kho.
-                            </div>
-                        </div>
+                            @endif
                         @else
                             <div class="alert alert-warning">
                                 <i class="bi bi-exclamation-triangle me-2"></i> Không thể chuyển kho do lô thuốc này không còn tồn kho.

@@ -19,8 +19,8 @@ Dự án được tổ chức theo kiến trúc MVC chuẩn của Laravel:
 - `Kho`: Quản lý thông tin kho.
 - `PhieuNhap`: Quản lý thông tin phiếu nhập kho.
 - `ChiTietLoNhap`: Quản lý chi tiết lô nhập kho.
-- `DonBanLe`: Quản lý thông tin đơn bán lẻ.
-- `ChiTietDonBanLe`: Quản lý chi tiết đơn bán lẻ.
+- `DonBanLe`: Quản lý thông tin hóa đơn.
+- `ChiTietDonBanLe`: Quản lý chi tiết hóa đơn.
 
 ### Controllers
 - `AuthController`: Quản lý đăng nhập, đăng xuất.

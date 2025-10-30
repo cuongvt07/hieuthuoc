@@ -22,7 +22,7 @@ class ChiTietDonBanLe extends Model
     ];
 
     /**
-     * Get the đơn bán lẻ that this detail belongs to
+     * Get the Hóa đơnthat this detail belongs to
      */
     public function donBanLe()
     {

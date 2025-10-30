@@ -17,7 +17,7 @@ class KhachHang extends Model
         ];
 
     /**
-     * Get all đơn bán lẻ for this khách hàng
+     * Get all Hóa đơnfor this khách hàng
      */
     public function donBanLe()
     {

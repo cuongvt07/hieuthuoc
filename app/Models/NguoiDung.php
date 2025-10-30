@@ -54,7 +54,7 @@ class NguoiDung extends Authenticatable
     }
 
     /**
-     * Get all đơn bán lẻ created by this user
+     * Get all Hóa đơncreated by this user
      */
     public function donBanLe()
     {

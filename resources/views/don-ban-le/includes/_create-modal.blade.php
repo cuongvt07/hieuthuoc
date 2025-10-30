@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="createOrderModalLabel"><i class="bi bi-cart-plus"></i> Tạo đơn bán lẻ</h5>
+                <h5 class="modal-title" id="createOrderModalLabel"><i class="bi bi-cart-plus"></i> Tạo hóa đơn</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

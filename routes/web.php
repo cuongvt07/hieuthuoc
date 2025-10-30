@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::get('lo-thuoc/{loThuoc}/dispose', [LoThuocController::class, 'dispose'])->name('lo-thuoc.dispose');
     Route::post('lo-thuoc/{loThuoc}/dispose', [LoThuocController::class, 'processDispose'])->name('lo-thuoc.processDispose');
     
-    // Đơn bán lẻ routes
+    // Hóa đơnroutes
     Route::resource('don-ban-le', DonBanLeController::class);
     
     Route::get('don-ban-le-thuoc-info', [DonBanLeController::class, 'getThuocInfo'])->name('don-ban-le.thuoc-info');

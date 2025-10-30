@@ -42,7 +42,7 @@ class LichSuTonKho extends Model
     // Removed kho() and phieuNhap() relationships as they are no longer used
 
     /**
-     * Get the đơn bán lẻ for this lịch sử
+     * Get the Hóa đơnfor this lịch sử
      */
     public function donBanLe()
     {
@@ -50,7 +50,7 @@ class LichSuTonKho extends Model
     }
 
     /**
-     * Get the chi tiết đơn bán lẻ for this lịch sử
+     * Get the chi tiết Hóa đơnfor this lịch sử
      */
     public function chiTietDonBanLe()
     {

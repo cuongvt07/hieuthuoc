@@ -98,7 +98,7 @@ Báo Cáo Khách Hàng : cột sp  =  mã đơn , số lượng sp, ngày tạo 
 
 Báo Cáo Thuốc :  báo cáo doanh thu theo thuốc  : filter (thuốc ) + thời gian   // done
 
-Quản lý đơn bán lẻ : Trạng thái --> tạo đơn --> chờ hoàn thành --> hoàn thành   // done
+Quản lý Hóa đơn: Trạng thái --> tạo đơn --> chờ hoàn thành --> hoàn thành   // done
 
 Doanh số bán theo tháng (2025) : lọc theo năm  // done
 
