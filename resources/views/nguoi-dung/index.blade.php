@@ -341,21 +341,25 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="edit_vai_tro" class="form-label">Vai Trò <span class="text-danger">*</span></label>
-                            <select class="form-select" id="edit_vai_tro" name="vai_tro" >
+                            <select class="form-select" id="edit_vai_tro" name="vai_tro" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
                                 <option value="admin">Quản Trị Viên</option>
                                 <option value="duoc_si">Dược Sĩ</option>
                             </select>
+                            @if(!(Auth::user() && Auth::user()->vai_tro === 'admin'))
+                                {{-- Ensure role value is submitted for non-admins (disabled selects are not sent) --}}
+                                <input type="hidden" id="edit_vai_tro_hidden" name="vai_tro" value="{{ Auth::user()->vai_tro }}">
+                            @endif
                             <div class="invalid-feedback" id="edit_vai_tro_error"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Trạng Thái <span class="text-danger">*</span></label>
-                            <div>
+                            <div id="edit_trang_thai_group">
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_1" value="hoat_dong">
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_1" value="hoat_dong" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
                                     <label class="form-check-label" for="edit_trang_thai_1">Hoạt động</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_0" value="ngung">
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_0" value="ngung" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
                                     <label class="form-check-label" for="edit_trang_thai_0">Ngừng hoạt động</label>
                                 </div>
                             </div>
@@ -473,8 +477,8 @@
 
         // Vô hiệu hóa các nút thao tác nếu không phải admin
         if (!hasEditPermission()) {
-            // Ẩn hoặc vô hiệu hóa nút "Thêm Nhân Sự"
-            $('#addUserModal').parent().find('.btn-primary').prop('disabled', true).addClass('disabled');
+            // Disable only the button that opens the "Thêm Nhân Sự" modal (don't touch other primary buttons like search)
+            $('button[data-bs-target="#addUserModal"]').prop('disabled', true).addClass('disabled');
 
             // Vô hiệu hóa các nút chỉnh sửa, xóa, đình chỉ trong bảng Admin
             $('#admin-table .edit-btn, #admin-table .delete-btn').prop('disabled', true).addClass('disabled');
