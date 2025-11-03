@@ -197,7 +197,8 @@
                                     if ($hasHuyRecord) {
                                         $status = 'out-of-stock expired';
                                         $statusText = 'Hết hạn (đã hủy)';
-                                    } elseif ($diffDays < 0 && $lo->ton_kho_hien_tai > 0) {
+                                    } elseif ($diffDays <= 0 && $lo->ton_kho_hien_tai > 0) {
+                                        // Treat expiry date equal to today as expired
                                         $status = 'expired';
                                         $statusText = 'Hết hạn (chưa hủy)';
                                     } elseif ($diffDays <= 30) {
@@ -218,7 +219,7 @@
                                     <a href="{{ route('lo-thuoc.show', $lo->lo_id) }}" class="btn btn-info">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($lo->ton_kho_hien_tai > 0 && $diffDays < 0)
+                                    @if($lo->ton_kho_hien_tai > 0 && $diffDays <= 0)
                                     <a href="{{ route('lo-thuoc.dispose', $lo->lo_id) }}" class="btn btn-danger">
                                         <i class="bi bi-trash"></i>
                                     </a>
@@ -275,9 +276,9 @@
                             <h6 class="mb-0">{{ $lo->thuoc->ten_thuoc }}</h6>
                             @if($lo->ton_kho_hien_tai <= 0)
                                 <span class="badge bg-secondary">Hết hàng</span>
-                            @elseif($diffDays < 0)
+                                @elseif($diffDays <= 0)
                                 <span class="badge bg-danger">Hết hạn</span>
-                            @elseif($diffDays <= 30)
+                                @elseif($diffDays <= 30)
                                 <span class="badge bg-warning text-dark">Còn {{ $diffDays }} ngày</span>
                             @else
                                 <span class="badge bg-success">Còn hạn</span>
@@ -331,7 +332,7 @@
                             <a href="{{ route('lo-thuoc.show', $lo->lo_id) }}" class="btn btn-sm btn-info">
                                 <i class="bi bi-eye me-1"></i> Chi tiết
                             </a>
-                            @if($lo->ton_kho_hien_tai > 0 && $diffDays < 0)
+                            @if($lo->ton_kho_hien_tai > 0 && $diffDays <= 0)
                             <a href="{{ route('lo-thuoc.dispose', $lo->lo_id) }}" class="btn btn-sm btn-danger">
                                 <i class="bi bi-trash me-1"></i> Hủy tồn
                             </a>

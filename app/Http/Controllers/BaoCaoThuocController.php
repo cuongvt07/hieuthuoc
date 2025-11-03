@@ -26,9 +26,23 @@ class BaoCaoThuocController extends Controller
 
         if ($loaiBaoCao == 'doanh_so') {
             // Báo cáo theo doanh số thuốc
-            $limit = $request->input('limit', 5); // Số lượng thuốc top
+            $limit = $request->input('limit', 5); // Số lượng thuốc top (used for non-paginated exports)
             $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
             $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
+            // normalize to date strings to ensure DB comparisons work as expected
+            $startDateStr = $startDate->toDateString();
+            $endDateStr = $endDate->toDateString();
+
+            // Build a subquery that returns distinct (thuoc_id, don_id, tong_cong)
+            // so we can sum order totals (tong_cong) per product without double-counting
+            $orderTotalsSub = DB::table('chi_tiet_don_ban_le')
+                ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
+                ->join('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
+                ->whereDate('don_ban_le.ngay_ban', '>=', $startDateStr)
+                ->whereDate('don_ban_le.ngay_ban', '<=', $endDateStr)
+                ->where('don_ban_le.trang_thai', 'hoan_tat')
+                ->select('lo_thuoc.thuoc_id as thuoc_id', 'don_ban_le.don_id', 'don_ban_le.tong_cong')
+                ->distinct();
 
             // Truy vấn dữ liệu doanh số - Sửa lỗi GROUP BY
             $query = Thuoc::select(
@@ -40,19 +54,23 @@ class BaoCaoThuocController extends Controller
                 'thuoc.don_vi_ban',
                 'thuoc.ti_le_quy_doi',
                 'thuoc.trang_thai',
-                'thuoc.ngay_tao',
+                'thuoc.created_at',
                 'thuoc.nhom_id',
                 'thuoc.kho_id'
             )
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
                 ->selectRaw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as tong_so_luong_quy_doi')
-                ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as doanh_so')
+                // join aggregated order totals subquery and sum order totals per product
+                ->leftJoinSub($orderTotalsSub, 'ot', function($join) {
+                    $join->on('ot.thuoc_id', '=', 'thuoc.thuoc_id');
+                })
+                ->selectRaw('SUM(ot.tong_cong) as doanh_so')
                 ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
                 ->leftJoin('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
                 ->leftJoin('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
-                ->whereDate('don_ban_le.ngay_ban', '>=', $startDate)
-                ->whereDate('don_ban_le.ngay_ban', '<=', $endDate)
+                ->whereDate('don_ban_le.ngay_ban', '>=', $startDateStr)
+                ->whereDate('don_ban_le.ngay_ban', '<=', $endDateStr)
                 ->where('don_ban_le.trang_thai', 'hoan_tat')
                 ->groupBy(
                     'thuoc.thuoc_id',
@@ -63,12 +81,11 @@ class BaoCaoThuocController extends Controller
                     'thuoc.don_vi_ban',
                     'thuoc.ti_le_quy_doi',
                     'thuoc.trang_thai',
-                    'thuoc.ngay_tao',
+                    'thuoc.created_at',
                     'thuoc.nhom_id',
                     'thuoc.kho_id'
                 )
-                ->orderBy('doanh_so', 'desc')
-                ->limit($limit);
+                ->orderBy('doanh_so', 'desc');
 
             // If a specific thuốc is selected, filter to it
             if ($request->filled('thuoc_id')) {
@@ -90,7 +107,9 @@ class BaoCaoThuocController extends Controller
                 }
             }
 
-            $thuocs = $query->paginate(10);
+            // Use pagination for the on-screen report. If you want top-N export, exportExcel handles its own query.
+            $perPage = 10;
+            $thuocs = $query->paginate($perPage)->appends($request->query());
 
             return view('bao-cao.thuoc.index', compact('thuocs', 'startDate', 'endDate'));
         }
@@ -155,7 +174,18 @@ class BaoCaoThuocController extends Controller
             $sheet->getStyle($headerRange)->getFill()->getStartColor()->setARGB('FFD9D9D9');
 
             // Truy vấn dữ liệu - Sửa lỗi GROUP BY
-            $thuocs = Thuoc::select(
+            // Build a subquery that returns distinct (thuoc_id, don_id, tong_cong)
+            // so we can sum order totals (tong_cong) per product without double-counting
+            $orderTotalsSub = DB::table('chi_tiet_don_ban_le')
+                ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
+                ->join('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
+                ->whereDate('don_ban_le.ngay_ban', '>=', $startDate->toDateString())
+                ->whereDate('don_ban_le.ngay_ban', '<=', $endDate->toDateString())
+                ->where('don_ban_le.trang_thai', 'hoan_tat')
+                ->select('lo_thuoc.thuoc_id as thuoc_id', 'don_ban_le.don_id', 'don_ban_le.tong_cong')
+                ->distinct();
+
+            $query = Thuoc::select(
                 'thuoc.thuoc_id',
                 'thuoc.ma_thuoc',
                 'thuoc.ten_thuoc',
@@ -164,19 +194,23 @@ class BaoCaoThuocController extends Controller
                 'thuoc.don_vi_ban',
                 'thuoc.ti_le_quy_doi',
                 'thuoc.trang_thai',
-                'thuoc.ngay_tao',
+                'thuoc.created_at',
                 'thuoc.nhom_id',
                 'thuoc.kho_id'
             )
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
                 ->selectRaw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as tong_so_luong_quy_doi')
-                ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien) as doanh_so')
+                // join aggregated order totals subquery and sum order totals per product
+                ->leftJoinSub($orderTotalsSub, 'ot', function($join) {
+                    $join->on('ot.thuoc_id', '=', 'thuoc.thuoc_id');
+                })
+                ->selectRaw('SUM(ot.tong_cong) as doanh_so')
                 ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
                 ->leftJoin('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
                 ->leftJoin('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
-                ->whereDate('don_ban_le.ngay_ban', '>=', $startDate)
-                ->whereDate('don_ban_le.ngay_ban', '<=', $endDate)
+                ->whereDate('don_ban_le.ngay_ban', '>=', $startDate->toDateString())
+                ->whereDate('don_ban_le.ngay_ban', '<=', $endDate->toDateString())
                 ->where('don_ban_le.trang_thai', 'hoan_tat')
                 ->groupBy(
                     'thuoc.thuoc_id',
@@ -187,12 +221,18 @@ class BaoCaoThuocController extends Controller
                     'thuoc.don_vi_ban',
                     'thuoc.ti_le_quy_doi',
                     'thuoc.trang_thai',
-                    'thuoc.ngay_tao',
+                    'thuoc.created_at',
                     'thuoc.nhom_id',
                     'thuoc.kho_id'
                 )
-                ->orderBy('doanh_so', 'desc')
-                ->get();
+                ->orderBy('doanh_so', 'desc');
+
+            // If a specific thuốc is selected for export, apply the filter to the query
+            if ($request->filled('thuoc_id')) {
+                $query->where('thuoc.thuoc_id', $request->thuoc_id);
+            }
+
+            $thuocs = $query->get();
 
             $row = 8;
             $tongDoanhSo = 0;

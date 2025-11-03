@@ -82,7 +82,14 @@ $(function () {
             
             html += `
                 <a href="#" class="list-group-item list-group-item-action product-item ${activeClass} ${disabledClass}" 
-                   data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}" ${clickAttribute}>
+                   data-id="${thuoc.thuoc_id}" data-name="${thuoc.ten_thuoc}"
+                   data-gia="${thuoc.gia_ban || 0}"
+                   data-vat="${thuoc.vat || 0}"
+                   data-tong-ton="${thuoc.tong_ton_kho || 0}"
+                   data-donvi-goc="${thuoc.don_vi_goc || ''}"
+                   data-donvi-ban="${thuoc.don_vi_ban || ''}"
+                   data-ti-le="${thuoc.ti_le_quy_doi || 1}"
+                   ${clickAttribute}>
                     <div class="d-flex w-100 justify-content-between">
                         <h6 class="mb-1">${thuoc.ten_thuoc}</h6>
                         <small>Mã: ${thuoc.ma_thuoc}</small>
@@ -223,11 +230,29 @@ $(function () {
         const thuocId = $(this).data('id');
         const thuocName = $(this).data('name');
         
-        // Lưu giá trị tìm kiếm hiện tại
+    // Lưu giá trị tìm kiếm hiện tại
         const currentSearchText = $('#product_search').val().trim();
         
         // Chỉ cập nhật ID của sản phẩm được chọn mà không thay đổi nội dung ô tìm kiếm
         $('#quick_add_product_id').val(thuocId);
+
+        // Immediately populate the product info using attributes from the search result
+        // so the UI stays consistent while we fetch full details from the server.
+        const $clicked = $(this);
+        const tempProduct = {
+            thuoc_id: thuocId,
+            ten_thuoc: thuocName,
+            gia_ban: parseFloat($clicked.data('gia')) || 0,
+            vat: parseFloat($clicked.data('vat')) || 0,
+            tong_ton_kho: parseFloat($clicked.data('tong-ton')) || 0,
+            don_vi_goc: $clicked.data('donvi-goc') || '',
+            don_vi_ban: $clicked.data('donvi-ban') || '',
+            ti_le_quy_doi: parseFloat($clicked.data('ti-le')) || 1
+        };
+        // Set a temporary selectedProduct and render immediately
+        selectedProduct = tempProduct;
+        // showProductInfo expects lo_thuocs as second arg; pass empty array for now
+        showProductInfo(tempProduct, [], thuocName);
         
         // Giữ kết quả tìm kiếm hiển thị để người dùng có thể chọn sản phẩm khác
         // $('#product-search-results').html('');

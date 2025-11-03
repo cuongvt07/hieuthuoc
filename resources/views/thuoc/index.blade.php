@@ -38,7 +38,7 @@
                         data-id="{{ $nhom->nhom_id }}" style="cursor: pointer;">
                         <div>
                             <span class="fw-bold">{{ $nhom->ma_nhom }}</span> - {{ $nhom->ten_nhom }}
-                            @if($nhom->trang_thai == 1)
+                            @if($nhom->trang_thai == 0)
                             <span class="badge bg-danger ms-2">Đã đình chỉ</span>
                             @endif
                         </div>
@@ -47,7 +47,7 @@
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="{{ $nhom->nhom_id }}" data-status="{{ $nhom->trang_thai }}">
-                                <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
+                                <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                             </button>
                         </div>
                     </div>

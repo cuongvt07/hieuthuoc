@@ -125,7 +125,7 @@
                         $cTop = request('customer_top', 3);
                         $cStartDate = now()->setDate($cYear, $cMonth, 1)->startOfMonth()->format('Y-m-d');
                         $cEndDate = now()->setDate($cYear, $cMonth, 1)->endOfMonth()->format('Y-m-d');
-                        $topCustomers = \App\Models\DonBanLe::select('khach_hang_id', \DB::raw('SUM(tong_tien) as total_spent'))
+                        $topCustomers = \App\Models\DonBanLe::select('khach_hang_id', \DB::raw('SUM(tong_cong) as total_spent'))
                             ->where('trang_thai', 'hoan_tat')
                             ->whereDate('ngay_ban', '>=', $cStartDate)
                             ->whereDate('ngay_ban', '<=', $cEndDate)
@@ -195,7 +195,7 @@
 
                         $query->whereDate('ngay_nhap', '<=', $purchaseTo);
 
-                        $totalPurchase = $query->sum('tong_tien');
+                        $totalPurchase = $query->sum('tong_cong');
                     @endphp
                     <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalPurchase, 0, ',', '.') }} VNĐ
                     </div>
@@ -238,7 +238,7 @@
                             if ($hasData) {
                                 $total = \App\Models\DonBanLe::whereYear('ngay_ban', $selectedYear)
                                     ->whereMonth('ngay_ban', $month)
-                                    ->sum('tong_tien');
+                                    ->sum('tong_cong');
                             } else {
                                 $total = 0;
                             }
@@ -354,7 +354,7 @@
 
                             $total = \App\Models\DonBanLe::whereYear('ngay_ban', $currentYear)
                                 ->whereMonth('ngay_ban', $month)
-                                ->sum('tong_tien');
+                                ->sum('tong_cong');
 
                             $monthlyData[$month] = $total;
                             $maxValue = max($maxValue, $total);

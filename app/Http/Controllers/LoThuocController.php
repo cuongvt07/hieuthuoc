@@ -43,11 +43,11 @@ class LoThuocController extends Controller
         }
 
 
-        // Lọc theo sắp hết hạn (<= 30 ngày)
+        // Lọc theo sắp hết hạn (<= 30 ngày) — exclude today so today's expiry is considered "hết hạn"
         if ($request->has('sap_het_han') && $request->sap_het_han == '1') {
-            $today = date('Y-m-d');
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
             $thirtyDaysLater = date('Y-m-d', strtotime('+30 days'));
-            $query->whereBetween('han_su_dung', [$today, $thirtyDaysLater]);
+            $query->whereBetween('han_su_dung', [$tomorrow, $thirtyDaysLater]);
         }
 
         // Lọc hết hạn (chưa hủy):
@@ -56,7 +56,8 @@ class LoThuocController extends Controller
         // - Trong lịch sử tồn kho CHƯA TỪNG có bất kỳ bản ghi nào của lô đó có loai_thay_doi = 'dieu_chinh'
         if ($request->has('het_han_chua_huy') && $request->het_han_chua_huy == '1') {
             $today = date('Y-m-d');
-            $query->where('han_su_dung', '<', $today)
+            // consider han_su_dung equal to today as expired (chưa hủy) as requested
+            $query->where('han_su_dung', '<=', $today)
                   ->where('ton_kho_hien_tai', '>', 0)
                   ->whereDoesntHave('lichSuTonKho', function($q) {
                       $q->where('loai_thay_doi', 'dieu_chinh');
@@ -66,14 +67,16 @@ class LoThuocController extends Controller
         // Lọc hết hạn (đã hủy): hết hạn và tồn kho = 0
         if ($request->has('het_han_da_huy') && $request->het_han_da_huy == '1') {
             $today = date('Y-m-d');
-            $query->where('han_su_dung', '<', $today)
+            // include equality so that a lot with HSD == today and ton_kho == 0 is considered "đã hủy"
+            $query->where('han_su_dung', '<=', $today)
                   ->where('ton_kho_hien_tai', '<=', 0);
         }
 
         // Lọc hết hạn (tổng hợp, nếu vẫn còn dùng filter cũ)
         if ($request->has('het_han') && $request->het_han == '1') {
             $today = date('Y-m-d');
-            $query->where('han_su_dung', '<', $today);
+            // treat equality as expired
+            $query->where('han_su_dung', '<=', $today);
         }
 
         // Lọc theo từ khóa (mã lô, số lô nhà sản xuất, ghi chú)

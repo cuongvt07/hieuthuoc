@@ -94,7 +94,7 @@ class BaoCaoKhachHangController extends Controller
         $sheet->setCellValue('A4', '');
 
         // Tiêu đề báo cáo
-        $sheet->setCellValue('A5', 'BÁO CÁO LỊCH SỬ MUA HÀNG KHÁCH HÀNG');
+        $sheet->setCellValue('A5', 'BÁO CÁO DOANH THU KHÁCH HÀNG');
         $sheet->mergeCells('A5:F5');
         $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

@@ -317,13 +317,27 @@
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.khach_hang_id}">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
-                                        <!-- Nút sửa, đình chỉ đã bị ẩn -->
+                                        @if(auth()->user()->vai_tro === 'duoc_si')
+                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.khach_hang_id}">
+                                            <i class="bi bi-pencil"></i> Sửa
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-btn" 
+                                            data-id="${item.khach_hang_id}" 
+                                            data-ten="${item.ho_ten}">
+                                            <i class="bi bi-trash"></i> Xóa
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-secondary suspend-btn" 
+                                            data-id="${item.khach_hang_id}" 
+                                            data-status="${item.trang_thai}">
+                                            <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
+                                        </button>
+                                        @endif
                                     </td>
                                 </tr>
                             `;
                         });
                     } else {
-                        html = '<tr><td colspan="4" class="text-center">Không có dữ liệu</td></tr>';
+                        html = '<tr><td colspan="4" class="text-center">Không tìm thấy khách hàng nào</td></tr>';
                     }
                     
                     tableBody.html(html);
