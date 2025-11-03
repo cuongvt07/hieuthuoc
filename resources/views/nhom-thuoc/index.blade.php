@@ -59,7 +59,7 @@
         </div>
         
         <div class="d-flex justify-content-end mt-3" id="pagination">
-            {{ $nhomThuoc->links() }}
+            {{ $nhomThuoc->links('pagination::bootstrap-4') }}
         </div>
     </div>
 </div>

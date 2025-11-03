@@ -100,7 +100,9 @@
                 </tfoot>
             </table>
         </div>
-        {{ $baoCaoKhachHangs->withQueryString()->links() }}
+        <div class="d-flex justify-content-center mt-3">
+            {{ $baoCaoKhachHangs->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 </div>
 @endsection

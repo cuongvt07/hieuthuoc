@@ -54,7 +54,7 @@ class BaoCaoThuocController extends Controller
                 'thuoc.don_vi_ban',
                 'thuoc.ti_le_quy_doi',
                 'thuoc.trang_thai',
-                'thuoc.created_at',
+                'thuoc.ngay_tao',
                 'thuoc.nhom_id',
                 'thuoc.kho_id'
             )
@@ -81,7 +81,7 @@ class BaoCaoThuocController extends Controller
                     'thuoc.don_vi_ban',
                     'thuoc.ti_le_quy_doi',
                     'thuoc.trang_thai',
-                    'thuoc.created_at',
+                    'thuoc.ngay_tao',
                     'thuoc.nhom_id',
                     'thuoc.kho_id'
                 )
@@ -194,7 +194,7 @@ class BaoCaoThuocController extends Controller
                 'thuoc.don_vi_ban',
                 'thuoc.ti_le_quy_doi',
                 'thuoc.trang_thai',
-                'thuoc.created_at',
+                'thuoc.ngay_tao',
                 'thuoc.nhom_id',
                 'thuoc.kho_id'
             )
@@ -221,7 +221,7 @@ class BaoCaoThuocController extends Controller
                     'thuoc.don_vi_ban',
                     'thuoc.ti_le_quy_doi',
                     'thuoc.trang_thai',
-                    'thuoc.created_at',
+                    'thuoc.ngay_tao',
                     'thuoc.nhom_id',
                     'thuoc.kho_id'
                 )

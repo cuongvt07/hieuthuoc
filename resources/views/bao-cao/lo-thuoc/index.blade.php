@@ -8,6 +8,24 @@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+<style>
+    .status-badge {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .expired {
+        background-color: #dc3545;
+    }
+    .near-expiry {
+        background-color: #ffc107;
+    }
+    .normal {
+        background-color: #28a745;
+    }
+    .out-of-stock {
+        background-color: #6c757d;
+    }
+</style>
 @endsection
 
 @section('content')
@@ -81,23 +99,37 @@
                             <td>{{ \Carbon\Carbon::parse($lo->han_su_dung)->format('d/m/Y') }}</td>
                             <td>
                                 @php
-                                    $now = \Carbon\Carbon::now();
-                                    $hsd = \Carbon\Carbon::parse($lo->han_su_dung);
-                                    // compute fractional days difference (can be negative if expired)
-                                    $secondsDiff = $hsd->getTimestamp() - $now->getTimestamp();
-                                    $daysFloat = $secondsDiff / 86400; // days as float
-                                    // compute months roughly for conditional checks
-                                    $monthsDiff = $daysFloat / 30;
+                                    $today = \Carbon\Carbon::today();
+                                    $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
+                                    $diffDays = $today->diffInDays($expiry, false);
+                                    
+                                    // Determine hủy status by presence of 'dieu_chinh' record
+                                    $hasHuyRecord = $lo->lichSuTonKho()->where('loai_thay_doi', 'dieu_chinh')->exists();
+                                    
+                                    if ($hasHuyRecord) {
+                                        $status = 'out-of-stock expired';
+                                        $statusText = 'Hết hạn (đã hủy)';
+                                        $badgeClass = 'bg-dark';
+                                    } elseif ($diffDays <= 0 && $lo->ton_kho_hien_tai > 0) {
+                                        // Treat expiry date equal to today as expired
+                                        $status = 'expired';
+                                        $statusText = 'Hết hạn (chưa hủy)';
+                                        $badgeClass = 'bg-danger';
+                                    } elseif ($diffDays <= 30) {
+                                        $status = 'near-expiry';
+                                        $statusText = 'Sắp hết hạn (còn ' . max(0, $diffDays) . ' ngày)';
+                                        $badgeClass = 'bg-warning text-dark';
+                                    } elseif ($lo->ton_kho_hien_tai <= 0) {
+                                        $status = 'out-of-stock';
+                                        $statusText = 'Hết hàng';
+                                        $badgeClass = 'bg-secondary';
+                                    } else {
+                                        $status = 'normal';
+                                        $statusText = 'Còn hạn';
+                                        $badgeClass = 'bg-success';
+                                    }
                                 @endphp
-                                @if($lo->da_huy)
-                                    <span class="badge bg-dark">Hết hạn (đã hủy)</span>
-                                @elseif($now > $hsd)
-                                    <span class="badge bg-danger">Hết hạn (chưa hủy)</span>
-                                @elseif($monthsDiff < 1 && $daysFloat >= 0)
-                                    <span class="badge bg-warning">Sắp hết hạn (còn {{ number_format($daysFloat, 2) }} ngày)</span>
-                                @else
-                                    <span class="badge bg-success">Còn hạn</span>
-                                @endif
+                                <span class="badge {{ $badgeClass }}">{{ $statusText }}</span>
                             </td>
                         </tr>
                     @empty

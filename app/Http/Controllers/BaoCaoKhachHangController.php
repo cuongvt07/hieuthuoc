@@ -67,7 +67,7 @@ class BaoCaoKhachHangController extends Controller
         }
 
         // Lấy dữ liệu tổng hợp và phân trang
-        $baoCaoKhachHangs = $query->orderBy('tong_chi_tieu', 'desc')->paginate(10);
+        $baoCaoKhachHangs = $query->orderBy('tong_chi_tieu', 'desc')->paginate(2);
         return view('bao-cao.khach-hang.index', compact('khachHangs', 'baoCaoKhachHangs'));
     }
 

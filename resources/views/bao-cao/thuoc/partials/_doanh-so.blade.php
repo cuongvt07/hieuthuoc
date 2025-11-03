@@ -25,4 +25,4 @@
     </tbody>
 </table>
 
-{{ $thuocs->links() }}
+{{ $thuocs->links('pagination::bootstrap-4') }}

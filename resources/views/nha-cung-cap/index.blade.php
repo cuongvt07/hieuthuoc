@@ -136,7 +136,7 @@
                 </div>
                 
                 <div class="d-flex justify-content-center mt-3" id="pagination">
-                    {{ $nhaCungCap->links() }}
+                    {{ $nhaCungCap->links('pagination::bootstrap-4') }}
                 </div>
             </div>
         </div>

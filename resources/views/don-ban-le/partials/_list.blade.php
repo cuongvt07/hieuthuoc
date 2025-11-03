@@ -115,5 +115,5 @@
 @endif
 
 <div class="d-flex justify-content-end mt-4" id="pagination-container">
-    {{ $donBanLes->links() }}
+    {{ $donBanLes->links('pagination::bootstrap-4') }}
 </div>

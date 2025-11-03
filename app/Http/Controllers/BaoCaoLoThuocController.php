@@ -25,8 +25,7 @@ class BaoCaoLoThuocController extends Controller
 
         $query = LoThuoc::with(['thuoc', 'kho'])
             ->select('lo_thuoc.*')
-            ->selectRaw('(ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton')
-            ->where('ton_kho_hien_tai', '>', 0);
+            ->selectRaw('(ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton');
 
         if ($request->filled('thuoc_id')) {
             $query->where('thuoc_id', $request->thuoc_id);
@@ -52,13 +51,13 @@ class BaoCaoLoThuocController extends Controller
 
             switch($request->trang_thai) {
                 case 'con_han':
-                    $query->where('han_su_dung', '>', $now->copy()->addMonths(6))
+                    $query->where('han_su_dung', '>', $now->copy()->addMonth())
                           ->whereDoesntHave('lichSuTonKho', function($q) {
                               $q->where('loai_thay_doi', 'dieu_chinh');
                           });
                     break;
                 case 'sap_het_han':
-                    $query->where('han_su_dung', '<=', $now->copy()->addMonths(6))
+                    $query->where('han_su_dung', '<=', $now->copy()->addMonth())
                           ->where('han_su_dung', '>', $now)
                           ->whereDoesntHave('lichSuTonKho', function($q) {
                               $q->where('loai_thay_doi', 'dieu_chinh');
@@ -66,6 +65,7 @@ class BaoCaoLoThuocController extends Controller
                     break;
                 case 'het_han_chua_huy':
                     $query->where('han_su_dung', '<=', $now)
+                          ->where('ton_kho_hien_tai', '>', 0)
                           ->whereDoesntHave('lichSuTonKho', function($q) {
                               $q->where('loai_thay_doi', 'dieu_chinh');
                           });
@@ -75,9 +75,6 @@ class BaoCaoLoThuocController extends Controller
                           ->whereHas('lichSuTonKho', function($q) {
                               $q->where('loai_thay_doi', 'dieu_chinh');
                           });
-                    break;
-                case 'het_han':
-                    $query->where('han_su_dung', '<=', $now);
                     break;
             }
         }
@@ -271,8 +268,8 @@ class BaoCaoLoThuocController extends Controller
             $sheet->setCellValue('B' . $row, $lo->thuoc->ten_thuoc);
             $sheet->setCellValue('C' . $row, $lo->kho->ten_kho);
             $sheet->setCellValue('D' . $row, $lo->ton_kho_hien_tai);
-            $sheet->setCellValue('E' . $row, number_format($lo->gia_nhap_tb));
-            $sheet->setCellValue('F' . $row, number_format($thanhTien));
+            $sheet->setCellValue('E' . $row, \number_format($lo->gia_nhap_tb, 0, ',', '.'));
+            $sheet->setCellValue('F' . $row, \number_format($thanhTien, 0, ',', '.'));
             $sheet->setCellValue('G' . $row, Carbon::parse($lo->han_su_dung)->format('d/m/Y'));
             $sheet->setCellValue('H' . $row, $trangThai);
 
@@ -290,7 +287,7 @@ class BaoCaoLoThuocController extends Controller
         $sheet->mergeCells('A' . $row . ':C' . $row);
         $sheet->setCellValue('D' . $row, $tongSoLuong);
         $sheet->mergeCells('E' . $row . ':E' . $row);
-        $sheet->setCellValue('F' . $row, number_format($tongGiaTri));
+        $sheet->setCellValue('F' . $row, \number_format($tongGiaTri, 0, ',', '.'));
         $sheet->mergeCells('G' . $row . ':H' . $row);
 
         // Style the totals row
