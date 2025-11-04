@@ -150,7 +150,7 @@
                     </table>
                 </div>
                 
-                <div class="d-flex justify-content-center mt-3">
+                <div id="pagination" class="d-flex justify-content-center mt-3">
                     {{ $giaThuoc->links('vendor.pagination.custom') }}
                 </div>
             </div>

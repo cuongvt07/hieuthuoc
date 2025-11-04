@@ -62,7 +62,8 @@ class NguoiDungController extends Controller
             'email' => 'required|email|max:100',
             'sdt' => 'nullable|string|max:20',
             'vai_tro' => ['required', Rule::in(['admin', 'duoc_si'])],
-            'trang_thai' => ['required', Rule::in(['ngung', 'hoat_dong'])],
+            // trang_thai: 1 = active, 0 = suspended
+            'trang_thai' => ['required', Rule::in([0,1,'0','1'])],
             'mat_khau' => 'required|string|min:6',
         ], [
             'ten_dang_nhap.required' => 'Tên đăng nhập không được để trống',
@@ -119,7 +120,7 @@ class NguoiDungController extends Controller
             'email' => 'email|max:100',
             'sdt' => 'nullable|string|max:20',
             'vai_tro' => ['required', Rule::in(['admin', 'duoc_si'])],
-            'trang_thai' => ['required', Rule::in(['ngung', 'hoat_dong'])],
+            'trang_thai' => ['required', Rule::in([0,1,'0','1'])],
         ]);
 
         $nguoiDung->update($validatedData);
@@ -164,12 +165,16 @@ class NguoiDungController extends Controller
      */
     public function suspend(Request $request, NguoiDung $nguoiDung)
     {
-        $nguoiDung->trang_thai = $nguoiDung->trang_thai == 'hoat_dong' ? 'ngung' : 'hoat_dong';
+        // Toggle numeric trạng_thái: 1 => 0, 0 => 1
+        $nguoiDung->trang_thai = $nguoiDung->trang_thai == 1 ? 0 : 1;
         $nguoiDung->save();
+
+        $message = $nguoiDung->trang_thai == 0 ? 'Đã đình chỉ người dùng.' : 'Đã bỏ đình chỉ người dùng.';
+
         return response()->json([
             'success' => true,
             'trang_thai' => $nguoiDung->trang_thai,
-            'message' => $nguoiDung->trang_thai == 1 ? 'Đã đình chỉ người dùng.' : 'Đã bỏ đình chỉ người dùng.'
+            'message' => $message,
         ]);
     }
 

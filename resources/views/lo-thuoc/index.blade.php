@@ -133,9 +133,9 @@
         <button type="button" class="btn btn-outline-primary active" id="tableViewBtn">
             <i class="bi bi-table me-1"></i> Dạng bảng
         </button>
-        <button type="button" class="btn btn-outline-primary" id="cardViewBtn">
+        <!-- <button type="button" class="btn btn-outline-primary" id="cardViewBtn">
             <i class="bi bi-grid-3x3-gap me-1"></i> Dạng thẻ
-        </button>
+        </button> -->
     </div>
 </div>
 

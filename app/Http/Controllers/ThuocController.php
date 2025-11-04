@@ -90,7 +90,7 @@ class ThuocController extends Controller
             $query->where('kho_id', $request->kho_id);
         }
 
-        $thuoc = $query->paginate(10);
+        $thuoc = $query->paginate(10)->withQueryString();
         
         $nhomQuery = NhomThuoc::query();
         $kho = Kho::all();
@@ -108,7 +108,7 @@ class ThuocController extends Controller
             }
         }
         
-        $nhomThuoc = $nhomQuery->paginate(10);
+        $nhomThuoc = $nhomQuery->paginate(10)->withQueryString();
 
         if ($request->ajax()) {
             // Kiểm tra xem request đến từ phần tìm kiếm thuốc hay nhóm thuốc

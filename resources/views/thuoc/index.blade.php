@@ -1035,7 +1035,8 @@
                     updateNhomThuocDropdowns();
                 },
                 error: function(xhr) {
-                    const errors = xhr.responseJSON.errors;
+                    const resp = xhr.responseJSON || {};
+                    const errors = resp.errors || {};
                     $('#addNhomForm .is-invalid').removeClass('is-invalid');
                     if (errors.ma_nhom) {
                         $('#ma_nhom').addClass('is-invalid');
@@ -1044,6 +1045,13 @@
                     if (errors.ten_nhom) {
                         $('#ten_nhom').addClass('is-invalid');
                         $('#ten_nhom_error').text(errors.ten_nhom[0]);
+                    }
+                    // If there is a server message, show it; otherwise log full xhr for debugging
+                    if (resp.message) {
+                        showToast(resp.message, 'danger');
+                    } else if (Object.keys(errors).length === 0) {
+                        console.error('Add Nhom error:', xhr);
+                        showToast('Có lỗi xảy ra khi thêm nhóm thuốc', 'danger');
                     }
                 }
             });
@@ -1080,7 +1088,8 @@
                     }
                 },
                 error: function(xhr) {
-                    const errors = xhr.responseJSON.errors;
+                    const resp = xhr.responseJSON || {};
+                    const errors = resp.errors || {};
                     $('#editNhomForm .is-invalid').removeClass('is-invalid');
                     if (errors.ma_nhom) {
                         $('#edit_ma_nhom').addClass('is-invalid');
@@ -1089,6 +1098,12 @@
                     if (errors.ten_nhom) {
                         $('#edit_ten_nhom').addClass('is-invalid');
                         $('#edit_ten_nhom_error').text(errors.ten_nhom[0]);
+                    }
+                    if (resp.message) {
+                        showToast(resp.message, 'danger');
+                    } else if (Object.keys(errors).length === 0) {
+                        console.error('Edit Nhom error:', xhr);
+                        showToast('Có lỗi xảy ra khi cập nhật nhóm thuốc', 'danger');
                     }
                 }
             });

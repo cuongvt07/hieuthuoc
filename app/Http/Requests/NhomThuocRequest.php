@@ -32,11 +32,26 @@ class NhomThuocRequest extends FormRequest
         if ($this->isMethod('post')) {
             $rules['ma_nhom'] = ['required', 'string', 'max:50', 'unique:nhom_thuoc,ma_nhom'];
         } else {
+
+            // Route parameter may be named 'nhom_thuoc' (snake) or 'nhomThuoc' (camel) or 'id'.
+            $routeParam = $this->route('nhom_thuoc') ?? $this->route('nhomThuoc') ?? $this->route('id');
+            $ignoreId = null;
+            if (is_object($routeParam) && isset($routeParam->nhom_id)) {
+                $ignoreId = $routeParam->nhom_id;
+            } elseif (is_numeric($routeParam)) {
+                $ignoreId = $routeParam;
+            }
+
+            $uniqueRule = Rule::unique('nhom_thuoc', 'ma_nhom');
+            if ($ignoreId) {
+                $uniqueRule = $uniqueRule->ignore($ignoreId, 'nhom_id');
+            }
+
             $rules['ma_nhom'] = [
                 'required', 
                 'string', 
                 'max:50', 
-                Rule::unique('nhom_thuoc', 'ma_nhom')->ignore($this->route('nhom_thuoc')->nhom_id, 'nhom_id')
+                $uniqueRule
             ];
         }
 

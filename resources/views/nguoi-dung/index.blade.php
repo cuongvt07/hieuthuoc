@@ -108,7 +108,7 @@
                                     <td>{{ $admin->email }}</td>
                                     <td>{{ $admin->sdt ?? 'Chưa cập nhật' }}</td>
                                     <td>
-                                        @if($admin->trang_thai)
+                                        @if($admin->trang_thai == 1)
                                             <span class="badge bg-success">Hoạt động</span>
                                         @else
                                             <span class="badge badge-inactive text-white">Khóa</span>
@@ -184,7 +184,7 @@
                                     <td>{{ $duocSi->email }}</td>
                                     <td>{{ $duocSi->sdt ?? 'Chưa cập nhật' }}</td>
                                     <td>
-                                        @if($duocSi->trang_thai)
+                                        @if($duocSi->trang_thai == 1)
                                             <span class="badge bg-success">Hoạt động</span>
                                         @else
                                             <span class="badge badge-inactive text-white">Khóa</span>
@@ -200,9 +200,9 @@
                                             <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
                                                 <i class="bi bi-key"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
-                                                <i class="bi bi-ban"></i> {{ $duocSi->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
-                                            </button>
+                                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
+                                                    <i class="bi bi-ban"></i> {{ $duocSi->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
+                                                </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -268,11 +268,11 @@
                             <label class="form-label">Trạng Thái <span class="text-danger">*</span></label>
                             <div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_1" value="hoat_dong" checked>
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_1" value="1" checked>
                                     <label class="form-check-label" for="trang_thai_1">Hoạt động</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_0" value="ngung">
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="trang_thai_0" value="0">
                                     <label class="form-check-label" for="trang_thai_0">Ngừng hoạt động</label>
                                 </div>
                             </div>
@@ -355,11 +355,11 @@
                             <label class="form-label">Trạng Thái <span class="text-danger">*</span></label>
                             <div id="edit_trang_thai_group">
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_1" value="hoat_dong" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_1" value="1" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
                                     <label class="form-check-label" for="edit_trang_thai_1">Hoạt động</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_0" value="ngung" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
+                                    <input class="form-check-input" type="radio" name="trang_thai" id="edit_trang_thai_0" value="0" @if(!(Auth::user() && Auth::user()->vai_tro === 'admin')) disabled @endif>
                                     <label class="form-check-label" for="edit_trang_thai_0">Ngừng hoạt động</label>
                                 </div>
                             </div>
@@ -410,21 +410,21 @@
     </div>
 </div>
 
-<!-- Modal xác nhận xóa người dùng -->
+<!-- Modal xác nhận Đình chỉ người dùng -->
 <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteUserModalLabel">Xác nhận xóa</h5>
+                <h5 class="modal-title" id="deleteUserModalLabel">Xác nhận Đình chỉ</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Bạn có chắc chắn muốn xóa người dùng <span id="delete_user_name" class="fw-bold"></span>?</p>
-                <p class="text-danger mb-0">Lưu ý: Hành động này không thể hoàn tác. Nếu người dùng đã có dữ liệu liên quan trong hệ thống, bạn không thể xóa mà chỉ có thể khóa tài khoản.</p>
+                <p>Bạn có chắc chắn muốn Đình chỉ người dùng <span id="delete_user_name" class="fw-bold"></span>?</p>
+                <p class="text-danger mb-0">Lưu ý: Hành động này không thể hoàn tác. Nếu người dùng đã có dữ liệu liên quan trong hệ thống, bạn không thể Đình chỉ mà chỉ có thể khóa tài khoản.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Xóa</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete" >Đình chỉ</button>
             </div>
         </div>
     </div>
@@ -480,7 +480,7 @@
             // Disable only the button that opens the "Thêm Nhân Sự" modal (don't touch other primary buttons like search)
             $('button[data-bs-target="#addUserModal"]').prop('disabled', true).addClass('disabled');
 
-            // Vô hiệu hóa các nút chỉnh sửa, xóa, đình chỉ trong bảng Admin
+            // Vô hiệu hóa các nút chỉnh sửa, Đình chỉ, đình chỉ trong bảng Admin
             $('#admin-table .edit-btn, #admin-table .delete-btn').prop('disabled', true).addClass('disabled');
         }
 
@@ -552,7 +552,7 @@
                                                 <i class="bi bi-key"></i> Đổi Mật Khẩu
                                             </button>
                                             <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
-                                                <i class="bi bi-ban"></i> ${item.trang_thai == 'hoat_dong' ? 'Đình chỉ' : 'Bỏ đình chỉ'}
+                                                <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
                                             </button>
          
                                             </div>
@@ -596,7 +596,7 @@
                                                     <i class="bi bi-key"></i> Đổi Mật Khẩu
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
-                                                    <i class="bi bi-ban"></i> ${item.trang_thai == 'hoat_dong' ? 'Đình chỉ' : 'Bỏ đình chỉ'}
+                                                    <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
                                                 </button>
                                             </div>
                                         </td>
@@ -783,7 +783,7 @@
             });
         });
 
-        // Xóa người dùng
+        // Đình chỉ người dùng
         let deleteId = null;
         
         function bindButtons() {
@@ -793,11 +793,11 @@
                 getUser(id);
             });
             
-            // Nút xóa người dùng
+            // Nút đình chỉ / bỏ đình chỉ người dùng (chỉ admin)
             $('.delete-btn').click(function() {
                 const id = $(this).data('id');
-                if (!hasEditPermission() || id != currentUserId) {
-                    showToast('Bạn không có quyền xóa người dùng này', 'warning');
+                if (!hasEditPermission()) {
+                    showToast('Bạn không có quyền đình chỉ người dùng này', 'warning');
                     return;
                 }
                 deleteId = id;
@@ -807,17 +807,17 @@
             });
         }
         
-        // Xác nhận xóa người dùng
+        // Xác nhận Đình chỉ người dùng
         $('#confirmDelete').click(function() {
             if (!deleteId || !hasEditPermission()) {
-                showToast('Bạn không có quyền xóa người dùng này', 'warning');
+                showToast('Bạn không có quyền đình chỉ người dùng này', 'warning');
                 $('#deleteUserModal').modal('hide');
                 return;
             }
-            
+
             $.ajax({
-                url: `/nguoi-dung/${deleteId}`,
-                type: "DELETE",
+                url: `/nguoi-dung/${deleteId}/suspend`,
+                type: "POST",
                 dataType: "json",
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -825,11 +825,13 @@
                 success: function(response) {
                     $('#deleteUserModal').modal('hide');
                     showToast(response.message);
+                    // reload lists via AJAX to reflect new trạng_thái
                     loadUsers();
                 },
                 error: function(xhr) {
                     $('#deleteUserModal').modal('hide');
-                    showToast(xhr.responseJSON.message, 'danger');
+                    const msg = xhr && xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Đã xảy ra lỗi';
+                    showToast(msg, 'danger');
                 }
             });
         });

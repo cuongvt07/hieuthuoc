@@ -26,11 +26,19 @@ class GiaThuocController extends Controller
         }
 
         if ($request->has('ngay_bat_dau') && $request->ngay_bat_dau) {
-            $query->where('ngay_bat_dau', '>=', $request->ngay_bat_dau);
+            // We want prices that are in effect overlapping the filter range.
+            // If user filters from date, we should include any price whose end is null or >= from
+            $from = Carbon::parse($request->ngay_bat_dau)->startOfDay();
+            $query->where(function($q) use ($from) {
+                $q->whereNull('ngay_ket_thuc')
+                  ->orWhere('ngay_ket_thuc', '>=', $from);
+            });
         }
 
         if ($request->has('ngay_ket_thuc') && $request->ngay_ket_thuc) {
-            $query->where('ngay_bat_dau', '<=', $request->ngay_ket_thuc);
+            // If user filters to date, include any price that started on or before that date
+            $to = Carbon::parse($request->ngay_ket_thuc)->endOfDay();
+            $query->where('ngay_bat_dau', '<=', $to);
         }
 
         $giaThuoc = $query->orderBy('thuoc_id')
@@ -67,11 +75,14 @@ class GiaThuocController extends Controller
 
         // If request is AJAX, return data as JSON for client-side filtering
         if ($request->ajax()) {
+            // Ensure pagination links preserve current filters
+            $links = (string) $giaThuoc->appends($request->all())->links('vendor.pagination.custom');
+
             return response()->json([
                 'giaThuoc' => $giaThuoc,
-                'links' => (string) $giaThuoc->links(),
+                'links' => $links,
                 'activeGiaByThuoc' => $activeGiaByThuoc,
-                'futureGiaByThuoc' => $futureGiaByThuoc,      
+                'futureGiaByThuoc' => $futureGiaByThuoc,
             ]);
         }
 

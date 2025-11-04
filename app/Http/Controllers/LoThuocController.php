@@ -95,7 +95,7 @@ class LoThuocController extends Controller
         
         $query->orderBy($sortField, $sortDirection);
 
-        $loThuocs = $query->paginate(10);
+        $loThuocs = $query->paginate(10)->withQueryString();
         $thuocs = Thuoc::orderBy('ten_thuoc')->get();
         $khos = Kho::orderBy('ten_kho')->get();
 
