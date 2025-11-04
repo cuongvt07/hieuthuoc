@@ -42,15 +42,15 @@ class BaoCaoKhoController extends Controller
                 WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
                 AND lo_thuoc.kho_id = ' . $request->kho_id . ' 
                 AND lo_thuoc.ton_kho_hien_tai > 0' . 
-                ($tuNgay ? ' AND lo_thuoc.created_at >= "' . $tuNgay->format('Y-m-d H:i:s') . '"' : '') .
-                ($denNgay ? ' AND lo_thuoc.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"' : '') . 
+                ($tuNgay ? ' AND lo_thuoc.ngay_tao >= "' . $tuNgay->format('Y-m-d H:i:s') . '"' : '') .
+                ($denNgay ? ' AND lo_thuoc.ngay_tao <= "' . $denNgay->format('Y-m-d H:i:s') . '"' : '') . 
                 ') as tong_ton_kho'))
             ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai * gia_nhap_tb) FROM lo_thuoc 
                 WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
                 AND lo_thuoc.kho_id = ' . $request->kho_id . ' 
                 AND lo_thuoc.ton_kho_hien_tai > 0' . 
-                ($tuNgay ? ' AND lo_thuoc.created_at >= "' . $tuNgay->format('Y-m-d H:i:s') . '"' : '') .
-                ($denNgay ? ' AND lo_thuoc.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"' : '') . 
+                ($tuNgay ? ' AND lo_thuoc.ngay_tao >= "' . $tuNgay->format('Y-m-d H:i:s') . '"' : '') .
+                ($denNgay ? ' AND lo_thuoc.ngay_tao <= "' . $denNgay->format('Y-m-d H:i:s') . '"' : '') . 
                 ') as gia_tri_ton'))
             ->whereExists(function($query) use ($request, $tuNgay, $denNgay) {
                 $query->select(DB::raw(1))
@@ -58,8 +58,8 @@ class BaoCaoKhoController extends Controller
                     ->whereColumn('lo_thuoc.thuoc_id', 'thuoc.thuoc_id')
                     ->where('lo_thuoc.kho_id', $request->kho_id)
                     ->where('ton_kho_hien_tai', '>', 0);
-                if ($tuNgay) $query->where('lo_thuoc.created_at', '>=', $tuNgay);
-                if ($denNgay) $query->where('lo_thuoc.created_at', '<=', $denNgay);
+                if ($tuNgay) $query->where('lo_thuoc.ngay_tao', '>=', $tuNgay);
+                if ($denNgay) $query->where('lo_thuoc.ngay_tao', '<=', $denNgay);
             })
             ->orderBy('thuoc.ten_thuoc')
             ->paginate(10);
@@ -79,8 +79,8 @@ class BaoCaoKhoController extends Controller
         ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as tong_gia_tri')
         ->leftJoin('lo_thuoc', function($join) use ($tuNgay, $denNgay) {
             $join->on('kho.kho_id', '=', 'lo_thuoc.kho_id');
-            if ($tuNgay) $join->where('lo_thuoc.created_at', '>=', $tuNgay);
-            if ($denNgay) $join->where('lo_thuoc.created_at', '<=', $denNgay);
+            if ($tuNgay) $join->where('lo_thuoc.ngay_tao', '>=', $tuNgay);
+            if ($denNgay) $join->where('lo_thuoc.ngay_tao', '<=', $denNgay);
         })
         ->leftJoin('thuoc', function($join) {
             $join->on('lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')

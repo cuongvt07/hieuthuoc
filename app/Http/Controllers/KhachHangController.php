@@ -28,7 +28,7 @@ class KhachHangController extends Controller
             'donBanLe as don_ban_le_count' => function ($q) {
                 $q->where('trang_thai', 'hoan_tat');
             }
-        ])->orderBy('ho_ten')->paginate(10);
+        ])->orderBy('ho_ten')->paginate(1);
 
         if ($request->ajax()) {
             return response()->json([

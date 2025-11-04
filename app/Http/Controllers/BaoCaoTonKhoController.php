@@ -54,7 +54,8 @@ class BaoCaoTonKhoController extends Controller
         }
 
         try {
-            $data = $this->getData($request);
+        // For export we need full dataset (no pagination)
+        $data = $this->getData($request, false);
 
             return view('bao-cao.ton-kho.index', [
                 'khos' => $khos,
@@ -79,7 +80,7 @@ class BaoCaoTonKhoController extends Controller
     /**
      * Lấy dữ liệu tồn kho từ bảng lịch sử tồn kho
      */
-    private function getData(Request $request)
+    private function getData(Request $request, $paginate = true)
     {
         // Xác định loại báo cáo, mặc định là theo lô
         $loaiBaoCao = $request->input('loai_bao_cao', 'lo');
@@ -205,6 +206,12 @@ class BaoCaoTonKhoController extends Controller
                 break;
         }
 
+        if ($paginate) {
+            // Paginate on-screen results and preserve query string filters
+            return $query->paginate(10)->appends($request->query());
+        }
+
+        // For exports or when full dataset is needed
         return $query->get();
     }
 
@@ -213,7 +220,8 @@ class BaoCaoTonKhoController extends Controller
      */
     private function exportExcel(Request $request)
     {
-        $data = $this->getData($request);
+    // For export we need the full dataset; exportExcel will call getData(..., false)
+    $data = $this->getData($request);
         $loaiBaoCao = $request->input('loai_bao_cao', 'lo');
 
         $spreadsheet = new Spreadsheet();

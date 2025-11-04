@@ -190,9 +190,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php 
+                    @php
+                        // Support both Collection and Paginator results
+                        $collection = $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->getCollection() : $data;
                         // Nhóm dữ liệu theo lô
-                        $groupedData = $data->groupBy(function($item) {
+                        $groupedData = $collection->groupBy(function($item) {
                             return $item->thuoc_id . '_' . $item->lo_id;
                         });
                     @endphp
@@ -358,6 +360,14 @@
         </div>
     </div>
 </div>
+
+@if($data instanceof \Illuminate\Pagination\LengthAwarePaginator)
+    <div class="mt-3">
+        <div class="d-flex justify-content-center">
+            {!! $data->withQueryString()->links('pagination::bootstrap-5') !!}
+        </div>
+    </div>
+@endif
 
 <!-- Phần footer cho in ấn -->
 <div class="print-footer d-none d-print-block">

@@ -141,7 +141,9 @@
             </table>
         </div>
         
-        {{ $loThuocs->withQueryString()->links() }}
+        <div class="d-flex justify-content-center mt-3">
+            {{ $loThuocs->withQueryString()->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 </div>
 @endsection
