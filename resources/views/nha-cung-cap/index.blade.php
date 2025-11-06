@@ -136,7 +136,7 @@
                 </div>
                 
                 <div class="d-flex justify-content-center mt-3" id="pagination">
-                    {{ $nhaCungCap->links('pagination::bootstrap-4') }}
+                    {{ $nhaCungCap->onEachSide(1)->links('vendor.pagination.custom') }}
                 </div>
             </div>
         </div>
@@ -496,13 +496,6 @@
                     tableBody.html(html);
                     $('#pagination').html(response.links);
 
-                    // Rebind pagination links
-                    $('#pagination').on('click', '.pagination a', function(e) {
-                        e.preventDefault();
-                        const page = $(this).attr('href').split('page=')[1];
-                        loadNhaCungCap(page, search);
-                    });
-
                     // Rebind buttons
                     bindButtons();
                 },
@@ -816,6 +809,17 @@
         // Khởi tạo
         bindButtons();
         loadNhaCungCap();
+        
+        // ===== XỬ LÝ PHÂN TRANG =====
+        $(document).on('click', '.pagination-link', function(e) {
+            e.preventDefault();
+            
+            const page = $(this).data('page');
+            if (!page) return;
+            
+            const searchValue = $('#search-input').val();
+            loadNhaCungCap(page, searchValue);
+        });
         
         // Clear form khi đóng modal
         $('#addNhaCungCapModal').on('hidden.bs.modal', function() {

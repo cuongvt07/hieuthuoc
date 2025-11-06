@@ -45,7 +45,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: "/thuoc",
+            url: "/nhom-thuoc-list",
             type: "GET",
             data: data,
             dataType: "json",
@@ -385,7 +385,7 @@ $(document).ready(function() {
     // Cập nhật dropdown nhóm thuốc
     function updateNhomThuocDropdowns() {
         $.ajax({
-            url: "/nhom-thuoc",
+            url: "/nhom-thuoc/all",
             type: "GET",
             dataType: "json",
             success: function(response) {
@@ -515,7 +515,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: "/thuoc",
+            url: "/thuoc-list",
             type: "GET",
             data: data,
             dataType: "json",

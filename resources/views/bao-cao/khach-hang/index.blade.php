@@ -101,7 +101,7 @@
             </table>
         </div>
         <div class="d-flex justify-content-center mt-3">
-            {{ $baoCaoKhachHangs->links('pagination::bootstrap-4') }}
+            {{ $baoCaoKhachHangs->onEachSide(1)->links('vendor.pagination.custom') }}
         </div>
     </div>
 </div>

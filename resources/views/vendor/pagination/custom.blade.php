@@ -8,7 +8,10 @@
                 </li>
             @else
                 <li class="page-item">
-                    <a class="page-link" href="{{ $paginator->previousPageUrl() }}" rel="prev">&laquo;</a>
+                    <a class="page-link pagination-link" 
+                       data-page="{{ $paginator->currentPage() - 1 }}" 
+                       href="javascript:void(0)" 
+                       rel="prev">&laquo;</a>
                 </li>
             @endif
 
@@ -16,7 +19,9 @@
             @foreach ($elements as $element)
                 {{-- Dấu ... --}}
                 @if (is_string($element))
-                    <li class="page-item disabled"><span class="page-link">{{ $element }}</span></li>
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ $element }}</span>
+                    </li>
                 @endif
 
                 {{-- Mảng trang --}}
@@ -28,7 +33,9 @@
                             </li>
                         @else
                             <li class="page-item">
-                                <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                <a class="page-link pagination-link" 
+                                   data-page="{{ $page }}" 
+                                   href="javascript:void(0)">{{ $page }}</a>
                             </li>
                         @endif
                     @endforeach
@@ -38,7 +45,10 @@
             {{-- Nút sau --}}
             @if ($paginator->hasMorePages())
                 <li class="page-item">
-                    <a class="page-link" href="{{ $paginator->nextPageUrl() }}" rel="next">&raquo;</a>
+                    <a class="page-link pagination-link" 
+                       data-page="{{ $paginator->currentPage() + 1 }}" 
+                       href="javascript:void(0)" 
+                       rel="next">&raquo;</a>
                 </li>
             @else
                 <li class="page-item disabled">
@@ -48,8 +58,9 @@
         </ul>
     </nav>
 @endif
+
 <style>
-    .pagination .page-link {
+.pagination .page-link {
     border-radius: 8px;
     margin: 0 3px;
     color: #0d6efd;
@@ -69,4 +80,8 @@
     font-weight: 600;
 }
 
+.pagination .page-item.disabled .page-link {
+    pointer-events: none;
+    opacity: 0.6;
+}
 </style>

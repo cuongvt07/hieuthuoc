@@ -114,7 +114,7 @@
             </div>
 
             <div class="d-flex justify-content-center mt-3">
-                {{ $lichSu->links('pagination::bootstrap-4') }}
+                {{ $lichSu->onEachSide(1)->links('vendor.pagination.custom') }}
             </div>
         </div>
     </div>

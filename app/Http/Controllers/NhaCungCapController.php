@@ -35,14 +35,19 @@ class NhaCungCapController extends Controller
             $query->orderBy('ten_ncc');
         }
 
-        $nhaCungCap = $query->paginate(10);
+        $nhaCungCap = $query->paginate(2)->appends($request->query());
 
-        if ($request->ajax()) {
-            return response()->json([
-                'nhaCungCap' => $nhaCungCap,
-                'links' => $nhaCungCap->links()->toHtml(),
-            ]);
-        }
+if ($request->ajax()) {
+    return response()->json([
+        'nhaCungCap' => $nhaCungCap,
+        'links' => $nhaCungCap
+            ->onEachSide(1)
+            ->appends($request->all())
+            ->links('vendor.pagination.custom')
+            ->render(), // ✅ Trả HTML đúng
+    ]);
+}
+
 
         return view('nha-cung-cap.index', compact('nhaCungCap'));
     }

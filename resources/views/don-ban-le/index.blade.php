@@ -372,7 +372,7 @@
                         Hiển thị {{ $donBanLes->firstItem() }}-{{ $donBanLes->lastItem() }} 
                         trong tổng số {{ $donBanLes->total() }} kết quả
                     </div>
-                    {{ $donBanLes->links('pagination::bootstrap-4') }}
+                    {{ $donBanLes->onEachSide(1)->links('vendor.pagination.custom') }}
                 </div>
                 @endif
             </div>

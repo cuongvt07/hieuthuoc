@@ -400,6 +400,17 @@
             const fromDate = $('#filter-from-date').val();
             const toDate = $('#filter-to-date').val();
             
+            // Tạo query parameters
+            const params = new URLSearchParams();
+            if (page > 1) params.set('page', page);
+            if (thuocId) params.set('thuoc_id', thuocId);
+            if (fromDate) params.set('ngay_bat_dau', fromDate);
+            if (toDate) params.set('ngay_ket_thuc', toDate);
+            
+            // Cập nhật URL trên browser
+            const newUrl = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
+            window.history.pushState({}, '', newUrl);
+            
             const tableBody = $('#gia-thuoc-table tbody');
             showLoading(tableBody);
             
@@ -468,11 +479,13 @@
                     $('#gia-thuoc-table tbody').html(html);
                     $('#pagination').html(response.links);
 
-                    // Gắn lại sự kiện click
-                    $('#pagination').on('click', '.pagination a', function(e) {
+                    // Gắn lại sự kiện click cho pagination
+                    $('#pagination').off('click').on('click', '.pagination-link', function(e) {
                         e.preventDefault();
-                        const page = $(this).attr('href').split('page=')[1];
-                        loadGiaThuoc(page);
+                        const page = $(this).data('page');
+                        if (page) {
+                            loadGiaThuoc(page);
+                        }
                     });
 
                     bindButtons();
@@ -708,11 +721,27 @@
             updateFilterButtonState();
         });
         
+        // Hàm load filter từ URL parameters khi trang được tải
+        function loadFiltersFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const thuocId = urlParams.get('thuoc_id');
+            const ngayBatDau = urlParams.get('ngay_bat_dau');
+            const ngayKetThuc = urlParams.get('ngay_ket_thuc');
+            
+            if (thuocId) $('#filter-thuoc').val(thuocId);
+            if (ngayBatDau) $('#filter-from-date').val(ngayBatDau);
+            if (ngayKetThuc) $('#filter-to-date').val(ngayKetThuc);
+            
+            // Cập nhật trạng thái button sau khi load filters
+            updateFilterButtonState();
+        }
+        
     // Khởi tạo
+    loadFiltersFromURL(); // Load filters từ URL trước
     bindButtons();
     disableDuocSiActions();
-    // Ensure search button initial state matches fresh page (disabled until filters set)
-    updateFilterButtonState();
+    updateFilterButtonState(); // Cập nhật trạng thái nút sau khi load filters
 
         // Clear form khi đóng modal
         $('#addGiaThuocModal').on('hidden.bs.modal', function() {

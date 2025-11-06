@@ -19,31 +19,28 @@ class GiaThuocController extends Controller
         $query = GiaThuoc::with(['thuoc' => function ($q) {
             $q->select('thuoc_id', 'ten_thuoc', 'ma_thuoc');
         }])
-            ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'ngay_tao']);
+            ->select(['gia_id', 'thuoc_id', 'gia_ban', 'ngay_bat_dau', 'ngay_ket_thuc', 'created_at']);
 
         if ($request->has('thuoc_id') && $request->thuoc_id) {
             $query->where('thuoc_id', $request->thuoc_id);
         }
 
+        // Lọc theo ngày bắt đầu (tìm giá bắt đầu từ ngày này trở đi)
         if ($request->has('ngay_bat_dau') && $request->ngay_bat_dau) {
-            // We want prices that are in effect overlapping the filter range.
-            // If user filters from date, we should include any price whose end is null or >= from
             $from = Carbon::parse($request->ngay_bat_dau)->startOfDay();
-            $query->where(function($q) use ($from) {
-                $q->whereNull('ngay_ket_thuc')
-                  ->orWhere('ngay_ket_thuc', '>=', $from);
-            });
+            $query->where('ngay_bat_dau', '>=', $from);
         }
 
+        // Lọc theo ngày kết thúc (tìm giá bắt đầu đến ngày này)
         if ($request->has('ngay_ket_thuc') && $request->ngay_ket_thuc) {
-            // If user filters to date, include any price that started on or before that date
             $to = Carbon::parse($request->ngay_ket_thuc)->endOfDay();
             $query->where('ngay_bat_dau', '<=', $to);
         }
 
         $giaThuoc = $query->orderBy('thuoc_id')
             ->orderBy('ngay_bat_dau', 'desc')
-            ->paginate(3);
+            ->paginate(10)
+            ->appends($request->query());
 
         $now = now();
 
@@ -76,7 +73,7 @@ class GiaThuocController extends Controller
         // If request is AJAX, return data as JSON for client-side filtering
         if ($request->ajax()) {
             // Ensure pagination links preserve current filters
-            $links = (string) $giaThuoc->appends($request->all())->links('vendor.pagination.custom');
+            $links = $giaThuoc->onEachSide(1)->appends($request->all())->links('vendor.pagination.custom')->render();
 
             return response()->json([
                 'giaThuoc' => $giaThuoc,

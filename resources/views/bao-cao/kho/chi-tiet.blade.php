@@ -95,7 +95,7 @@
                 </table>
             </div>
             <div class="d-flex justify-content-center">
-                {{ $thuocs->links('pagination::bootstrap-4') }}
+                {{ $thuocs->onEachSide(1)->links('vendor.pagination.custom') }}
             </div>
         </div>
     </div>

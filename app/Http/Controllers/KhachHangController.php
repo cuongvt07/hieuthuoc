@@ -33,7 +33,7 @@ class KhachHangController extends Controller
         if ($request->ajax()) {
             return response()->json([
                 'khachHang' => $khachHang,
-                'links' => $khachHang->links()->toHtml(),
+                'links' => $khachHang->onEachSide(1)->links('vendor.pagination.custom')->render(),
             ]);
         }
 

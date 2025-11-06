@@ -64,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::get('thuoc/{thuoc}/lots', [ThuocController::class, 'getLots'])->name('thuoc.lots');
     Route::get('api/thuoc/info', [ThuocController::class, 'getInfo'])->name('api.thuoc.info');
     Route::get('api/thuoc/{id}/kho', [ThuocController::class, 'getKhoList'])->name('api.thuoc.kho');
+    Route::get('thuoc-list', [ThuocController::class, 'getThuocList'])->name('thuoc.list');
+    Route::get('nhom-thuoc-list', [ThuocController::class, 'getNhomThuocList'])->name('nhom-thuoc.list');
     
     // Nhóm thuốc routes - chuyển hướng về trang quản lý thuốc và giữ các tham số tìm kiếm
     Route::get('nhom-thuoc', function(Request $request) {
@@ -134,6 +136,7 @@ Route::middleware('auth')->group(function () {
     
     // API lấy tất cả nhóm thuốc cho dropdown JS
     Route::get('/nhom-thuoc/all', [NhomThuocController::class, 'all']);
+    Route::get('/nhom-thuoc/filter-data', [NhomThuocController::class, 'getFilterData']);
 });
 
 // API lấy lịch sử giá thuốc

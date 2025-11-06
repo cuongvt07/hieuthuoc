@@ -16,6 +16,18 @@ class NhomThuocController extends Controller
         $nhomThuoc = NhomThuoc::orderBy('ten_nhom')->get();
         return response()->json(['nhomThuoc' => $nhomThuoc]);
     }
+
+    /**
+     * Get all drug groups for filter dropdown (all active groups)
+     */
+    public function getFilterData()
+    {
+        $nhomThuocData = NhomThuoc::where('trang_thai', 1)
+            ->orderBy('ten_nhom')
+            ->get();
+        return response()->json(['nhomThuocData' => $nhomThuocData]);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -38,7 +50,7 @@ class NhomThuocController extends Controller
         if ($request->ajax()) {
             return response()->json([
                 'nhomThuoc' => $nhomThuoc,
-                'links' => $nhomThuoc->links()->toHtml(),
+                'links' => $nhomThuoc->onEachSide(1)->links('vendor.pagination.custom')->render(),
             ]);
         }
 

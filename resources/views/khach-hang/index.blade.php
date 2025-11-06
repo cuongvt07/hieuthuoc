@@ -108,7 +108,7 @@
                 </div>
                 
                 <div class="d-flex justify-content-center mt-3" id="pagination">
-                    {{ $khachHang->links('pagination::bootstrap-4') }}
+                    {{ $khachHang->onEachSide(1)->links('vendor.pagination.custom') }}
                 </div>
             </div>
         </div>

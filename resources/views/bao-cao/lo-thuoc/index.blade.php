@@ -142,7 +142,7 @@
         </div>
         
         <div class="d-flex justify-content-center mt-3">
-            {{ $loThuocs->withQueryString()->links('pagination::bootstrap-4') }}
+            {{ $loThuocs->withQueryString()->onEachSide(1)->links('vendor.pagination.custom') }}
         </div>
     </div>
 </div>

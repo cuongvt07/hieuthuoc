@@ -11,7 +11,7 @@
 </div>
 <div class="row">
     <!-- Phần quản lý nhóm thuốc -->
-    <div class="col-md-4">
+    <div class="col-md-4" data-block-type="nhom">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Nhóm Thuốc</h6>
@@ -54,13 +54,15 @@
                     @endforeach
                 </div>
 
-                {{ $nhomThuoc->onEachSide(1)->links('vendor.pagination.custom') }}
+                <div class="pagination-container" id="pagination-nhom">
+                    {{ $nhomThuoc->onEachSide(1)->links('vendor.pagination.custom') }}
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Phần quản lý thuốc -->
-    <div class="col-md-8">
+    <div class="col-md-8" data-block-type="thuoc">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <div>
@@ -101,14 +103,13 @@
                         <div class="input-group">
                             <select id="filter-nhom" class="form-select">
                                 <option value="">-- Tất cả nhóm --</option>
-                                @foreach ($nhomThuoc as $nhom)
+                                @foreach ($nhomThuocData as $nhom)
                                 <option value="{{ $nhom->nhom_id }}">{{ $nhom->ten_nhom }}</option>
                                 @endforeach
                             </select>
                             <button class="btn btn-outline-danger" type="button" id="resetFilterBtn" title="Xóa bộ lọc nhóm">
                                 <i class="bi bi-x-circle"></i>
                             </button>
-                            </select>
                         </div>
                     </div>
 
@@ -166,7 +167,9 @@
                         </table>
                     </div>
 
-                    {{ $thuoc->onEachSide(1)->links('vendor.pagination.custom') }}
+                    <div class="pagination-container" id="pagination-thuoc">
+                        {{ $thuoc->onEachSide(1)->links('vendor.pagination.custom') }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -497,11 +500,12 @@
             const search = $('#search-nhom').val();
             console.log('Loading Nhom Thuoc with search:', search, 'and page:', page);
             const data = {
-                page: page,
-                search_nhom: search ? search.trim() : ''
+                page: page
             };
+            if (search && search.trim() !== '') data.search = search.trim();
+
             return $.ajax({
-                url: "/thuoc",
+                url: "{{ route('nhom-thuoc.list') }}",
                 type: "GET",
                 data: data,
                 dataType: "json",
@@ -528,15 +532,7 @@
                     $('#pagination-nhom').html(response.links);
                     currentNhomPage = page;
 
-                    $('#pagination-nhom').off('click').on('click', '.pagination a', function(e) {
-                        e.preventDefault();
-                        const page = $(this).attr('href').split('page=')[1];
-                        loadNhomThuoc(page);
-                    });
                     console.log('Nhom Thuoc loaded:', response.nhomThuoc);
-
-                    bindNhomThuocEvents();
-                    updateNhomThuocDropdowns();
                 },
                 error: function() {
                     showToast('Có lỗi xảy ra khi tải danh sách nhóm thuốc', 'danger');
@@ -545,21 +541,32 @@
         }
 
     function updateNhomThuocDropdowns() {
+        // Cập nhật dropdown filter (chỉ lấy nhóm active)
+        $.ajax({
+            url: "/nhom-thuoc/filter-data",
+            type: "GET",
+            dataType: "json",
+            success: function(response) {
+                const filterOptions = response.nhomThuocData.map(function(nhom) {
+                    return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
+                }).join('');
+
+                const currentFilterValue = $('#filter-nhom').val();
+                $('#filter-nhom').html(`<option value="">-- Tất cả nhóm --</option>${filterOptions}`);
+                $('#filter-nhom').val(currentFilterValue);
+            },
+            error: function() {
+                console.log('Không thể cập nhật dropdown filter nhóm thuốc');
+            }
+        });
+
+        // Cập nhật dropdown trong modal (lấy tất cả nhóm)
         $.ajax({
             url: "/nhom-thuoc/all",
             type: "GET",
             dataType: "json",
             success: function(response) {
-                const nhomOptions = response.nhomThuoc.map(function(nhom) {
-                    return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
-                }).join('');
-
-                const currentFilterValue = $('#filter-nhom').val();
-                // preserve current selected value in edit modal if any
                 const currentEditNhomVal = $('#edit_nhom_id').val();
-
-                $('#filter-nhom').html(`<option value="">-- Tất cả nhóm --</option>${nhomOptions}`);
-                $('#filter-nhom').val(currentFilterValue);
 
                 const activeNhomOptions = response.nhomThuoc.filter(nhom => nhom.trang_thai == 1)
                     .map(function(nhom) {
@@ -567,9 +574,11 @@
                     }).join('');
                 $('#nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${activeNhomOptions}`);
 
-                $('#edit_nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${nhomOptions}`);
+                const allNhomOptions = response.nhomThuoc.map(function(nhom) {
+                    return `<option value="${nhom.nhom_id}">${nhom.ten_nhom}</option>`;
+                }).join('');
+                $('#edit_nhom_id').html(`<option value="">-- Chọn nhóm thuốc --</option>${allNhomOptions}`);
                 if (currentEditNhomVal) {
-                    // re-select previously selected value if it still exists
                     $('#edit_nhom_id').val(currentEditNhomVal).trigger('change');
                 }
             },
@@ -894,8 +903,10 @@
             if (nhomId && nhomId !== '') data.nhom_id = nhomId;
             if (khoId && khoId !== '') data.kho_id = khoId;
 
+            console.log('Loading Thuoc with data:', data);
+
             $.ajax({
-                url: "/thuoc",
+                url: "{{ route('thuoc.list') }}",
                 type: "GET",
                 data: data,
                 dataType: "json",
@@ -920,17 +931,11 @@
                         </tr>`;
                         });
                     } else {
-                        html = '<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>';
+                        html = '<tr><td colspan="9" class="text-center">Không có dữ liệu</td></tr>';
                     }
                     $('#thuoc-table tbody').html(html);
                     $('#pagination-thuoc').html(response.links);
                     currentThuocPage = page;
-
-                    $('#pagination-thuoc').off('click').on('click', '.pagination a', function(e) {
-                        e.preventDefault();
-                        const page = $(this).attr('href').split('page=')[1];
-                        loadThuoc(page);
-                    });
                 },
                 error: function() {
                     showToast('Có lỗi xảy ra khi tải danh sách thuốc', 'danger');
@@ -1267,6 +1272,28 @@ $('#editThuocForm').submit(function(e) {
                 alert(message);
             }
         }
+
+        // ===== XỬ LÝ PHÂN TRANG ĐỘC LẬP =====
+        $(document).on('click', '.pagination-link', function(e) {
+            e.preventDefault();
+            
+            const page = $(this).data('page');
+            if (!page) return;
+
+            // Xác định khối nào đang được click
+            const paginationContainer = $(this).closest('.pagination-container');
+            const blockType = paginationContainer.attr('id') === 'pagination-nhom' ? 'nhom' : 'thuoc';
+            
+            console.log('Pagination clicked - Block:', blockType, 'Page:', page);
+
+            if (blockType === 'nhom') {
+                currentNhomPage = page;
+                loadNhomThuoc(page);
+            } else {
+                currentThuocPage = page;
+                loadThuoc(page);
+            }
+        });
     });
 </script>
 @endsection
