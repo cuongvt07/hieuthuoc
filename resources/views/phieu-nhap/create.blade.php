@@ -499,7 +499,7 @@
 
         // Format số thành định dạng tiền tệ
         function formatCurrency(value) {
-            return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+            return new Intl.NumberFormat('vi-VN', {maximumFractionDigits: 0, minimumFractionDigits: 0}).format(value) + ' đ';
         }
 
         // Format date từ YYYY-MM-DD sang DD/MM/YYYY

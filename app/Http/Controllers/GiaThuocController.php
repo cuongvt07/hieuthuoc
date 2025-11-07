@@ -39,7 +39,7 @@ class GiaThuocController extends Controller
 
         $giaThuoc = $query->orderBy('thuoc_id')
             ->orderBy('ngay_bat_dau', 'desc')
-            ->paginate(10)
+            ->paginate(3)
             ->appends($request->query());
 
         $now = now();

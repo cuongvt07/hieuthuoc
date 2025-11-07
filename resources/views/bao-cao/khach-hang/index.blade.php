@@ -119,6 +119,21 @@
             $('input[name="den_ngay"]').val('');
             $('#filterForm').submit();
         });
+
+        // Handle pagination clicks
+        $(document).on('click', '.pagination-link', function(e) {
+            e.preventDefault();
+            const page = $(this).data('page');
+            
+            // Get current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Update page parameter
+            urlParams.set('page', page);
+            
+            // Redirect to new URL with updated page
+            window.location.href = window.location.pathname + '?' + urlParams.toString();
+        });
     });
 </script>
 @endsection

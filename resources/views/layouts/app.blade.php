@@ -316,7 +316,7 @@
     <main class="content-wrapper">
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container-fluid">
-                <h4 class="mb-0">@yield('page-title', 'Dashboard')</h4>
+                <h4 class="mb-0"></h4>
                 <div class="d-flex align-items-center">
                     <div class="dropdown me-3">
                         <button class="btn btn-sm btn-light position-relative" type="button" id="notificationsDropdown"

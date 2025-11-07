@@ -743,6 +743,15 @@
     disableDuocSiActions();
     updateFilterButtonState(); // Cập nhật trạng thái nút sau khi load filters
 
+    // Handle pagination clicks cho trang load lần đầu (không qua AJAX)
+    $(document).on('click', '.pagination-link', function(e) {
+        e.preventDefault();
+        const page = $(this).data('page');
+        if (page) {
+            loadGiaThuoc(page);
+        }
+    });
+
         // Clear form khi đóng modal
         $('#addGiaThuocModal').on('hidden.bs.modal', function() {
             $('#addGiaThuocForm')[0].reset();

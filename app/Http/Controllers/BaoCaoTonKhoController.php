@@ -41,6 +41,17 @@ class BaoCaoTonKhoController extends Controller
     }
 
     /**
+     * Format tiền (không có phần thập phân)
+     */
+    private function formatMoney($amount)
+    {
+        if (is_null($amount)) {
+            return '0';
+        }
+        return number_format((float)$amount, 0, ',', '.');
+    }
+
+    /**
      * Hiển thị trang báo cáo tồn kho
      */
     public function index(Request $request)
@@ -347,8 +358,8 @@ class BaoCaoTonKhoController extends Controller
                     $sheet->setCellValue('B'.$row, $item->ten_thuoc ?? '');
                     $sheet->setCellValue('C'.$row, $item->don_vi_tinh ?? '');
                     $sheet->setCellValue('D'.$row, $tonKho);
-                    $sheet->setCellValue('E'.$row, $this->formatNumber($giaBan));
-                    $sheet->setCellValue('F'.$row, $this->formatNumber($giaTriTon));
+                    $sheet->setCellValue('E'.$row, $this->formatMoney($giaBan));
+                    $sheet->setCellValue('F'.$row, $this->formatMoney($giaTriTon));
                     
                     // Thêm style cho hàng dữ liệu
                     $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
@@ -372,7 +383,7 @@ class BaoCaoTonKhoController extends Controller
                     $sheet->setCellValue('B'.$row, $item->ten_kho ?? '');
                     $sheet->setCellValue('C'.$row, $item->so_loai_thuoc ?? 0);
                     $sheet->setCellValue('D'.$row, $tonKho);
-                    $sheet->setCellValue('E'.$row, $this->formatNumber($giaTriTon));
+                    $sheet->setCellValue('E'.$row, $this->formatMoney($giaTriTon));
                     
                     $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray([
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
@@ -393,7 +404,7 @@ class BaoCaoTonKhoController extends Controller
                     $sheet->setCellValue('B'.$row, $item->ho_ten ?? '');
                     $sheet->setCellValue('C'.$row, $item->so_don ?? 0);
                     $sheet->setCellValue('D'.$row, $soLuongMua);
-                    $sheet->setCellValue('E'.$row, $this->formatNumber($giaTriMua));
+                    $sheet->setCellValue('E'.$row, $this->formatMoney($giaTriMua));
                     
                     $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray([
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
@@ -424,8 +435,8 @@ class BaoCaoTonKhoController extends Controller
                     $sheet->setCellValue('D'.$row, $item->ten_kho ?? '');
                     $sheet->setCellValue('E'.$row, $item->ma_lo ?? '');
                     $sheet->setCellValue('F'.$row, $tonKho);
-                    $sheet->setCellValue('G'.$row, $this->formatNumber($giaBan));
-                    $sheet->setCellValue('H'.$row, $this->formatNumber($giaTriTon));
+                    $sheet->setCellValue('G'.$row, $this->formatMoney($giaBan));
+                    $sheet->setCellValue('H'.$row, $this->formatMoney($giaTriTon));
                     
                     $sheet->getStyle('A'.$row.':H'.$row)->applyFromArray([
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
@@ -442,7 +453,7 @@ class BaoCaoTonKhoController extends Controller
                 $sheet->setCellValue('A'.$row, 'TỔNG CỘNG');
                 $sheet->mergeCells('A'.$row.':C'.$row);
                 $sheet->setCellValue('D'.$row, $totalQuantity);
-                $sheet->setCellValue('F'.$row, $this->formatNumber($totalValue));
+                $sheet->setCellValue('F'.$row, $this->formatMoney($totalValue));
                 $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
                     'font' => ['bold' => true],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
@@ -460,7 +471,7 @@ class BaoCaoTonKhoController extends Controller
                 $sheet->setCellValue('A'.$row, 'TỔNG CỘNG');
                 $sheet->mergeCells('A'.$row.':C'.$row);
                 $sheet->setCellValue('D'.$row, $totalQuantity);
-                $sheet->setCellValue('E'.$row, $this->formatNumber($totalValue));
+                $sheet->setCellValue('E'.$row, $this->formatMoney($totalValue));
                 $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray([
                     'font' => ['bold' => true],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
@@ -477,7 +488,7 @@ class BaoCaoTonKhoController extends Controller
                 $sheet->setCellValue('A'.$row, 'TỔNG CỘNG');
                 $sheet->mergeCells('A'.$row.':E'.$row);
                 $sheet->setCellValue('F'.$row, $totalQuantity);
-                $sheet->setCellValue('H'.$row, $this->formatNumber($totalValue));
+                $sheet->setCellValue('H'.$row, $this->formatMoney($totalValue));
                 $sheet->getStyle('A'.$row.':H'.$row)->applyFromArray([
                     'font' => ['bold' => true],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],

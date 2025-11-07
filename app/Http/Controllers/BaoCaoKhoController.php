@@ -89,7 +89,7 @@ class BaoCaoKhoController extends Controller
         ->groupBy('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
         ->orderBy('kho.ten_kho');
 
-        $khoList = $khoListQuery->get();
+        $khoList = $khoListQuery->paginate(10)->appends($request->query());
 
         return view('bao-cao.kho.tong-hop', compact('khos', 'khoList'));
     }

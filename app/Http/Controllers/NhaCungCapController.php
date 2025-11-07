@@ -35,7 +35,7 @@ class NhaCungCapController extends Controller
             $query->orderBy('ten_ncc');
         }
 
-        $nhaCungCap = $query->paginate(2)->appends($request->query());
+        $nhaCungCap = $query->paginate(10)->appends($request->query());
 
 if ($request->ajax()) {
     return response()->json([

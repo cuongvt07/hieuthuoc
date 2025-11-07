@@ -18,7 +18,7 @@ class ThuocController extends Controller
     {
         // ✅ Trang đầu tiên hiển thị dữ liệu trang 1 của cả hai bảng
         $thuoc = Thuoc::with(['nhomThuoc', 'kho'])->paginate(5);
-        $nhomThuoc = NhomThuoc::paginate(5); // dùng cho danh sách nhóm thuốc (bên trái)
+        $nhomThuoc = NhomThuoc::paginate(2); // dùng cho danh sách nhóm thuốc (bên trái)
         $nhomThuocData = NhomThuoc::all();    // dùng cho dropdown filter nhóm ở khối thuốc
         $kho = Kho::all();                    // danh sách kho cho dropdown
 
@@ -45,8 +45,7 @@ class ThuocController extends Controller
         }
 
         // ⚙️ Giữ query string khi phân trang
-        $nhomThuoc = $query->orderByDesc('created_at')
-            ->paginate(5)
+        $nhomThuoc = $query->paginate(2)
             ->appends($request->query());
 
         return response()->json([

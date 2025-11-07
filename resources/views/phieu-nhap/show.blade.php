@@ -176,8 +176,8 @@
                         </td>
                     <td>{{ \Carbon\Carbon::parse($chiTiet->han_su_dung)->format('d/m/Y') }}</td>
                     <td>{{ number_format($chiTiet->so_luong, 2) }}</td>
-                    <td class="text-end">{{ number_format($chiTiet->gia_nhap) }}</td>
-                    <td class="text-end">{{ number_format($chiTiet->thanh_tien) }}</td>
+                    <td class="text-end">{{ number_format($chiTiet->gia_nhap, 0, ',', '.') }}</td>
+                    <td class="text-end">{{ number_format($chiTiet->thanh_tien, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -196,15 +196,15 @@
             <div class="summary-box">
                 <div class="row">
                     <div class="col-6 text-start">Tổng tiền hàng:</div>
-                    <div class="col-6 text-end">{{ number_format($phieuNhap->tong_tien) }} VNĐ</div>
+                    <div class="col-6 text-end">{{ number_format($phieuNhap->tong_tien, 0, ',', '.') }} VNĐ</div>
                 </div>
                 <div class="row">
                     <div class="col-6 text-start">Thuế VAT:</div>
-                    <div class="col-6 text-end">{{ number_format($phieuNhap->vat) }} VNĐ</div>
+                    <div class="col-6 text-end">{{ number_format($phieuNhap->vat, 0, ',', '.') }} VNĐ</div>
                 </div>
                 <div class="row fw-bold border-top pt-2">
                     <div class="col-6 text-start">Tổng cộng:</div>
-                    <div class="col-6 text-end">{{ number_format($phieuNhap->tong_cong) }} VNĐ</div>
+                    <div class="col-6 text-end">{{ number_format($phieuNhap->tong_cong, 0, ',', '.') }} VNĐ</div>
                 </div>
             </div>
         </div>

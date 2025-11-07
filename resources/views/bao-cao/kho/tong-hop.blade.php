@@ -107,6 +107,9 @@
                     </tfoot>
                 </table>
             </div>
+            <div class="d-flex justify-content-center mt-3">
+                {{ $khoList->withQueryString()->onEachSide(1)->links('vendor.pagination.custom') }}
+            </div>
         </div>
     </div>
 </div>
@@ -121,5 +124,20 @@
         });
         form.submit();
     };
+
+    // Handle pagination clicks
+    $(document).on('click', '.pagination-link', function(e) {
+        e.preventDefault();
+        const page = $(this).data('page');
+        
+        // Get current URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Update page parameter
+        urlParams.set('page', page);
+        
+        // Redirect to new URL with updated page
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    });
 </script>
 @endsection
