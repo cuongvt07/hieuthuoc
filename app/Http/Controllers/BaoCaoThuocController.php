@@ -27,24 +27,14 @@ class BaoCaoThuocController extends Controller
         if ($loaiBaoCao == 'doanh_so') {
             // Báo cáo theo doanh số thuốc
             $limit = $request->input('limit', 5); // Số lượng thuốc top (used for non-paginated exports)
-            $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
+            // Nếu không truyền thời gian thì lấy từ đầu đến hiện tại
+            $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : null;
             $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
             // normalize to date strings to ensure DB comparisons work as expected
-            $startDateStr = $startDate->toDateString();
+            $startDateStr = $startDate ? $startDate->toDateString() : null;
             $endDateStr = $endDate->toDateString();
 
-            // Build a subquery that returns distinct (thuoc_id, don_id, tong_cong)
-            // so we can sum order totals (tong_cong) per product without double-counting
-            $orderTotalsSub = DB::table('chi_tiet_don_ban_le')
-                ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
-                ->join('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
-                ->whereDate('don_ban_le.ngay_ban', '>=', $startDateStr)
-                ->whereDate('don_ban_le.ngay_ban', '<=', $endDateStr)
-                ->where('don_ban_le.trang_thai', 'hoan_tat')
-                ->select('lo_thuoc.thuoc_id as thuoc_id', 'don_ban_le.don_id', 'don_ban_le.tong_cong')
-                ->distinct();
-
-            // Truy vấn dữ liệu doanh số - Sửa lỗi GROUP BY
+            // Truy vấn dữ liệu doanh số - Tính đúng theo từng sản phẩm
             $query = Thuoc::select(
                 'thuoc.thuoc_id',
                 'thuoc.ma_thuoc',
@@ -61,17 +51,21 @@ class BaoCaoThuocController extends Controller
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
                 ->selectRaw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as tong_so_luong_quy_doi')
-                // join aggregated order totals subquery and sum order totals per product
-                ->leftJoinSub($orderTotalsSub, 'ot', function($join) {
-                    $join->on('ot.thuoc_id', '=', 'thuoc.thuoc_id');
+                ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien + COALESCE(chi_tiet_don_ban_le.tien_thue, 0)) as doanh_so')
+                ->join('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
+                ->join('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
+                ->join('don_ban_le', function($join) use ($startDateStr, $endDateStr) {
+                    $join->on('chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id');
+                    
+                    // Chỉ lọc từ ngày nếu có truyền vào
+                    if ($startDateStr) {
+                        $join->whereDate('don_ban_le.ngay_ban', '>=', $startDateStr);
+                    }
+                    
+                    // Luôn lọc đến ngày (mặc định là hôm nay)
+                    $join->whereDate('don_ban_le.ngay_ban', '<=', $endDateStr)
+                        ->where('don_ban_le.trang_thai', 'hoan_tat');
                 })
-                ->selectRaw('SUM(ot.tong_cong) as doanh_so')
-                ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
-                ->leftJoin('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
-                ->leftJoin('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
-                ->whereDate('don_ban_le.ngay_ban', '>=', $startDateStr)
-                ->whereDate('don_ban_le.ngay_ban', '<=', $endDateStr)
-                ->where('don_ban_le.trang_thai', 'hoan_tat')
                 ->groupBy(
                     'thuoc.thuoc_id',
                     'thuoc.ma_thuoc',
@@ -153,10 +147,15 @@ class BaoCaoThuocController extends Controller
             $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             // Thêm thông tin thời gian
-            $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : Carbon::now()->startOfMonth();
+            // Nếu không truyền thời gian thì lấy từ đầu đến hiện tại
+            $startDate = $request->filled('tu_ngay') ? Carbon::createFromFormat('d/m/Y', $request->tu_ngay) : null;
             $endDate = $request->filled('den_ngay') ? Carbon::createFromFormat('d/m/Y', $request->den_ngay) : Carbon::now();
             
-            $sheet->setCellValue('A6', '(Từ ngày: ' . $startDate->format('d/m/Y') . ' - Đến ngày: ' . $endDate->format('d/m/Y') . ')');
+            $dateRangeText = $startDate 
+                ? '(Từ ngày: ' . $startDate->format('d/m/Y') . ' - Đến ngày: ' . $endDate->format('d/m/Y') . ')'
+                : '(Từ đầu - Đến ngày: ' . $endDate->format('d/m/Y') . ')';
+            
+            $sheet->setCellValue('A6', $dateRangeText);
             $sheet->mergeCells('A6:E6');
             $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -173,18 +172,7 @@ class BaoCaoThuocController extends Controller
             $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
             $sheet->getStyle($headerRange)->getFill()->getStartColor()->setARGB('FFD9D9D9');
 
-            // Truy vấn dữ liệu - Sửa lỗi GROUP BY
-            // Build a subquery that returns distinct (thuoc_id, don_id, tong_cong)
-            // so we can sum order totals (tong_cong) per product without double-counting
-            $orderTotalsSub = DB::table('chi_tiet_don_ban_le')
-                ->join('lo_thuoc', 'chi_tiet_don_ban_le.lo_id', '=', 'lo_thuoc.lo_id')
-                ->join('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
-                ->whereDate('don_ban_le.ngay_ban', '>=', $startDate->toDateString())
-                ->whereDate('don_ban_le.ngay_ban', '<=', $endDate->toDateString())
-                ->where('don_ban_le.trang_thai', 'hoan_tat')
-                ->select('lo_thuoc.thuoc_id as thuoc_id', 'don_ban_le.don_id', 'don_ban_le.tong_cong')
-                ->distinct();
-
+            // Truy vấn dữ liệu - Tính đúng theo từng sản phẩm
             $query = Thuoc::select(
                 'thuoc.thuoc_id',
                 'thuoc.ma_thuoc',
@@ -201,17 +189,22 @@ class BaoCaoThuocController extends Controller
                 ->selectRaw('COUNT(DISTINCT don_ban_le.don_id) as so_don')
                 ->selectRaw('SUM(chi_tiet_don_ban_le.so_luong) as tong_so_luong')
                 ->selectRaw('SUM(CASE WHEN chi_tiet_don_ban_le.don_vi = 1 THEN chi_tiet_don_ban_le.so_luong / COALESCE(NULLIF(thuoc.ti_le_quy_doi,0),1) ELSE chi_tiet_don_ban_le.so_luong END) as tong_so_luong_quy_doi')
-                // join aggregated order totals subquery and sum order totals per product
-                ->leftJoinSub($orderTotalsSub, 'ot', function($join) {
-                    $join->on('ot.thuoc_id', '=', 'thuoc.thuoc_id');
+                // Tính doanh số = thành tiền + tiền thuế của TỪNG THUỐC (không phải tổng đơn)
+                ->selectRaw('SUM(chi_tiet_don_ban_le.thanh_tien + COALESCE(chi_tiet_don_ban_le.tien_thue, 0)) as doanh_so')
+                ->join('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
+                ->join('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
+                ->join('don_ban_le', function($join) use ($startDate, $endDate) {
+                    $join->on('chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id');
+                    
+                    // Chỉ lọc từ ngày nếu có truyền vào
+                    if ($startDate) {
+                        $join->whereDate('don_ban_le.ngay_ban', '>=', $startDate->toDateString());
+                    }
+                    
+                    // Luôn lọc đến ngày (mặc định là hôm nay)
+                    $join->whereDate('don_ban_le.ngay_ban', '<=', $endDate->toDateString())
+                        ->where('don_ban_le.trang_thai', 'hoan_tat');
                 })
-                ->selectRaw('SUM(ot.tong_cong) as doanh_so')
-                ->leftJoin('lo_thuoc', 'thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
-                ->leftJoin('chi_tiet_don_ban_le', 'lo_thuoc.lo_id', '=', 'chi_tiet_don_ban_le.lo_id')
-                ->leftJoin('don_ban_le', 'chi_tiet_don_ban_le.don_id', '=', 'don_ban_le.don_id')
-                ->whereDate('don_ban_le.ngay_ban', '>=', $startDate->toDateString())
-                ->whereDate('don_ban_le.ngay_ban', '<=', $endDate->toDateString())
-                ->where('don_ban_le.trang_thai', 'hoan_tat')
                 ->groupBy(
                     'thuoc.thuoc_id',
                     'thuoc.ma_thuoc',

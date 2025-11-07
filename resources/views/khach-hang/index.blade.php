@@ -343,13 +343,6 @@
                     tableBody.html(html);
                     $('#pagination').html(response.links);
 
-                    // Rebind pagination links
-                    $('#pagination').on('click', '.pagination a', function(e) {
-                        e.preventDefault();
-                        const page = $(this).attr('href').split('page=')[1];
-                        loadKhachHang(page, search);
-                    });
-
                     // Rebind buttons
                     bindButtons();
                 },
@@ -644,6 +637,36 @@
 
         // Khởi tạo
         bindButtons();
+        
+        // ===== XỬ LÝ PHÂN TRANG =====
+        // Delegated handler for paginator links (works for both server-rendered and AJAX-loaded pagination)
+        // Using document-level delegation so it works immediately on page load
+        $(document).on('click', '#pagination .pagination a', function(e) {
+            e.preventDefault();
+            const href = $(this).attr('href') || '';
+            let pageNum = 1;
+            try {
+                const url = new URL(href, window.location.href);
+                pageNum = parseInt(url.searchParams.get('page') || '1', 10);
+            } catch (err) {
+                // Fallback for relative query strings like '?page=2'
+                const parts = href.split('page=');
+                if (parts.length > 1) {
+                    pageNum = parseInt(parts[1].split('&')[0] || '1', 10) || 1;
+                }
+            }
+            const searchValue = $('#search-input').val() || '';
+            loadKhachHang(pageNum, searchValue);
+        });
+
+        // Support legacy/custom pagination elements that use .pagination-link with data-page
+        $(document).on('click', '#pagination .pagination-link', function(e) {
+            e.preventDefault();
+            const page = $(this).data('page');
+            if (!page) return;
+            const searchValue = $('#search-input').val() || '';
+            loadKhachHang(page, searchValue);
+        });
         
         // Clear form khi đóng modal
         $('#addKhachHangModal').on('hidden.bs.modal', function() {

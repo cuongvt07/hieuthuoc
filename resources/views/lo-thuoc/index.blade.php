@@ -188,30 +188,33 @@
                                 @endif
                             </td>
                             <td>
-                                @php
-                                    $today = \Carbon\Carbon::today();
-                                    $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
-                                    $diffDays = $today->diffInDays($expiry, false);
-                                    // Determine hủy status by presence of 'dieu_chinh' or ton_kho == 0
-                                    $hasHuyRecord = $huyRecord ? true : false;
-                                    if ($hasHuyRecord) {
-                                        $status = 'out-of-stock expired';
-                                        $statusText = 'Hết hạn (đã hủy)';
-                                    } elseif ($diffDays <= 0 && $lo->ton_kho_hien_tai > 0) {
-                                        // Treat expiry date equal to today as expired
-                                        $status = 'expired';
-                                        $statusText = 'Hết hạn (chưa hủy)';
-                                    } elseif ($diffDays <= 30) {
-                                        $status = 'near-expiry';
-                                        $statusText = 'Sắp hết hạn (còn ' . max(0, $diffDays) . ' ngày)';
-                                    } elseif ($lo->ton_kho_hien_tai <= 0) {
-                                        $status = 'out-of-stock';
-                                        $statusText = 'Hết hàng';
-                                    } else {
-                                        $status = 'normal';
-                                        $statusText = 'Bình thường';
-                                    }
-                                @endphp
+                            @php
+                                $today = \Carbon\Carbon::today();
+                                $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
+                                $diffDays = $today->diffInDays($expiry, false); // Có thể âm nếu đã hết hạn
+                                $hasHuyRecord = $huyRecord ? true : false;
+
+                                // Ưu tiên logic theo mức độ quan trọng
+                                if ($hasHuyRecord) {
+                                    $status = 'out-of-stock expired';
+                                    $statusText = 'Hết hạn (đã hủy)';
+                                } elseif ($expiry->lessThanOrEqualTo($today)) {
+                                    // HSD <= hôm nay => đã hết hạn
+                                    $status = 'expired';
+                                    $statusText = 'Hết hạn (chưa hủy)';
+                                } elseif ($diffDays <= 30) {
+                                    // Còn trong 30 ngày nữa sẽ hết hạn
+                                    $status = 'near-expiry';
+                                    $statusText = 'Sắp hết hạn (còn ' . $diffDays . ' ngày)';
+                                } elseif ($lo->ton_kho_hien_tai <= 0) {
+                                    // Hết hàng (nhưng chưa hủy)
+                                    $status = 'out-of-stock';
+                                    $statusText = 'Hết hàng';
+                                } else {
+                                    $status = 'normal';
+                                    $statusText = 'Bình thường';
+                                }
+                            @endphp
                                 <span class="badge status-badge {{ $status }}">{{ $statusText }}</span>
                             </td>
                             <td class="text-center">

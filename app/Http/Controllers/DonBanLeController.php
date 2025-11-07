@@ -20,14 +20,61 @@ class DonBanLeController extends Controller
     /**
      * Hiển thị danh sách hóa đơn
      */
-    public function index(Request $request)
-    {
-        $query = DonBanLe::with(['nguoiDung', 'khachHang', 'chiTietDonBanLe.loThuoc.thuoc']);
+public function index(Request $request)
+{
+    $query = DonBanLe::with(['nguoiDung', 'khachHang', 'chiTietDonBanLe.loThuoc.thuoc']);
+    
+    // Lọc theo từ khóa
+    if ($request->has('keyword') && $request->keyword != '') {
+        $keyword = $request->keyword;
+        $query->where(function($q) use ($keyword) {
+            $q->where('ma_don', 'like', "%{$keyword}%")
+              ->orWhereHas('khachHang', function($q) use ($keyword) {
+                  $q->where('ho_ten', 'like', "%{$keyword}%")
+                    ->orWhere('sdt', 'like', "%{$keyword}%");
+              });
+        });
+    }
+    
+    // Lọc theo ngày
+    if ($request->has('from_date') && $request->from_date) {
+        $query->whereDate('ngay_ban', '>=', $request->from_date);
+    }
+    
+    if ($request->has('to_date') && $request->to_date) {
+        $query->whereDate('ngay_ban', '<=', $request->to_date);
+    }
+    
+    // Lọc theo trạng thái
+    if ($request->has('status') && $request->status != '') {
+        $query->where('trang_thai', $request->status);
+    }
+    
+    // Lọc theo nhân viên
+    if ($request->has('staff') && $request->staff != '') {
+        $query->where('nguoi_dung_id', $request->staff);
+    }
+
+    // Sắp xếp
+    $sortField = $request->input('sort_by', 'ngay_ban');
+    $sortDirection = $request->input('sort_direction', 'desc');
+    $query->orderBy($sortField, $sortDirection);
+    
+    $donBanLes = $query->paginate(perPage: 10)->withQueryString();
+    
+    // Lấy danh sách nhân viên
+    $nhanViens = NguoiDung::where('vai_tro', 'duoc_si')
+        ->orderBy('ho_ten')
+        ->get(['nguoi_dung_id', 'ho_ten']);
+
+    if ($request->ajax()) {
+        // Tính toán summaries
+        $summaryQuery = DonBanLe::query();
         
-        // Lọc theo từ khóa (mã đơn hoặc tên/sđt khách hàng)
+        // Apply filters cho summary
         if ($request->has('keyword') && $request->keyword != '') {
             $keyword = $request->keyword;
-            $query->where(function($q) use ($keyword) {
+            $summaryQuery->where(function($q) use ($keyword) {
                 $q->where('ma_don', 'like', "%{$keyword}%")
                   ->orWhereHas('khachHang', function($q) use ($keyword) {
                       $q->where('ho_ten', 'like', "%{$keyword}%")
@@ -36,87 +83,47 @@ class DonBanLeController extends Controller
             });
         }
         
-        // Lọc theo ngày
         if ($request->has('from_date') && $request->from_date) {
-            $query->whereDate('ngay_ban', '>=', $request->from_date);
+            $summaryQuery->whereDate('ngay_ban', '>=', $request->from_date);
         }
         
         if ($request->has('to_date') && $request->to_date) {
-            $query->whereDate('ngay_ban', '<=', $request->to_date);
+            $summaryQuery->whereDate('ngay_ban', '<=', $request->to_date);
         }
         
-        // Lọc theo trạng thái
-        if ($request->has('status') && $request->status != '') {
-            $query->where('trang_thai', $request->status);
-        }
-        
-        // Lọc theo nhân viên
         if ($request->has('staff') && $request->staff != '') {
-            $query->where('nguoi_dung_id', $request->staff);
-        }
-
-        // Sắp xếp kết quả
-        $sortField = $request->input('sort_by', 'ngay_ban');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        
-        $query->orderBy($sortField, $sortDirection);
-        
-        $donBanLes = $query->paginate(10)->withQueryString();
-        
-        // Lấy danh sách nhân viên cho bộ lọc
-        $nhanViens = NguoiDung::where('vai_tro', 'duoc_si')
-            ->orderBy('ho_ten')
-            ->get(['nguoi_dung_id', 'ho_ten']);
-
-        if ($request->ajax()) {
-            // Calculate summary data for AJAX response
-            $totalOrders = $donBanLes->total();
-            
-            // Create a fresh query for the summaries to avoid filter issues
-            $summaryQuery = DonBanLe::query();
-            
-            // Apply the same filters as the main query except pagination
-            if ($request->has('keyword') && $request->keyword != '') {
-                $keyword = $request->keyword;
-                $summaryQuery->where(function($q) use ($keyword) {
-                    $q->where('ma_don', 'like', "%{$keyword}%")
-                      ->orWhereHas('khachHang', function($q) use ($keyword) {
-                          $q->where('ho_ten', 'like', "%{$keyword}%")
-                            ->orWhere('sdt', 'like', "%{$keyword}%");
-                      });
-                });
-            }
-            
-            if ($request->has('from_date') && $request->from_date) {
-                $summaryQuery->whereDate('ngay_ban', '>=', $request->from_date);
-            }
-            
-            if ($request->has('to_date') && $request->to_date) {
-                $summaryQuery->whereDate('ngay_ban', '<=', $request->to_date);
-            }
-            
-            if ($request->has('staff') && $request->staff != '') {
-                $summaryQuery->where('nguoi_dung_id', $request->staff);
-            }
-            
-            $completedOrders = (clone $summaryQuery)->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->count();
-            $cancelledOrders = (clone $summaryQuery)->whereIn('trang_thai', ['da_huy', 'huy'])->count();
-            $totalRevenue = (clone $summaryQuery)->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->sum('tong_cong');
-            
-            return response()->json([
-                'data' => view('don-ban-le.partials._list', compact('donBanLes'))->render(),
-                'pagination' => view('layouts.partials._pagination', ['paginator' => $donBanLes])->render(),
-                'summaries' => [
-                    'totalOrders' => $totalOrders,
-                    'completedOrders' => $completedOrders,
-                    'cancelledOrders' => $cancelledOrders,
-                    'totalRevenue' => $totalRevenue,
-                ]
-            ]);
+            $summaryQuery->where('nguoi_dung_id', $request->staff);
         }
         
-        return view('don-ban-le.index', compact('donBanLes', 'nhanViens'));
+        $totalOrders = $donBanLes->total();
+        $completedOrders = (clone $summaryQuery)->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->count();
+        $cancelledOrders = (clone $summaryQuery)->whereIn('trang_thai', ['da_huy', 'huy'])->count();
+        $totalRevenue = (clone $summaryQuery)->whereIn('trang_thai', ['hoan_thanh', 'hoan_tat'])->sum('tong_cong');
+        
+        // Render pagination
+        $paginationHtml = '';
+        if ($donBanLes->hasPages()) {
+            $paginationHtml = '<div class="d-flex justify-content-between align-items-center mt-3">';
+            $paginationHtml .= '<div>Hiển thị ' . $donBanLes->firstItem() . '-' . $donBanLes->lastItem() . ' trong tổng số ' . $donBanLes->total() . ' kết quả</div>';
+            $paginationHtml .= $donBanLes->onEachSide(1)->links('vendor.pagination.custom')->toHtml();
+            $paginationHtml .= '</div>';
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => view('don-ban-le.partials._list', compact('donBanLes'))->render(),
+            'pagination' => $paginationHtml,
+            'summaries' => [
+                'totalOrders' => $totalOrders,
+                'completedOrders' => $completedOrders,
+                'cancelledOrders' => $cancelledOrders,
+                'totalRevenue' => $totalRevenue,
+            ]
+        ]);
     }
+    
+    return view('don-ban-le.index', compact('donBanLes', 'nhanViens'));
+}
     
     /**
      * Tìm kiếm thuốc theo tên hoặc mã

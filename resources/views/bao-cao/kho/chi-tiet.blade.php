@@ -49,7 +49,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Danh sách thuốc trong kho</h6>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive table-scroll">
                 <table class="table table-bordered table-hover align-middle">
                     <thead class="table-light">
                         <tr>
@@ -101,3 +101,18 @@
     </div>
 </div>
 @endsection
+<style>
+.table-scroll {
+    max-height: 600px; /* Chiều cao tối đa của danh sách */
+    overflow-y: auto;  /* Cho phép cuộn dọc */
+}
+
+/* Giữ tiêu đề bảng (thead) cố định khi cuộn */
+.table-scroll thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa; /* Màu nền header */
+    z-index: 2;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.05);
+}
+</style>

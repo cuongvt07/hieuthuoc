@@ -1,4 +1,3 @@
-
 <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
     <thead>
         <tr>
@@ -57,7 +56,6 @@
                         <i class="fas fa-cog"></i> Thao tác
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ $don->don_id }}">
-                        <!-- Xem chi tiết - luôn hiển thị -->
                         <li>
                             <a class="dropdown-item view-order-btn" href="javascript:void(0)" 
                                data-id="{{ $don->don_id }}">
@@ -66,14 +64,12 @@
                         </li>
                         @if(Auth::user() && Auth::user()->vai_tro === 'duoc_si')
                             @if($don->trang_thai == 'cho_xu_ly')
-                                <!-- Hoàn tất đơn - chỉ hiển thị khi chờ xử lý -->
                                 <li>
                                     <a class="dropdown-item complete-order-btn" href="javascript:void(0)" 
                                        data-id="{{ $don->don_id }}" data-ma-don="{{ $don->ma_don }}">
                                         <i class="fas fa-check-circle text-success me-2"></i> Hoàn tất đơn
                                     </a>
                                 </li>
-                                <!-- Hủy đơn - chỉ hiển thị khi chờ xử lý -->
                                 <li>
                                     <a class="dropdown-item cancel-order-btn" href="javascript:void(0)" 
                                        data-id="{{ $don->don_id }}" data-ma-don="{{ $don->ma_don }}">
@@ -82,7 +78,6 @@
                                 </li>
                             @endif
                             @if(in_array($don->trang_thai, ['hoan_tat', 'hoan_thanh']))
-                                <!-- In hóa đơn - chỉ hiển thị khi đã hoàn tất -->
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ route('don-ban-le.print', $don->don_id) }}" 
@@ -103,17 +98,3 @@
         @endforelse
     </tbody>
 </table>
-
-@if($donBanLes->hasPages())
-<div class="d-flex justify-content-between align-items-center mt-3">
-    <div>
-        Hiển thị {{ $donBanLes->firstItem() }}-{{ $donBanLes->lastItem() }} 
-        trong tổng số {{ $donBanLes->total() }} kết quả
-    </div>
-    {{ $donBanLes->onEachSide(1)->links('vendor.pagination.custom') }}
-</div>
-@endif
-
-<div class="d-flex justify-content-end mt-4" id="pagination-container">
-    {{ $donBanLes->onEachSide(1)->links('vendor.pagination.custom') }}
-</div>

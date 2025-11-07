@@ -171,7 +171,7 @@
     </div>
 
     <!-- Summary Cards Row -->
-    <div class="row mb-4">
+    <div class="row mb-2">
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card border-left-primary shadow h-100 py-2 summary-card summary-card-orders">
                 <div class="card-body">
@@ -366,6 +366,7 @@
                 </table>
 
                 <!-- Pagination -->
+                <div id="pagination-container">
                 @if($donBanLes->hasPages())
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <div>
@@ -375,6 +376,7 @@
                     {{ $donBanLes->onEachSide(1)->links('vendor.pagination.custom') }}
                 </div>
                 @endif
+                </div>
             </div>
         </div>
     </div>
@@ -417,12 +419,20 @@
         });
         
         // Support for pagination links
-        $(document).on('click', '.pagination a', function(e) {
+        $(document).on('click', '.pagination-link', function(e) {
             e.preventDefault();
-            const url = $(this).attr('href');
+            
+            const page = $(this).data('page');
+            if (!page) return;
+            
+            // Build URL with current filters
+            const url = '{{ route("don-ban-le.index") }}?' + $('#filter-form').serialize() + '&page=' + page;
             loadOrders(url);
+            
+            // Update browser URL
             window.history.pushState({}, '', url);
         });
+
         
         // Xử lý hủy đơn hàng
         $('#detail-cancel-btn').on('click', function() {
@@ -463,27 +473,35 @@
         });
     });
 
-    function loadOrders(url) {
-        $.ajax({
-            url: url,
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                $('#orders-table-container').html(response.data);
-                if (response.pagination) {
-                    $('#pagination-container').html(response.pagination);
-                }
-                if (response.summaries) {
-                    updateSummaries(response.summaries);
-                }
-                    // Khởi tạo lại dropdown, modal, và bind lại các event sau khi load AJAX
-                    reinitBootstrapComponents();
-            },
-            error: function(xhr) {
-                console.error('Error loading orders:', xhr.responseText);
+function loadOrders(url) {
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            // Update table body only
+            const $tempDiv = $('<div>').html(response.data);
+            const tbody = $tempDiv.find('tbody').html();
+            $('#dataTable tbody').html(tbody);
+            
+            // Update pagination
+            if (response.pagination) {
+                $('#pagination-container').html(response.pagination);
             }
-        });
-    }
+            
+            // Update summaries
+            if (response.summaries) {
+                updateSummaries(response.summaries);
+            }
+            
+            reinitBootstrapComponents();
+        },
+        error: function(xhr) {
+            console.error('Error:', xhr);
+            alert('Có lỗi xảy ra khi tải dữ liệu');
+        }
+    });
+}
     
     function updateSummaries(summaries) {
         if (!summaries) return;
@@ -655,13 +673,7 @@
                 viewOrderDetails(orderId);
             });
 
-            // Bind lại event cho pagination
-            $(document).off('click', '.pagination a').on('click', '.pagination a', function(e) {
-                e.preventDefault();
-                const url = $(this).attr('href');
-                loadOrders(url);
-                window.history.pushState({}, '', url);
-            });
+            // Pagination handler đã được bind ở document level, không cần bind lại
 
             // Bind lại event cho nút hoàn tất đơn
             $(document).off('click', '.complete-order-btn').on('click', '.complete-order-btn', function() {
