@@ -29,11 +29,13 @@
 @endsection
 
 @section('content')
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <form id="filterForm" method="GET" class="row g-3">
+<div class="container-fluid">
+    <h1 class="page-title">Báo Cáo Lô Thuốc</h1>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="filterForm" method="GET" class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Trạng thái</label>
                         <select name="trang_thai" class="form-select">
@@ -100,8 +102,8 @@
                             <td>
                                 @php
                                     $today = \Carbon\Carbon::today();
-                                    $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
-                                    $diffDays = $today->diffInDays($expiry, false);
+                                    $expiry = \Carbon\Carbon::parse($lo->han_su_dung)->startOfDay();
+                                    $oneMonthFromNow = $today->copy()->addMonth();
                                     
                                     // Determine hủy status by presence of 'dieu_chinh' record
                                     $hasHuyRecord = $lo->lichSuTonKho()->where('loai_thay_doi', 'dieu_chinh')->exists();
@@ -110,14 +112,16 @@
                                         $status = 'out-of-stock expired';
                                         $statusText = 'Hết hạn (đã hủy)';
                                         $badgeClass = 'bg-dark';
-                                    } elseif ($diffDays <= 0 && $lo->ton_kho_hien_tai > 0) {
-                                        // Treat expiry date equal to today as expired
+                                    } elseif ($expiry < $today) {
+                                        // HSD đã qua (hết hạn)
                                         $status = 'expired';
                                         $statusText = 'Hết hạn (chưa hủy)';
                                         $badgeClass = 'bg-danger';
-                                    } elseif ($diffDays <= 30) {
+                                    } elseif ($expiry <= $oneMonthFromNow) {
+                                        // HSD trong vòng 1 tháng tới (sắp hết hạn)
+                                        $diffDays = $expiry->diffInDays($today);
                                         $status = 'near-expiry';
-                                        $statusText = 'Sắp hết hạn (còn ' . max(0, $diffDays) . ' ngày)';
+                                        $statusText = 'Sắp hết hạn (còn ' . $diffDays . ' ngày)';
                                         $badgeClass = 'bg-warning text-dark';
                                     } elseif ($lo->ton_kho_hien_tai <= 0) {
                                         $status = 'out-of-stock';
@@ -145,6 +149,7 @@
             {{ $loThuocs->withQueryString()->onEachSide(1)->links('vendor.pagination.custom') }}
         </div>
     </div>
+</div>
 </div>
 @endsection
 

@@ -5,6 +5,8 @@
 @section('page-title', 'Báo Cáo Doanh Số Thuốc')
 
 @section('content')
+<h1 class="h3 mb-4 text-gray-800">Báo Cáo Doanh Số Thuốc</h1>
+
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">

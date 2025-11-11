@@ -15,9 +15,11 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Nhóm Thuốc</h6>
+                @if(auth()->user()->vai_tro === 'admin')
                 <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addNhomThuocModal">
                     <i class="bi bi-plus-circle me-1"></i> Thêm Nhóm
                 </button>
+                @endif
             </div>
             <div class="card-body">
                 <div class="mb-3">
@@ -42,6 +44,7 @@
                             <span class="badge bg-danger ms-2">Đã đình chỉ</span>
                             @endif
                         </div>
+                        @if(auth()->user()->vai_tro === 'admin')
                         <div>
                             <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="{{ $nhom->nhom_id }}">
                                 <i class="bi bi-pencil"></i>
@@ -50,6 +53,7 @@
                                 <i class="bi bi-ban"></i> {{ $nhom->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                             </button>
                         </div>
+                        @endif
                     </div>
                     @endforeach
                 </div>
@@ -69,9 +73,11 @@
                     <h6 class="m-0 font-weight-bold">Danh Sách Thuốc <span id="selected-nhom-name"></span></h6>
                     <small class="text-muted" id="filter-status">Đang hiển thị tất cả thuốc</small>
                 </div>
+                @if(auth()->user()->vai_tro === 'admin')
                 <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addThuocModal">
                     <i class="bi bi-plus-circle me-1"></i> Thêm Thuốc
                 </button>
+                @endif
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -125,7 +131,9 @@
                                     <th>Đơn Vị Bán</th>
                                     <th>Tỉ Lệ</th>
                                     <th>Trạng Thái</th>
+                                    @if(auth()->user()->vai_tro === 'admin')
                                     <th>Thao Tác</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -149,6 +157,7 @@
                                         <span class="badge bg-success">Đang hoạt động</span>
                                         @endif
                                     </td>
+                                    @if(auth()->user()->vai_tro === 'admin')
                                     <td>
                                         <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="{{ $item->thuoc_id }}">
                                             <i class="bi bi-pencil"></i>
@@ -157,6 +166,7 @@
                                             <i class="bi bi-ban"></i> {{ $item->trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ' }}
                                         </button>
                                     </td>
+                                    @endif
                                 </tr>
                                 @empty
                                 <tr>
@@ -510,17 +520,21 @@
                 success: function(response) {
                     let html = '';
                     if (response.nhomThuoc.data.length > 0) {
+                        const isDuocSi = hasEditPermission();
                         $.each(response.nhomThuoc.data, function(index, nhom) {
+                            const actionButtons = isDuocSi ? `
+                            <div>
+                                <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}"><i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}"><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                            </div>` : '';
+                            
                             html += `
                         <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center nhom-thuoc-item ${selectedNhomId == nhom.nhom_id ? 'active' : ''}" data-id="${nhom.nhom_id}" style="cursor: pointer;">
                             <div>
                                 <span class="fw-bold">${nhom.ma_nhom}</span> - ${nhom.ten_nhom}
                                 ${nhom.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}
                             </div>
-                            <div>
-                                <button type="button" class="btn btn-sm btn-info edit-nhom-btn" data-id="${nhom.nhom_id}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm btn-warning suspend-nhom-btn" data-id="${nhom.nhom_id}" data-status="${nhom.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-ban"></i> ${nhom.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
-                            </div>
+                            ${actionButtons}
                         </div>`;
                         });
                     } else {
@@ -911,8 +925,15 @@
                 dataType: "json",
                 success: function(response) {
                     let html = '';
+                    const isDuocSi = hasEditPermission();
                     if (response.thuoc.data.length > 0) {
                         response.thuoc.data.forEach(function(item) {
+                            const actionButtons = isDuocSi ? `
+                            <td>
+                                <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${item.thuoc_id}"><i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}"><i class="bi bi-ban"></i> ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+                            </td>` : '';
+                            
                             html += `
                         <tr>
                             <td>${item.ma_thuoc}</td>
@@ -923,14 +944,12 @@
                             <td>${item.don_vi_ban}</td>
                             <td>${item.ti_le_quy_doi}</td>
                             <td>${item.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${item.thuoc_id}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-pencil"></i></button>
-                                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${item.thuoc_id}" data-status="${item.trang_thai}" ${!hasEditPermission() ? 'disabled' : ''}><i class="bi bi-ban"></i> ${item.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
-                            </td>
+                            ${actionButtons}
                         </tr>`;
                         });
                     } else {
-                        html = '<tr><td colspan="9" class="text-center">Không có dữ liệu</td></tr>';
+                        const colspan = isDuocSi ? '9' : '8';
+                        html = `<tr><td colspan="${colspan}" class="text-center">Không có dữ liệu</td></tr>`;
                     }
                     $('#thuoc-table tbody').html(html);
                     $('#pagination-thuoc').html(response.links);
@@ -1227,6 +1246,13 @@ $('#editThuocForm').submit(function(e) {
                 return $(this).find('.edit-thuoc-btn').data('id') == thuoc.thuoc_id;
             });
             if (row.length) {
+                const isDuocSi = hasEditPermission();
+                const actionButtons = isDuocSi ? `
+            <td>
+                <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
+                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
+            </td>` : '';
+                
                 const html = `
             <td>${thuoc.ma_thuoc}</td>
             <td>${thuoc.ten_thuoc} ${thuoc.trang_thai == 0 ? '<span class="badge bg-danger ms-2">Đã đình chỉ</span>' : ''}</td>
@@ -1236,10 +1262,7 @@ $('#editThuocForm').submit(function(e) {
             <td>${thuoc.don_vi_ban}</td>
             <td>${thuoc.ti_le_quy_doi}</td>
             <td>${thuoc.trang_thai == 0 ? '<span class="badge bg-danger">Đã đình chỉ</span>' : '<span class="badge bg-success">Đang hoạt động</span>'}</td>
-            <td>
-                <button type="button" class="btn btn-sm btn-info edit-thuoc-btn" data-id="${thuoc.thuoc_id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-sm btn-warning suspend-thuoc-btn" data-id="${thuoc.thuoc_id}" data-status="${thuoc.trang_thai}"><i class="bi bi-ban"></i> ${thuoc.trang_thai == 0 ? 'Bỏ đình chỉ' : 'Đình chỉ'}</button>
-            </td>`;
+            ${actionButtons}`;
                 row.html(html);
             }
         }

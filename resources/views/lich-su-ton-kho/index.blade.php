@@ -142,6 +142,22 @@
             $('input[name="den_ngay"]').val('');
             $('#filterForm').submit();
         });
+
+        // Xử lý phân trang
+        $(document).on('click', '.pagination-link', function(e) {
+            e.preventDefault();
+            
+            const page = $(this).data('page');
+            if (!page) return;
+            
+            // Lấy các tham số filter hiện tại
+            const form = $('#filterForm');
+            const params = form.serialize() + '&page=' + page;
+            const url = '{{ route("lich-su-ton-kho.index") }}?' + params;
+            
+            // Chuyển trang
+            window.location.href = url;
+        });
     });
 </script>
 @endsection

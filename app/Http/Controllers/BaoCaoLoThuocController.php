@@ -250,14 +250,22 @@ class BaoCaoLoThuocController extends Controller
         foreach ($loThuocs as $lo) {
             $now = Carbon::now()->startOfDay();
             $hsd = Carbon::parse($lo->han_su_dung)->startOfDay();
-            $daysDiff = $hsd->diffInDays($now, false);
-            if ($lo->da_huy) {
+            $oneMonthFromNow = $now->copy()->addMonth();
+            
+            // Kiểm tra có record hủy tồn không
+            $hasHuyRecord = $lo->lichSuTonKho()->where('loai_thay_doi', 'dieu_chinh')->exists();
+            
+            if ($hasHuyRecord) {
                 $trangThai = 'Hết hạn (đã hủy)';
-            } elseif ($now >= $hsd) {
+            } elseif ($hsd < $now) {
+                // HSD đã qua (hết hạn)
                 $trangThai = 'Hết hạn (chưa hủy)';
-            } elseif ($daysDiff <= 30) {
-                $trangThai = 'Sắp hết hạn (còn ' . sprintf('%02d', $daysDiff) . ' ngày)';
+            } elseif ($hsd <= $oneMonthFromNow) {
+                // HSD trong vòng 1 tháng tới (sắp hết hạn)
+                $daysDiff = $hsd->diffInDays($now);
+                $trangThai = 'Sắp hết hạn (còn ' . $daysDiff . ' ngày)';
             } else {
+                // HSD còn lâu (còn hạn)
                 $trangThai = 'Còn hạn';
             }
 

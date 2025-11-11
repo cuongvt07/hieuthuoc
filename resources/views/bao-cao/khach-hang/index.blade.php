@@ -19,6 +19,7 @@
 
 @section('content')
 <div class="row mb-4">
+    <h1 class="page-title">Báo Cáo Khách Hàng</h1>
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">

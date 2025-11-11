@@ -39,7 +39,7 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Khách Hàng</h6>
-                    @if(auth()->user()->vai_tro === 'admin')
+                    @if(auth()->user()->vai_tro === 'duoc_si')
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addKhachHangModal">
                         <i class="bi bi-plus-circle"></i> Thêm Khách Hàng
                     </button>
@@ -85,7 +85,7 @@
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $item->khach_hang_id }}">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
-                                        @if(auth()->user()->vai_tro === 'admin')
+                                        @if(auth()->user()->vai_tro === 'duoc_si')
                                         <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->khach_hang_id }}">
                                             <i class="bi bi-pencil"></i> Sửa
                                         </button>
@@ -306,27 +306,40 @@
                 success: function(response) {
                     let html = '';
                     
+                    // Lấy vai trò người dùng
+                    const userRole = '{{ auth()->user()->vai_tro }}';
+                    const isDuocSi = userRole === 'duoc_si';
+                    
                     if (response.khachHang.data.length > 0) {
                         $.each(response.khachHang.data, function(index, item) {
+                            // Nút Xem luôn hiển thị
+                            let actionButtons = `
+                                <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.khach_hang_id}">
+                                    <i class="bi bi-eye"></i> Xem
+                                </button>
+                            `;
+                            
+                            // Chỉ dược sĩ mới thấy nút Sửa và Đình chỉ
+                            if (isDuocSi) {
+                                actionButtons += `
+                                    <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.khach_hang_id}">
+                                        <i class="bi bi-pencil"></i> Sửa
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger suspend-btn" 
+                                        data-id="${item.khach_hang_id}" 
+                                        data-status="${item.trang_thai}">
+                                        <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
+                                    </button>
+                                `;
+                            }
+                            
                             html += `
                                 <tr>
                                     <td>${item.sdt}</td>
                                     <td>${item.ho_ten}</td>
                                     <td class="text-center">${item.don_ban_le_count || 0}</td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.khach_hang_id}">
-                                            <i class="bi bi-eye"></i> Xem
-                                        </button>
-                                        @if(auth()->user()->vai_tro === 'admin')
-                                        <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.khach_hang_id}">
-                                            <i class="bi bi-pencil"></i> Sửa
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-secondary suspend-btn" 
-                                            data-id="${item.khach_hang_id}" 
-                                            data-status="${item.trang_thai}">
-                                            <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Bỏ đình chỉ' : 'Đình chỉ'}
-                                        </button>
-                                        @endif
+                                        ${actionButtons}
                                     </td>
                                 </tr>
                             `;
@@ -705,9 +718,12 @@
             findByPhone: findCustomerByPhone
         };
 
-        // Ẩn hoàn toàn nút thêm mới, sửa, xóa, đình chỉ cho dược sĩ
-        if (window.Laravel && window.Laravel.user && window.Laravel.user.vai_tro === 'duoc_si') {
-            $('#addKhachHangModal').remove();
+        // Kiểm tra vai trò - chỉ admin mới bị ẩn các nút chỉnh sửa
+        const userRole = '{{ auth()->user()->vai_tro }}';
+        if (userRole === 'admin') {
+            // Ẩn nút thêm mới
+            $('button[data-bs-target="#addKhachHangModal"]').remove();
+            // Ẩn các nút sửa, xóa, đình chỉ
             $('.edit-btn, .delete-btn, .suspend-btn').remove();
         }
 

@@ -39,7 +39,7 @@ class LichSuTonKhoController extends Controller
         // Sắp xếp
         $query->orderBy('created_at', 'desc');
 
-        $lichSu = $query->paginate(20);
+        $lichSu = $query->paginate(5)->appends($request->query());
         $thuocs = Thuoc::where('trang_thai', 1)->orderBy('ten_thuoc')->get();
 
         return view('lich-su-ton-kho.index', compact('lichSu', 'thuocs'));

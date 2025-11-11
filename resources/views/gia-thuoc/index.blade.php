@@ -61,9 +61,11 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Giá Thuốc</h6>
+                @if(auth()->user()->vai_tro !== 'duoc_si')
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGiaThuocModal">
                     <i class="bi bi-plus-circle me-1"></i> Thêm Giá Thuốc
                 </button>
+                @endif
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -108,7 +110,9 @@
                                 <th>Giá Bán</th>
                                 <th>Ngày Bắt Đầu</th>
                                 <th>Ngày Kết Thúc</th>
+                                @if(auth()->user()->vai_tro !== 'duoc_si')
                                 <th width="120px">Thao Tác</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -129,6 +133,7 @@
                                     <td>{{ number_format($gia->gia_ban) }} đ</td>
                                     <td>{{ $gia->ngay_bat_dau ? date('d/m/Y', strtotime($gia->ngay_bat_dau)) : '' }}</td>
                                     <td>{{ $gia->ngay_ket_thuc ? date('d/m/Y', strtotime($gia->ngay_ket_thuc)) : 'Hiện tại' }}</td>
+                                    @if(auth()->user()->vai_tro !== 'duoc_si')
                                     <td class="text-center">
                                         <button class="btn btn-sm btn-primary edit-btn me-1" data-id="{{ $gia->gia_id }}" {{ $isActive ? '' : 'disabled' }}>
                                             <i class="bi bi-pencil"></i>
@@ -140,6 +145,7 @@
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
@@ -289,19 +295,7 @@
     $(document).ready(function() {
     // Lấy vai trò của người dùng từ DOM data attribute (safer than Blade-to-JS interpolation)
     const userRole = $('#page-data').data('user-role') || '';
-
-        // Nếu là dược sĩ thì ẩn/vô hiệu hóa các nút thao tác
-        function disableDuocSiActions() {
-            if (userRole === 'duoc_si') {
-                // Vô hiệu hóa nút thêm giá thuốc
-                $("[data-bs-target='#addGiaThuocModal']").prop('disabled', true).addClass('disabled');
-                // Vô hiệu hóa nút sửa/xóa trong bảng
-                $('#gia-thuoc-table .edit-btn, #gia-thuoc-table .delete-btn').prop('disabled', true).addClass('disabled');
-            }
-        }
-
-        // Gọi khi load trang
-        disableDuocSiActions();
+    const isDuocSi = userRole === 'duoc_si';
 
         // Hiển thị loading spinner
         function showLoading(element) {
@@ -451,13 +445,7 @@
                                 disabledEdit = 'disabled'; // không sửa giá cũ
                             }
 
-                            html += `
-                                <tr class="${rowClass}">
-                                    <td>${item.thuoc.ma_thuoc}</td>
-                                    <td>${item.thuoc.ten_thuoc}</td>
-                                    <td class="text-end">${giaBan} đ</td>
-                                    <td>${ngayBatDau}</td>
-                                    <td>${ngayKetThuc}</td>
+                            const actionButtons = !isDuocSi ? `
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-primary edit-btn me-1" data-id="${item.gia_id}" ${disabledEdit}>
                                             <i class="bi bi-pencil"></i>
@@ -468,12 +456,22 @@
                                             data-date="${ngayBatDau}" ${disabledDelete}>
                                             <i class="bi bi-trash"></i>
                                         </button>
-                                    </td>
+                                    </td>` : '';
+
+                            html += `
+                                <tr class="${rowClass}">
+                                    <td>${item.thuoc.ma_thuoc}</td>
+                                    <td>${item.thuoc.ten_thuoc}</td>
+                                    <td class="text-end">${giaBan} đ</td>
+                                    <td>${ngayBatDau}</td>
+                                    <td>${ngayKetThuc}</td>
+                                    ${actionButtons}
                                 </tr>
                             `;
                         });
                     } else {
-                        html = '<tr><td colspan="6" class="text-center">Không có dữ liệu</td></tr>';
+                        const colspan = isDuocSi ? '5' : '6';
+                        html = `<tr><td colspan="${colspan}" class="text-center">Không có dữ liệu</td></tr>`;
                     }
 
                     $('#gia-thuoc-table tbody').html(html);
@@ -489,7 +487,6 @@
                     });
 
                     bindButtons();
-                    disableDuocSiActions(); // vẫn áp dụng logic ẩn cho dược sĩ
                 },
                 error: function() {
                     tableBody.html('<tr><td colspan="4" class="text-center text-danger">Đã xảy ra lỗi khi tải dữ liệu</td></tr>');
@@ -740,7 +737,6 @@
     // Khởi tạo
     loadFiltersFromURL(); // Load filters từ URL trước
     bindButtons();
-    disableDuocSiActions();
     updateFilterButtonState(); // Cập nhật trạng thái nút sau khi load filters
 
     // Handle pagination clicks cho trang load lần đầu (không qua AJAX)
