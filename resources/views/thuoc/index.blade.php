@@ -286,10 +286,8 @@
                                 <label for="nhom_id" class="form-label">Nhóm Thuốc <span class="text-danger">*</span></label>
                                 <select class="form-select" id="nhom_id" name="nhom_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn nhóm thuốc --</option>
-                                    @foreach ($nhomThuoc as $nhom)
-                                    @if ($nhom->trang_thai == 1)
+                                    @foreach ($nhomThuocData as $nhom)
                                     <option value="{{ $nhom->nhom_id }}">{{ $nhom->ten_nhom }}</option>
-                                    @endif
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback" id="nhom_id_error"></div>
@@ -362,7 +360,7 @@
                                 <label for="edit_nhom_id" class="form-label">Nhóm Thuốc <span class="text-danger">*</span></label>
                                 <select class="form-select" id="edit_nhom_id" name="nhom_id" requiredmsg="Trường này yêu cầu bắt buộc">
                                     <option value="">-- Chọn nhóm thuốc --</option>
-                                    @foreach ($nhomThuoc as $nhom)
+                                    @foreach ($nhomThuocAll as $nhom)
                                     <option value="{{ $nhom->nhom_id }}">{{ $nhom->ten_nhom }}</option>
                                     @endforeach
                                 </select>
@@ -672,6 +670,7 @@
                 showToast(response.message);
                 loadNhomThuoc(currentNhomPage);
                 loadThuoc(currentThuocPage);
+                updateNhomThuocDropdowns(); // Cập nhật dropdown sau khi đình chỉ/bỏ đình chỉ
             },
             error: function(xhr) {
                 console.log('Suspend error:', xhr.responseJSON);
@@ -1294,6 +1293,10 @@ $('#editThuocForm').submit(function(e) {
                 loadThuoc(page);
             }
         });
+
+        // ===== KHỞI TẠO =====
+        // Dropdown nhóm thuốc đã được render sẵn từ server
+        // Chỉ cần update khi có thay đổi (thêm/sửa/xóa/đình chỉ nhóm)
     });
 </script>
 @endsection
