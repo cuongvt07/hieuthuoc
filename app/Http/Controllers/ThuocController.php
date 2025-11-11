@@ -17,7 +17,7 @@ class ThuocController extends Controller
     public function index()
     {
         // ✅ Trang đầu tiên hiển thị dữ liệu trang 1 của cả hai bảng
-        $thuoc = Thuoc::with(['nhomThuoc', 'kho'])->paginate(5);
+        $thuoc = Thuoc::with(['nhomThuoc', 'kho'])->paginate(10);
         $nhomThuoc = NhomThuoc::paginate(2); // dùng cho danh sách nhóm thuốc (bên trái)
         $nhomThuocData = NhomThuoc::all();    // dùng cho dropdown filter nhóm ở khối thuốc
         $kho = Kho::all();                    // danh sách kho cho dropdown
@@ -78,8 +78,8 @@ class ThuocController extends Controller
         }
 
         // ⚙️ Giữ filter khi chuyển trang
-        $thuoc = $query->orderByDesc('created_at')
-            ->paginate(5)
+        $thuoc = $query->orderByDesc('ngay_tao')
+            ->paginate(10)
             ->appends($request->query());
 
         return response()->json([
@@ -94,7 +94,7 @@ class ThuocController extends Controller
     public function getInfo(Request $request): JsonResponse
     {
         $thuoc = Thuoc::with(['nhomThuoc', 'giaThuoc' => function ($query) {
-            $query->orderByDesc('created_at')->first();
+            $query->orderByDesc('ngay_tao')->first();
         }])->findOrFail($request->id);
 
         return response()->json([

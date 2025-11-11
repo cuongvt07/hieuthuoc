@@ -63,9 +63,11 @@
         </div>
     </div>
     <div class="col-md-6 text-end">
+        @if(auth()->user()->vai_tro === 'admin')
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
             <i class="bi bi-plus-circle me-1"></i> Thêm Nhân Sự
         </button>
+        @endif
     </div>
 </div>
 
@@ -118,6 +120,7 @@
                                         <div class="btn-group" role="group" style="
     display: flex;
     gap: 10px; ">
+                                            @if(auth()->user()->vai_tro === 'admin')
                                             <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $admin->nguoi_dung_id }}">
                                                 <i class="bi bi-pencil"></i> Sửa
                                             </button>
@@ -127,6 +130,7 @@
                                             <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $admin->nguoi_dung_id }}" data-name="{{ $admin->ho_ten }}">
                                                 <i class="bi bi-ban"></i> {{ $admin->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
                                             </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -194,15 +198,19 @@
                                         <div class="btn-group" role="group" style="
     display: flex;
     gap: 10px;">
+                                            @if(auth()->user()->vai_tro === 'admin' || auth()->user()->nguoi_dung_id == $duocSi->nguoi_dung_id)
                                             <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $duocSi->nguoi_dung_id }}">
                                                 <i class="bi bi-pencil"></i> Sửa
                                             </button>
                                             <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
                                                 <i class="bi bi-key"></i>
                                             </button>
-                                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
-                                                    <i class="bi bi-ban"></i> {{ $duocSi->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
-                                                </button>
+                                            @endif
+                                            @if(auth()->user()->vai_tro === 'admin')
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ $duocSi->nguoi_dung_id }}" data-name="{{ $duocSi->ho_ten }}">
+                                                <i class="bi bi-ban"></i> {{ $duocSi->trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ' }}
+                                            </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -475,15 +483,6 @@
             $('#editUserForm .invalid-feedback').text('');
         }
 
-        // Vô hiệu hóa các nút thao tác nếu không phải admin
-        if (!hasEditPermission()) {
-            // Disable only the button that opens the "Thêm Nhân Sự" modal (don't touch other primary buttons like search)
-            $('button[data-bs-target="#addUserModal"]').prop('disabled', true).addClass('disabled');
-
-            // Vô hiệu hóa các nút chỉnh sửa, Đình chỉ, đình chỉ trong bảng Admin
-            $('#admin-table .edit-btn, #admin-table .delete-btn').prop('disabled', true).addClass('disabled');
-        }
-
         // Tìm kiếm người dùng
         $('#searchBtn').click(function() {
             const searchValue = $('#search-input').val();
@@ -545,17 +544,18 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                            ${hasEditPermission() ? `
+                                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}">
                                                 <i class="bi bi-pencil"></i> Sửa
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                            <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
                                                 <i class="bi bi-key"></i> Đổi Mật Khẩu
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
                                                 <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
                                             </button>
-         
-                                            </div>
+                                            ` : ''}
+                                        </div>
                                     </td>
                                 </tr>
                             `;
@@ -589,15 +589,19 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}" ${!hasEditPermission() && !isCurrentUser ? 'disabled' : ''}>
+                                                ${hasEditPermission() || isCurrentUser ? `
+                                                <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.nguoi_dung_id}">
                                                     <i class="bi bi-pencil"></i> Sửa
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() && !isCurrentUser ? 'disabled' : ''}>
+                                                <button type="button" class="btn btn-sm btn-info change-password-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
                                                     <i class="bi bi-key"></i> Đổi Mật Khẩu
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}" ${!hasEditPermission() ? 'disabled' : ''}>
+                                                ` : ''}
+                                                ${hasEditPermission() ? `
+                                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${item.nguoi_dung_id}" data-name="${item.ho_ten}">
                                                     <i class="bi bi-ban"></i> ${item.trang_thai == 1 ? 'Đình chỉ' : 'Bỏ đình chỉ'}
                                                 </button>
+                                                ` : ''}
                                             </div>
                                         </td>
                                     </tr>

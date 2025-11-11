@@ -39,7 +39,7 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold">Danh Sách Khách Hàng</h6>
-                    @if(auth()->user()->vai_tro === 'duoc_si')
+                    @if(auth()->user()->vai_tro === 'admin')
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addKhachHangModal">
                         <i class="bi bi-plus-circle"></i> Thêm Khách Hàng
                     </button>
@@ -85,7 +85,7 @@
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="{{ $item->khach_hang_id }}">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
-                                        @if(auth()->user()->vai_tro === 'duoc_si')
+                                        @if(auth()->user()->vai_tro === 'admin')
                                         <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="{{ $item->khach_hang_id }}">
                                             <i class="bi bi-pencil"></i> Sửa
                                         </button>
@@ -317,14 +317,9 @@
                                         <button type="button" class="btn btn-sm btn-info view-btn" data-id="${item.khach_hang_id}">
                                             <i class="bi bi-eye"></i> Xem
                                         </button>
-                                        @if(auth()->user()->vai_tro === 'duoc_si')
+                                        @if(auth()->user()->vai_tro === 'admin')
                                         <button type="button" class="btn btn-sm btn-warning edit-btn" data-id="${item.khach_hang_id}">
                                             <i class="bi bi-pencil"></i> Sửa
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-btn" 
-                                            data-id="${item.khach_hang_id}" 
-                                            data-ten="${item.ho_ten}">
-                                            <i class="bi bi-trash"></i> Xóa
                                         </button>
                                         <button type="button" class="btn btn-sm btn-secondary suspend-btn" 
                                             data-id="${item.khach_hang_id}" 
@@ -710,11 +705,11 @@
             findByPhone: findCustomerByPhone
         };
 
-        // Ẩn hoàn toàn nút thêm mới, sửa, đình chỉ
-            if (window.Laravel && window.Laravel.user && window.Laravel.user.vai_tro !== 'duoc_si') {
-                $('#addKhachHangModal').remove();
-                $('.edit-btn, .delete-btn, .suspend-btn').remove();
-            }
+        // Ẩn hoàn toàn nút thêm mới, sửa, xóa, đình chỉ cho dược sĩ
+        if (window.Laravel && window.Laravel.user && window.Laravel.user.vai_tro === 'duoc_si') {
+            $('#addKhachHangModal').remove();
+            $('.edit-btn, .delete-btn, .suspend-btn').remove();
+        }
 
         // Sắp xếp theo số đơn hàng
         let sortDirection = 'desc';

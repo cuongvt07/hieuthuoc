@@ -120,7 +120,7 @@ class KhachHangController extends Controller
     public function findByPhone(Request $request)
     {
         $sdt = $request->get('sdt');
-        $khachHang = KhachHang::where('sdt', 'like', "%{$sdt}%")->where('trang_thai', 1)->get();
+        $khachHang = KhachHang::where('sdt', 'like', "%{$sdt}%")->where('trang_thai', 0)->get();
         
         return response()->json([
             'success' => true,
@@ -138,7 +138,7 @@ class KhachHangController extends Controller
         return response()->json([
             'success' => true,
             'trang_thai' => $khachHang->trang_thai,
-            'message' => $khachHang->trang_thai == 1 ? 'Đã đình chỉ khách hàng.' : 'Đã bỏ đình chỉ khách hàng.'
+            'message' => $khachHang->trang_thai == 0 ? 'Đã bỏ đình chỉ khách hàng.' : 'Đã đình chỉ khách hàng.'
         ]);
     }
 }

@@ -320,7 +320,7 @@ public function index(Request $request)
                 $khachHang = KhachHang::create([
                     'ho_ten' => $request->khach_hang_moi['ho_ten'],
                     'sdt' => $request->khach_hang_moi['sdt'],
-                    'trang_thai' => 1,  
+                    'trang_thai' => 0,  
                 ]);
                 $khachHangId = $khachHang->khach_hang_id;
             }
