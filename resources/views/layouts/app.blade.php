@@ -43,6 +43,7 @@
         .accordion-button {
             padding: 8px 15px;
             font-size: 1rem;
+            font-weight: 600;
         }
 
         .accordion-item {
@@ -88,6 +89,7 @@
             align-items: center;
             padding: 10px 15px;
             transition: all 0.3s;
+            font-weight: 700;
         }
 
         .menu-item:hover,

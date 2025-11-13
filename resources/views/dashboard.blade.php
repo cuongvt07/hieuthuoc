@@ -238,6 +238,7 @@
                             if ($hasData) {
                                 $total = \App\Models\DonBanLe::whereYear('ngay_ban', $selectedYear)
                                     ->whereMonth('ngay_ban', $month)
+                                    ->where('trang_thai', 'hoan_tat')
                                     ->sum('tong_cong');
                             } else {
                                 $total = 0;

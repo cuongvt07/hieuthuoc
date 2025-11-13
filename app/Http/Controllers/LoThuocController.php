@@ -43,11 +43,12 @@ class LoThuocController extends Controller
         }
 
 
-        // Lọc theo sắp hết hạn (<= 30 ngày) — exclude today so today's expiry is considered "hết hạn"
+        // Lọc theo sắp hết hạn: HSD > hôm nay và <= 1 tháng sau
         if ($request->has('sap_het_han') && $request->sap_het_han == '1') {
-            $tomorrow = date('Y-m-d', strtotime('+1 day'));
-            $thirtyDaysLater = date('Y-m-d', strtotime('+30 days'));
-            $query->whereBetween('han_su_dung', [$tomorrow, $thirtyDaysLater]);
+            $today = date('Y-m-d');
+            $oneMonthLater = date('Y-m-d', strtotime('+1 month'));
+            $query->where('han_su_dung', '>', $today)
+                  ->where('han_su_dung', '<=', $oneMonthLater);
         }
 
         // Lọc hết hạn (chưa hủy):

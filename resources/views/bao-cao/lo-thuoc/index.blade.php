@@ -112,8 +112,8 @@
                                         $status = 'out-of-stock expired';
                                         $statusText = 'Hết hạn (đã hủy)';
                                         $badgeClass = 'bg-dark';
-                                    } elseif ($expiry < $today) {
-                                        // HSD đã qua (hết hạn)
+                                    } elseif ($expiry <= $today) {
+                                        // HSD <= hôm nay (bao gồm cả HSD = hôm nay) => hết hạn
                                         $status = 'expired';
                                         $statusText = 'Hết hạn (chưa hủy)';
                                         $badgeClass = 'bg-danger';

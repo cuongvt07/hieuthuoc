@@ -20,7 +20,7 @@ class ThuocController extends Controller
         $thuoc = Thuoc::with(['nhomThuoc', 'kho'])->paginate(10);
         $nhomThuoc = NhomThuoc::paginate(10); // dùng cho danh sách nhóm thuốc (bên trái)
         $nhomThuocData = NhomThuoc::where('trang_thai', 1)->orderBy('ten_nhom')->get(); // dùng cho dropdown filter (chỉ active)
-        $nhomThuocAll = NhomThuoc::orderBy('ten_nhom')->get(); // dùng cho dropdown trong modal thêm/sửa (tất cả)
+        $nhomThuocAll =  NhomThuoc::where('trang_thai', 1)->orderBy('ten_nhom')->get(); // dùng cho dropdown trong modal thêm/sửa (tất cả)
         $kho = Kho::all(); // danh sách kho cho dropdown
 
         return view('thuoc.index', [

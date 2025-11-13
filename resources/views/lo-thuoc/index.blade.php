@@ -189,21 +189,22 @@
                             </td>
                             <td>
                             @php
-                                $today = \Carbon\Carbon::today();
-                                $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
-                                $diffDays = $today->diffInDays($expiry, false); // Có thể âm nếu đã hết hạn
+                                $today = \Carbon\Carbon::today()->startOfDay();
+                                $expiry = \Carbon\Carbon::parse($lo->han_su_dung)->startOfDay();
+                                $oneMonthFromNow = $today->copy()->addMonth();
                                 $hasHuyRecord = $huyRecord ? true : false;
 
                                 // Ưu tiên logic theo mức độ quan trọng
                                 if ($hasHuyRecord) {
                                     $status = 'out-of-stock expired';
                                     $statusText = 'Hết hạn (đã hủy)';
-                                } elseif ($expiry->lessThanOrEqualTo($today)) {
+                                } elseif ($expiry <= $today) {
                                     // HSD <= hôm nay => đã hết hạn
                                     $status = 'expired';
                                     $statusText = 'Hết hạn (chưa hủy)';
-                                } elseif ($diffDays <= 30) {
-                                    // Còn trong 30 ngày nữa sẽ hết hạn
+                                } elseif ($expiry <= $oneMonthFromNow) {
+                                    // HSD trong vòng 1 tháng tới => sắp hết hạn
+                                    $diffDays = $expiry->diffInDays($today);
                                     $status = 'near-expiry';
                                     $statusText = 'Sắp hết hạn (còn ' . $diffDays . ' ngày)';
                                 } elseif ($lo->ton_kho_hien_tai <= 0) {
@@ -222,7 +223,11 @@
                                     <a href="{{ route('lo-thuoc.show', $lo->lo_id) }}" class="btn btn-info">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($lo->ton_kho_hien_tai > 0 && $diffDays <= 0)
+                                    @php
+                                        $today = \Carbon\Carbon::today()->startOfDay();
+                                        $expiry = \Carbon\Carbon::parse($lo->han_su_dung)->startOfDay();
+                                    @endphp
+                                    @if($expiry <= $today && !$hasHuyRecord)
                                     <a href="{{ route('lo-thuoc.dispose', $lo->lo_id) }}" class="btn btn-danger">
                                         <i class="bi bi-trash"></i>
                                     </a>
@@ -255,17 +260,17 @@
             <div class="col-md-4 mb-4">
                 <div class="card lot-card h-100">
                     @php
-                        $today = \Carbon\Carbon::today();
-                        $expiry = \Carbon\Carbon::parse($lo->han_su_dung);
-                        $diffDays = $today->diffInDays($expiry, false);
+                        $today = \Carbon\Carbon::today()->startOfDay();
+                        $expiry = \Carbon\Carbon::parse($lo->han_su_dung)->startOfDay();
+                        $oneMonthFromNow = $today->copy()->addMonth();
                         
                         if ($lo->ton_kho_hien_tai <= 0) {
                             $cardClass = 'border-secondary';
                             $headerClass = 'bg-secondary text-white';
-                        } elseif ($diffDays < 0) {
+                        } elseif ($expiry <= $today) {
                             $cardClass = 'border-danger';
                             $headerClass = 'bg-danger text-white';
-                        } elseif ($diffDays <= 30) {
+                        } elseif ($expiry <= $oneMonthFromNow) {
                             $cardClass = 'border-warning';
                             $headerClass = 'bg-warning';
                         } else {
@@ -277,11 +282,14 @@
                     <div class="card-header {{ $headerClass }}">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">{{ $lo->thuoc->ten_thuoc }}</h6>
+                            @php
+                                $diffDays = $expiry->diffInDays($today);
+                            @endphp
                             @if($lo->ton_kho_hien_tai <= 0)
                                 <span class="badge bg-secondary">Hết hàng</span>
-                                @elseif($diffDays <= 0)
+                            @elseif($expiry <= $today)
                                 <span class="badge bg-danger">Hết hạn</span>
-                                @elseif($diffDays <= 30)
+                            @elseif($expiry <= $oneMonthFromNow)
                                 <span class="badge bg-warning text-dark">Còn {{ $diffDays }} ngày</span>
                             @else
                                 <span class="badge bg-success">Còn hạn</span>
@@ -335,7 +343,11 @@
                             <a href="{{ route('lo-thuoc.show', $lo->lo_id) }}" class="btn btn-sm btn-info">
                                 <i class="bi bi-eye me-1"></i> Chi tiết
                             </a>
-                            @if($lo->ton_kho_hien_tai > 0 && $diffDays <= 0)
+                            @php
+                                $huyRecordCard = ($lo->lichSuTonKho && count($lo->lichSuTonKho) > 0) ? $lo->lichSuTonKho->first() : null;
+                                $hasHuyRecordCard = $huyRecordCard ? true : false;
+                            @endphp
+                            @if($expiry <= $today && !$hasHuyRecordCard)
                             <a href="{{ route('lo-thuoc.dispose', $lo->lo_id) }}" class="btn btn-sm btn-danger">
                                 <i class="bi bi-trash me-1"></i> Hủy tồn
                             </a>

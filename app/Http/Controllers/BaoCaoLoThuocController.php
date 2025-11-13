@@ -257,8 +257,8 @@ class BaoCaoLoThuocController extends Controller
             
             if ($hasHuyRecord) {
                 $trangThai = 'Hết hạn (đã hủy)';
-            } elseif ($hsd < $now) {
-                // HSD đã qua (hết hạn)
+            } elseif ($hsd <= $now) {
+                // HSD <= hôm nay (bao gồm cả HSD = hôm nay) => hết hạn
                 $trangThai = 'Hết hạn (chưa hủy)';
             } elseif ($hsd <= $oneMonthFromNow) {
                 // HSD trong vòng 1 tháng tới (sắp hết hạn)

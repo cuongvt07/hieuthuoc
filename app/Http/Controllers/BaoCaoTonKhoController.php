@@ -93,15 +93,29 @@ class BaoCaoTonKhoController extends Controller
      */
     private function getData(Request $request, $paginate = true)
     {
+        dd(1213);
         // Xác định loại báo cáo, mặc định là theo lô
         $loaiBaoCao = $request->input('loai_bao_cao', 'lo');
         
+        // Xác định ngày báo cáo - quan trọng để lấy đúng snapshot tồn kho tại thời điểm đó
+        $ngayBaoCao = null;
+        if ($request->filled('ngay_bao_cao')) {
+            $ngayBaoCao = Carbon::createFromFormat('d/m/Y', $request->ngay_bao_cao)->endOfDay();
+        }
+        
         // Lấy các bản ghi lịch sử tồn kho mới nhất cho mỗi lô thuốc
+        // TRONG khoảng thời gian được chọn (nếu có)
         $latestHistorySubquery = LichSuTonKho::select(
                 'lo_id',
                 DB::raw('MAX(created_at) as latest_date')
-            )
-            ->groupBy('lo_id');
+            );
+        
+        // Nếu có filter ngày báo cáo, chỉ lấy bản ghi <= ngày đó
+        if ($ngayBaoCao) {
+            $latestHistorySubquery->where('created_at', '<=', $ngayBaoCao);
+        }
+        
+        $latestHistorySubquery->groupBy('lo_id');
         
         // Truy vấn cơ bản
         $query = LichSuTonKho::join('lo_thuoc', 'lich_su_ton_kho.lo_id', '=', 'lo_thuoc.lo_id')
@@ -186,10 +200,8 @@ class BaoCaoTonKhoController extends Controller
             });
         }
 
-        if ($request->filled('ngay_bao_cao')) {
-            $ngayBaoCao = Carbon::createFromFormat('d/m/Y', $request->ngay_bao_cao)->endOfDay();
-            $query->where('lich_su_ton_kho.created_at', '<=', $ngayBaoCao);
-        }
+        // Filter ngay_bao_cao đã được xử lý trong latestHistorySubquery ở trên
+        // để lấy đúng snapshot tồn kho tại thời điểm đó
 
         if ($request->has('con_ton') && $request->con_ton == 1) {
             // Chỉ áp dụng lọc tồn kho dương cho báo cáo theo lô hoặc theo thuốc

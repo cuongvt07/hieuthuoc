@@ -22,7 +22,6 @@ class BaoCaoKhoController extends Controller
             return $this->exportExcel($request);
         }
 
-        // --- Filter thời gian ---
         $tuNgay = $request->filled('tu_ngay') ? Carbon::parse($request->tu_ngay)->startOfDay() : null;
         $denNgay = $request->filled('den_ngay') ? Carbon::parse($request->den_ngay)->endOfDay() : null;
 
@@ -31,63 +30,140 @@ class BaoCaoKhoController extends Controller
             $now = Carbon::now();
             $sixMonthsLater = $now->copy()->addMonths(6);
 
-            $thuocs = Thuoc::with(['loThuoc' => function($query) use ($request, $tuNgay, $denNgay) {
-                $query->where('kho_id', $request->kho_id)
-                    ->where('ton_kho_hien_tai', '>', 0);
-                if ($tuNgay) $query->where('ngay_tao', '>=', $tuNgay);
-                if ($denNgay) $query->where('ngay_tao', '<=', $denNgay);
-            }])
-            ->select('thuoc.*')
-            ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai) FROM lo_thuoc 
-                WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
-                AND lo_thuoc.kho_id = ' . $request->kho_id . ' 
-                AND lo_thuoc.ton_kho_hien_tai > 0' . 
-                ($tuNgay ? ' AND lo_thuoc.ngay_tao >= "' . $tuNgay->format('Y-m-d H:i:s') . '"' : '') .
-                ($denNgay ? ' AND lo_thuoc.ngay_tao <= "' . $denNgay->format('Y-m-d H:i:s') . '"' : '') . 
-                ') as tong_ton_kho'))
-            ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai * gia_nhap_tb) FROM lo_thuoc 
-                WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
-                AND lo_thuoc.kho_id = ' . $request->kho_id . ' 
-                AND lo_thuoc.ton_kho_hien_tai > 0' . 
-                ($tuNgay ? ' AND lo_thuoc.ngay_tao >= "' . $tuNgay->format('Y-m-d H:i:s') . '"' : '') .
-                ($denNgay ? ' AND lo_thuoc.ngay_tao <= "' . $denNgay->format('Y-m-d H:i:s') . '"' : '') . 
-                ') as gia_tri_ton'))
-            ->whereExists(function($query) use ($request, $tuNgay, $denNgay) {
-                $query->select(DB::raw(1))
-                    ->from('lo_thuoc')
-                    ->whereColumn('lo_thuoc.thuoc_id', 'thuoc.thuoc_id')
-                    ->where('lo_thuoc.kho_id', $request->kho_id)
-                    ->where('ton_kho_hien_tai', '>', 0);
-                if ($tuNgay) $query->where('lo_thuoc.ngay_tao', '>=', $tuNgay);
-                if ($denNgay) $query->where('lo_thuoc.ngay_tao', '<=', $denNgay);
-            })
-            ->orderBy('thuoc.ten_thuoc')
-            ->paginate(10);
+
+            if ($denNgay) {
+                // Lấy snapshot tồn kho tại thời điểm denNgay
+                $thuocs = Thuoc::select('thuoc.*')
+                ->selectRaw('(
+                    SELECT SUM(
+                        (SELECT lst2.ton_kho_moi 
+                         FROM lich_su_ton_kho lst2
+                         WHERE lst2.lo_id = lt.lo_id
+                         AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                         ORDER BY lst2.created_at DESC, lst2.id DESC
+                         LIMIT 1)
+                    )
+                    FROM lo_thuoc lt
+                    WHERE lt.thuoc_id = thuoc.thuoc_id 
+                    AND lt.kho_id = ' . $request->kho_id . '
+                ) as tong_ton_kho')
+                ->selectRaw('(
+                    SELECT SUM(
+                        (SELECT lst2.ton_kho_moi * lt.gia_nhap_tb
+                         FROM lich_su_ton_kho lst2
+                         WHERE lst2.lo_id = lt.lo_id
+                         AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                         ORDER BY lst2.created_at DESC, lst2.id DESC
+                         LIMIT 1)
+                    )
+                    FROM lo_thuoc lt
+                    WHERE lt.thuoc_id = thuoc.thuoc_id 
+                    AND lt.kho_id = ' . $request->kho_id . '
+                ) as gia_tri_ton')
+                ->whereExists(function($query) use ($request, $denNgay) {
+                    $query->select(DB::raw(1))
+                        ->from('lo_thuoc as lt')
+                        ->join('lich_su_ton_kho as lst', 'lt.lo_id', '=', 'lst.lo_id')
+                        ->whereColumn('lt.thuoc_id', 'thuoc.thuoc_id')
+                        ->where('lt.kho_id', $request->kho_id)
+                        ->where('lst.created_at', '<=', $denNgay);
+                })
+                ->havingRaw('tong_ton_kho > 0')
+                ->orderBy('thuoc.ten_thuoc')
+                ->paginate(10);
+            } else {
+                // Lấy tồn kho hiện tại
+                $thuocs = Thuoc::with(['loThuoc' => function($query) use ($request) {
+                    $query->where('kho_id', $request->kho_id)
+                        ->where('ton_kho_hien_tai', '>', 0);
+                }])
+                ->select('thuoc.*')
+                ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai) FROM lo_thuoc 
+                    WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
+                    AND lo_thuoc.kho_id = ' . $request->kho_id . ' 
+                    AND lo_thuoc.ton_kho_hien_tai > 0) as tong_ton_kho'))
+                ->addSelect(DB::raw('(SELECT SUM(ton_kho_hien_tai * gia_nhap_tb) FROM lo_thuoc 
+                    WHERE lo_thuoc.thuoc_id = thuoc.thuoc_id 
+                    AND lo_thuoc.kho_id = ' . $request->kho_id . ' 
+                    AND lo_thuoc.ton_kho_hien_tai > 0) as gia_tri_ton'))
+                ->whereExists(function($query) use ($request) {
+                    $query->select(DB::raw(1))
+                        ->from('lo_thuoc')
+                        ->whereColumn('lo_thuoc.thuoc_id', 'thuoc.thuoc_id')
+                        ->where('lo_thuoc.kho_id', $request->kho_id)
+                        ->where('ton_kho_hien_tai', '>', 0);
+                })
+                ->orderBy('thuoc.ten_thuoc')
+                ->paginate(10);
+            }
 
             return view('bao-cao.kho.chi-tiet', compact('khos', 'thuocs'));
         }
 
-        // --- Nếu không chọn kho cụ thể: tổng hợp ---
-        $khoListQuery = Kho::select(
-            'kho.kho_id',
-            'kho.ten_kho',
-            'kho.dia_chi',
-            'kho.ghi_chu'
-        )
-        ->selectRaw('COUNT(DISTINCT thuoc.thuoc_id) as so_mat_hang')
-        ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
-        ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as tong_gia_tri')
-        ->leftJoin('lo_thuoc', function($join) use ($tuNgay, $denNgay) {
-            $join->on('kho.kho_id', '=', 'lo_thuoc.kho_id');
-            if ($tuNgay) $join->where('lo_thuoc.ngay_tao', '>=', $tuNgay);
-            if ($denNgay) $join->where('lo_thuoc.ngay_tao', '<=', $denNgay);
-        })
-        ->leftJoin('thuoc', function($join) {
-            $join->on('lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
-                 ->where('thuoc.trang_thai', 1);
-        })
-        ->groupBy('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
-        ->orderBy('kho.ten_kho');
+        if ($denNgay) {
+            $khoListQuery = Kho::select(
+                'kho.kho_id',
+                'kho.ten_kho',
+                'kho.dia_chi',
+                'kho.ghi_chu'
+            )
+            ->selectRaw('(
+                SELECT COUNT(DISTINCT lt.thuoc_id)
+                FROM lo_thuoc lt
+                WHERE lt.kho_id = kho.kho_id
+                AND (
+                    SELECT lst2.ton_kho_moi
+                    FROM lich_su_ton_kho lst2
+                    WHERE lst2.lo_id = lt.lo_id
+                    AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                    ORDER BY lst2.created_at DESC, lst2.id DESC
+                    LIMIT 1
+                ) > 0
+            ) as so_mat_hang')
+            ->selectRaw('(
+                SELECT SUM(
+                    (SELECT lst2.ton_kho_moi
+                     FROM lich_su_ton_kho lst2
+                     WHERE lst2.lo_id = lt.lo_id
+                     AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                     ORDER BY lst2.created_at DESC, lst2.id DESC
+                     LIMIT 1)
+                )
+                FROM lo_thuoc lt
+                WHERE lt.kho_id = kho.kho_id
+            ) as tong_ton_kho')
+            ->selectRaw('(
+                SELECT SUM(
+                    (SELECT lst2.ton_kho_moi * lt.gia_nhap_tb
+                     FROM lich_su_ton_kho lst2
+                     WHERE lst2.lo_id = lt.lo_id
+                     AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                     ORDER BY lst2.created_at DESC, lst2.id DESC
+                     LIMIT 1)
+                )
+                FROM lo_thuoc lt
+                WHERE lt.kho_id = kho.kho_id
+            ) as tong_gia_tri')
+            ->orderBy('kho.ten_kho');
+        } else {
+            // Lấy tồn kho hiện tại
+            $khoListQuery = Kho::select(
+                'kho.kho_id',
+                'kho.ten_kho',
+                'kho.dia_chi',
+                'kho.ghi_chu'
+            )
+            ->selectRaw('COUNT(DISTINCT thuoc.thuoc_id) as so_mat_hang')
+            ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
+            ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as tong_gia_tri')
+            ->leftJoin('lo_thuoc', 'kho.kho_id', '=', 'lo_thuoc.kho_id')
+            ->leftJoin('thuoc', function($join) {
+                $join->on('lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
+                     ->where('thuoc.trang_thai', 1);
+            })
+            ->groupBy('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
+            ->orderBy('kho.ten_kho');
+        }
 
         $khoList = $khoListQuery->paginate(10)->appends($request->query());
 
@@ -158,18 +234,55 @@ class BaoCaoKhoController extends Controller
 
             $sheet->fromArray(['STT', 'Tên sản phẩm', 'Đơn vị', 'Số lượng tồn', 'Giá trị tồn'], null, 'A7');
 
-            $thuocs = Thuoc::select('thuoc.thuoc_id', 'thuoc.ten_thuoc', 'thuoc.don_vi_goc')
-                ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
-                ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton')
-                ->leftJoin('lo_thuoc', function($join) use ($request) {
-                    $join->on('thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
-                        ->where('lo_thuoc.kho_id', '=', $request->kho_id);
-                })
-                ->where('thuoc.trang_thai', 1)
-                ->groupBy('thuoc.thuoc_id', 'thuoc.ten_thuoc', 'thuoc.don_vi_goc')
-                ->having('tong_ton_kho', '>', 0)
-                ->orderBy('thuoc.ten_thuoc')
-                ->get();
+            // Nếu có denNgay, lấy từ lịch sử tồn kho; nếu không lấy tồn hiện tại
+            if ($request->filled('den_ngay')) {
+                $denNgay = Carbon::parse($request->den_ngay)->endOfDay();
+                
+                $thuocs = Thuoc::select('thuoc.thuoc_id', 'thuoc.ten_thuoc', 'thuoc.don_vi_goc')
+                    ->selectRaw('(
+                        SELECT SUM(
+                            (SELECT lst2.ton_kho_moi 
+                             FROM lich_su_ton_kho lst2
+                             WHERE lst2.lo_id = lt.lo_id
+                             AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                             ORDER BY lst2.created_at DESC, lst2.id DESC
+                             LIMIT 1)
+                        )
+                        FROM lo_thuoc lt
+                        WHERE lt.thuoc_id = thuoc.thuoc_id 
+                        AND lt.kho_id = ' . $request->kho_id . '
+                    ) as tong_ton_kho')
+                    ->selectRaw('(
+                        SELECT SUM(
+                            (SELECT lst2.ton_kho_moi * lt.gia_nhap_tb
+                             FROM lich_su_ton_kho lst2
+                             WHERE lst2.lo_id = lt.lo_id
+                             AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                             ORDER BY lst2.created_at DESC, lst2.id DESC
+                             LIMIT 1)
+                        )
+                        FROM lo_thuoc lt
+                        WHERE lt.thuoc_id = thuoc.thuoc_id 
+                        AND lt.kho_id = ' . $request->kho_id . '
+                    ) as gia_tri_ton')
+                    ->where('thuoc.trang_thai', 1)
+                    ->havingRaw('tong_ton_kho > 0')
+                    ->orderBy('thuoc.ten_thuoc')
+                    ->get();
+            } else {
+                $thuocs = Thuoc::select('thuoc.thuoc_id', 'thuoc.ten_thuoc', 'thuoc.don_vi_goc')
+                    ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
+                    ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as gia_tri_ton')
+                    ->leftJoin('lo_thuoc', function($join) use ($request) {
+                        $join->on('thuoc.thuoc_id', '=', 'lo_thuoc.thuoc_id')
+                            ->where('lo_thuoc.kho_id', '=', $request->kho_id);
+                    })
+                    ->where('thuoc.trang_thai', 1)
+                    ->groupBy('thuoc.thuoc_id', 'thuoc.ten_thuoc', 'thuoc.don_vi_goc')
+                    ->having('tong_ton_kho', '>', 0)
+                    ->orderBy('thuoc.ten_thuoc')
+                    ->get();
+            }
 
             $row = 8;
             $tongSL = 0;
@@ -221,16 +334,65 @@ class BaoCaoKhoController extends Controller
             $sheet->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->fromArray(['STT', 'Tên kho', 'Số lượng mặt hàng', 'Tổng số lượng tồn', 'Tổng giá trị tồn'], null, 'A7');
 
-            $khos = Kho::select('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
-                ->selectRaw('COUNT(DISTINCT thuoc.thuoc_id) as so_mat_hang')
-                ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
-                ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as tong_gia_tri')
-                ->leftJoin('lo_thuoc', 'kho.kho_id', '=', 'lo_thuoc.kho_id')
-                ->leftJoin('thuoc', 'lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
-                ->where('thuoc.trang_thai', 1)
-                ->groupBy('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
-                ->orderBy('kho.ten_kho')
-                ->get();
+            // Nếu có denNgay, lấy từ lịch sử tồn kho; nếu không lấy tồn hiện tại
+            if ($request->filled('den_ngay')) {
+                $denNgay = Carbon::parse($request->den_ngay)->endOfDay();
+                
+                $khos = Kho::select('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
+                    ->selectRaw('(
+                        SELECT COUNT(DISTINCT lt.thuoc_id)
+                        FROM lich_su_ton_kho lst
+                        INNER JOIN lo_thuoc lt ON lst.lo_id = lt.lo_id
+                        WHERE lt.kho_id = kho.kho_id
+                        AND lst.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                        AND lst.ton_kho_moi > 0
+                        AND lst.id = (
+                            SELECT id 
+                            FROM lich_su_ton_kho 
+                            WHERE lo_id = lst.lo_id 
+                            AND created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                            ORDER BY created_at DESC, id DESC
+                            LIMIT 1
+                        )
+                    ) as so_mat_hang')
+                    ->selectRaw('(
+                        SELECT SUM(
+                            (SELECT lst2.ton_kho_moi
+                             FROM lich_su_ton_kho lst2
+                             WHERE lst2.lo_id = lt.lo_id
+                             AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                             ORDER BY lst2.created_at DESC, lst2.id DESC
+                             LIMIT 1)
+                        )
+                        FROM lo_thuoc lt
+                        WHERE lt.kho_id = kho.kho_id
+                    ) as tong_ton_kho')
+                    ->selectRaw('(
+                        SELECT SUM(
+                            (SELECT lst2.ton_kho_moi * lt.gia_nhap_tb
+                             FROM lich_su_ton_kho lst2
+                             WHERE lst2.lo_id = lt.lo_id
+                             AND lst2.created_at <= "' . $denNgay->format('Y-m-d H:i:s') . '"
+                             ORDER BY lst2.created_at DESC, lst2.id DESC
+                             LIMIT 1)
+                        )
+                        FROM lo_thuoc lt
+                        WHERE lt.kho_id = kho.kho_id
+                    ) as tong_gia_tri')
+                    ->orderBy('kho.ten_kho')
+                    ->get();
+            } else {
+                $khos = Kho::select('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
+                    ->selectRaw('COUNT(DISTINCT thuoc.thuoc_id) as so_mat_hang')
+                    ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai) as tong_ton_kho')
+                    ->selectRaw('SUM(lo_thuoc.ton_kho_hien_tai * lo_thuoc.gia_nhap_tb) as tong_gia_tri')
+                    ->leftJoin('lo_thuoc', 'kho.kho_id', '=', 'lo_thuoc.kho_id')
+                    ->leftJoin('thuoc', 'lo_thuoc.thuoc_id', '=', 'thuoc.thuoc_id')
+                    ->where('thuoc.trang_thai', 1)
+                    ->groupBy('kho.kho_id', 'kho.ten_kho', 'kho.dia_chi', 'kho.ghi_chu')
+                    ->orderBy('kho.ten_kho')
+                    ->get();
+            }
 
             $row = 8;
             $tongMatHang = $tongSL = $tongGT = 0;

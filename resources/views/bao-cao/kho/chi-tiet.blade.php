@@ -75,7 +75,7 @@
                                 <td>{{ $thuocs->firstItem() + $index }}</td>
                                 <td>{{ $thuoc->ten_thuoc }}</td>
                                 <td>{{ $thuoc->don_vi_goc }}</td>
-                                <td class="text-end">{{ number_format($thuoc->tong_ton_kho) }}</td>
+                                <td class="text-end">{{ ($thuoc->tong_ton_kho) }}</td>
                                 <td class="text-end">{{ number_format($thuoc->gia_tri_ton) }} VNĐ</td>
                                 
                             </tr>
@@ -88,7 +88,7 @@
                     <tfoot class="fw-bold">
                         <tr>
                             <td colspan="3" class="text-end">TỔNG CỘNG:</td>
-                            <td class="text-end">{{ number_format($tongSoLuong) }}</td>
+                            <td class="text-end">{{ ($tongSoLuong) }}</td>
                             <td class="text-end">{{ number_format($tongGiaTri) }} VNĐ</td>
                         </tr>
                     </tfoot>

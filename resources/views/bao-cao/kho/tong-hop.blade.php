@@ -82,7 +82,7 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $kho->ten_kho }}</td>
                                 <td class="text-end">{{ number_format($kho->so_mat_hang) }}</td>
-                                <td class="text-end">{{ number_format($kho->tong_ton_kho) }}</td>
+                                <td class="text-end">{{ ($kho->tong_ton_kho) }}</td>
                                 <td class="text-end">{{ number_format($kho->tong_gia_tri) }} VNĐ</td>
                                 <td class="text-center">
                                     <a href="{{ route('bao-cao.kho.index', array_merge(['kho_id' => $kho->kho_id], request()->only(['tu_ngay', 'den_ngay']))) }}" class="btn btn-sm btn-info">
@@ -100,7 +100,7 @@
                         <tr>
                             <td colspan="2" class="text-end">TỔNG CỘNG:</td>
                             <td class="text-end">{{ number_format($tongMatHang) }}</td>
-                            <td class="text-end">{{ number_format($tongSoLuong) }}</td>
+                            <td class="text-end">{{ ($tongSoLuong) }}</td>
                             <td class="text-end">{{ number_format($tongGiaTri) }} VNĐ</td>
                             <td></td>
                         </tr>
