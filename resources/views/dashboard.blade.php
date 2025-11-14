@@ -355,6 +355,7 @@
 
                             $total = \App\Models\DonBanLe::whereYear('ngay_ban', $currentYear)
                                 ->whereMonth('ngay_ban', $month)
+                                ->where('trang_thai', 'hoan_tat')
                                 ->sum('tong_cong');
 
                             $monthlyData[$month] = $total;

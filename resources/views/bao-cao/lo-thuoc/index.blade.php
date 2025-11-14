@@ -118,8 +118,8 @@
                                         $statusText = 'Hết hạn (chưa hủy)';
                                         $badgeClass = 'bg-danger';
                                     } elseif ($expiry <= $oneMonthFromNow) {
-                                        // HSD trong vòng 1 tháng tới (sắp hết hạn)
-                                        $diffDays = $expiry->diffInDays($today);
+                                        // HSD trong vòng 1 tháng tới (sắp hết hạn) - chỉ tính khi còn hạn
+                                        $diffDays = $today->diffInDays($expiry);
                                         $status = 'near-expiry';
                                         $statusText = 'Sắp hết hạn (còn ' . $diffDays . ' ngày)';
                                         $badgeClass = 'bg-warning text-dark';
