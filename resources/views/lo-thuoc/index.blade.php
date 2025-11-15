@@ -204,7 +204,7 @@
                                     $statusText = 'Hết hạn (chưa hủy)';
                                 } elseif ($expiry <= $oneMonthFromNow) {
                                     // HSD trong vòng 1 tháng tới => sắp hết hạn
-                                    $diffDays = $expiry->diffInDays($today);
+                                    $diffDays = $today->diffInDays($expiry, false);
                                     $status = 'near-expiry';
                                     $statusText = 'Sắp hết hạn (còn ' . $diffDays . ' ngày)';
                                 } elseif ($lo->ton_kho_hien_tai <= 0) {
